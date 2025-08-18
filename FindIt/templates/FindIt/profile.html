@@ -1,19 +1,47 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container mt-5">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-primary text-white">Profile</div>
+        <div class="col-lg-5 col-md-7">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center rounded-top-4">
+                    <h4 class="mb-0">My Profile</h4>
+                </div>
                 <div class="card-body text-center">
-                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle mb-3" width="128" height="128" alt="Profile Picture">
-                    <h4>{{ user.username }}</h4>
-                    <p>{{ user.email }}</p>
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit" class="btn btn-success">Save Changes</button>
-                    </form>
+                    <!-- Profile Picture -->
+                    {% if profile.profile_picture %}
+                        <img src="{{ profile.profile_picture.url }}" 
+                             class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
+                             width="130" height="130" alt="Profile Picture">
+                    {% else %}
+                        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" 
+                             class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
+                             width="130" height="130" alt="Profile Picture">
+                    {% endif %}
+
+
+                    <!-- Name -->
+                    {% if user.first_name or user.last_name %}
+                        <h4 class="fw-bold text-dark">{{ user.first_name }} {{ user.last_name }}</h4>
+                    {% endif %}
+                    <!-- Username -->
+                    <h5 class="text-dark">@{{ user.username }}</h5>
+                    <p class="text-muted mb-4">Member since {{ user.date_joined|date:"F Y" }}</p>
+
+                    <!-- Info Section -->
+                    <div class="text-start px-3">
+                        <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p>
+                        <p class="mb-2"><strong>Phone:</strong> 
+                            {{ profile.contact_number|default:"Not provided" }}
+                        </p>
+                    </div>
+
+                    <!-- Edit Button -->
+                    <div class="mt-4">
+                        <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary px-4 rounded-pill">
+                            Edit Profile
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

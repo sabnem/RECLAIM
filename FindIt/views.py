@@ -155,8 +155,10 @@ def contact_item_owner(request, item_id):
     return render(request, 'FindIt/contact_owner.html', {'form': form, 'item': item})
 
 def inbox(request):
-    messages = request.user.received_messages.select_related('sender', 'item').order_by('-timestamp')
-    return render(request, 'FindIt/inbox.html', {'messages': messages})
+    messages_qs = request.user.received_messages.select_related('sender', 'item').order_by('-timestamp')
+    # Mark all unread messages as read
+    messages_qs.filter(is_read=False).update(is_read=True)
+    return render(request, 'FindIt/inbox.html', {'messages': messages_qs})
 
 def send_message(request, item_id, recipient_id):
     item = get_object_or_404(Item, id=item_id)

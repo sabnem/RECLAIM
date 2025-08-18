@@ -16,7 +16,9 @@
               </div>
               <div class="d-flex flex-column align-items-end">
                 <small class="text-muted mb-2">{{ msg.timestamp|date:'Y-m-d H:i' }}</small>
-                {% if msg.sender != user %}
+                {% if user == msg.sender and user != msg.recipient %}
+                  <a href="{% url 'send_message' item_id=msg.item.id recipient_id=msg.recipient.id %}" class="btn btn-sm btn-primary">Reply</a>
+                {% elif user == msg.recipient and user != msg.sender %}
                   <a href="{% url 'send_message' item_id=msg.item.id recipient_id=msg.sender.id %}" class="btn btn-sm btn-primary">Reply</a>
                 {% endif %}
                 <a href="{% url 'item_detail' msg.item.id %}" class="btn btn-sm btn-outline-secondary mt-1">View Item</a>

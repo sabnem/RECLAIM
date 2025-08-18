@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Edit Profile</div>
+                <div class="card-body text-center">
+                    <form method="post" enctype="multipart/form-data" id="edit-profile-form">
+                        {% csrf_token %}
+                        <label for="id_profile_picture" style="cursor:pointer;">
+                            {% if profile.profile_picture %}
+                                <img src="{{ profile.profile_picture.url }}" class="rounded-circle mb-3" width="128" height="128" alt="Profile Picture" id="profile-pic">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle mb-3" width="128" height="128" alt="Profile Picture" id="profile-pic">
+                            {% endif %}
+                            <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" style="display:none;">
+                        </label>
+                        <div class="mb-3 text-start">
+                            <label for="id_first_name" class="form-label"><strong>First Name:</strong></label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="mb-3 text-start">
+                            <label for="id_last_name" class="form-label"><strong>Last Name:</strong></label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="mb-3 text-start">
+                            <label for="id_email" class="form-label"><strong>Email:</strong></label>
+                            {{ form.email }}
+                        </div>
+                        <h4>{{ user.username }}</h4>
+                        <div class="mb-3 text-start">
+                            <label for="id_contact_number" class="form-label"><strong>Phone Number:</strong></label>
+                            {{ form.contact_number }}
+                        </div>
+                        <button type="submit" class="btn btn-success">Save Changes</button>
+                        <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                    <script>
+                        document.getElementById('id_profile_picture').addEventListener('change', function() {
+                            document.getElementById('edit-profile-form').submit();
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
