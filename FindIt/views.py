@@ -1,7 +1,12 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from .forms import UserRegistrationForm, LoginForm
+from .forms import UserRegistrationForm, LoginForm, ItemForm, MessageForm
 from django.contrib import messages
+from .models import Item, ItemCategory, Message
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.core.mail import send_mail
+from django.conf import settings
 
 def register(request):
     if request.method == 'POST':
@@ -36,3 +41,83 @@ def user_logout(request):
 
 def home(request):
     return render(request, 'FindIt/home.html')
+
+def report_item(request):
+    if request.method == 'POST':
+        form = ItemForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.reported_by = request.user
+            item.save()
+            messages.success(request, 'Item reported successfully!')
+            return redirect('home')
+    else:
+        form = ItemForm()
+    return render(request, 'FindIt/report_item.html', {'form': form})
+
+def item_list(request):
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    status = request.GET.get('status', '')
+    items = Item.objects.all().order_by('-date_reported')
+    if query:
+        items = items.filter(Q(title__icontains=query) | Q(description__icontains=query) | Q(location__icontains=query))
+    if category_id:
+        items = items.filter(category_id=category_id)
+    if status:
+        items = items.filter(status=status)
+    categories = ItemCategory.objects.all()
+    return render(request, 'FindIt/item_list.html', {
+        'items': items,
+        'categories': categories,
+        'query': query,
+        'selected_category': category_id,
+        'selected_status': status,
+    })
+
+def item_detail(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    return render(request, 'FindIt/item_detail.html', {'item': item})
+
+def contact_item_owner(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    owner_email = item.reported_by.email
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            message = form.cleaned_data['message']
+            sender = request.user
+            send_mail(
+                subject=f'Lost & Found Inquiry: {item.title}',
+                message=f"Message from {sender.username} ({sender.email}):\n\n{message}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[owner_email],
+                fail_silently=False,
+            )
+            messages.success(request, 'Your message has been sent to the item owner!')
+            return redirect('item_detail', item_id=item.id)
+    else:
+        form = MessageForm()
+    return render(request, 'FindIt/contact_owner.html', {'form': form, 'item': item})
+
+def inbox(request):
+    messages = request.user.received_messages.select_related('sender', 'item').order_by('-timestamp')
+    return render(request, 'FindIt/inbox.html', {'messages': messages})
+
+def send_message(request, item_id, recipient_id):
+    item = get_object_or_404(Item, id=item_id)
+    recipient = get_object_or_404(User, id=recipient_id)
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            Message.objects.create(
+                sender=request.user,
+                recipient=recipient,
+                item=item,
+                content=form.cleaned_data['message']
+            )
+            messages.success(request, 'Message sent!')
+            return redirect('item_detail', item_id=item.id)
+    else:
+        form = MessageForm()
+    return render(request, 'FindIt/send_message.html', {'form': form, 'item': item, 'recipient': recipient})

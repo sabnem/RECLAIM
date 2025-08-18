@@ -1,9 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Welcome to the Lost & Found Portal</h2>
-{% if user.is_authenticated %}
-    <p>Hello, {{ user.username }}! <a href="{% url 'logout' %}">Logout</a></p>
-{% else %}
-    <p><a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Register</a></p>
-{% endif %}
+<div class="py-5 text-center bg-light rounded-4 shadow-sm mb-5">
+    <h1 class="display-5 fw-bold mb-3">Welcome to the Lost & Found Portal</h1>
+    <p class="lead mb-4">Easily report, search, and retrieve lost and found items in your community.</p>
+    {% if user.is_authenticated %}
+        <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+            <a href="{% url 'report_item' %}" class="btn btn-primary btn-lg px-4"><i class="bi bi-plus-circle"></i> Report Item</a>
+            <a href="{% url 'item_list' %}" class="btn btn-info btn-lg px-4 text-white"><i class="bi bi-search"></i> View All Items</a>
+            <a href="{% url 'inbox' %}" class="btn btn-dark btn-lg px-4"><i class="bi bi-envelope"></i> Inbox</a>
+        </div>
+        <div class="mt-4">
+            <span class="badge bg-success fs-6">Logged in as {{ user.username }}</span>
+        </div>
+    {% else %}
+        <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+            <a href="{% url 'login' %}" class="btn btn-success btn-lg px-4"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg px-4"><i class="bi bi-person-plus"></i> Register</a>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

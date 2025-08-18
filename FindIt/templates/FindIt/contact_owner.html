@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow-lg border-0 bg-white rounded-4">
+      <div class="card-body p-5">
+        <div class="text-center mb-4">
+          <i class="bi bi-envelope display-3 text-success"></i>
+          <h2 class="fw-bold mt-2">Contact Item Owner</h2>
+        </div>
+        <p><strong>Item:</strong> {{ item.title }}</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary w-100 mt-3">Send Message</button>
+        </form>
+        <a href="{% url 'item_detail' item.id %}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back to Item</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

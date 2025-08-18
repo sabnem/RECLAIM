@@ -19,3 +19,38 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
 	if hasattr(instance, 'userprofile'):
 		instance.userprofile.save()
+
+class ItemCategory(models.Model):
+	name = models.CharField(max_length=50)
+
+	def __str__(self):
+		return self.name
+
+class Item(models.Model):
+	STATUS_CHOICES = [
+		('lost', 'Lost'),
+		('found', 'Found'),
+	]
+	title = models.CharField(max_length=100)
+	description = models.TextField()
+	category = models.ForeignKey(ItemCategory, on_delete=models.SET_NULL, null=True)
+	location = models.CharField(max_length=100)
+	photo = models.ImageField(upload_to='item_photos/', blank=True, null=True)
+	status = models.CharField(max_length=5, choices=STATUS_CHOICES)
+	date_reported = models.DateTimeField(auto_now_add=True)
+	reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+
+	def __str__(self):
+		return f"{self.title} ({self.get_status_display()})"
+# Trigger migration recreation
+
+class Message(models.Model):
+	sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+	recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+	item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='messages')
+	content = models.TextField()
+	timestamp = models.DateTimeField(auto_now_add=True)
+	is_read = models.BooleanField(default=False)
+
+	def __str__(self):
+		return f"From {self.sender.username} to {self.recipient.username} about {self.item.title}"

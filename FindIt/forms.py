@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile
+from .models import UserProfile, Item
 
 class UserRegistrationForm(forms.ModelForm):
     password = forms.CharField(label='Password', widget=forms.PasswordInput)
@@ -15,9 +15,23 @@ class UserRegistrationForm(forms.ModelForm):
         user.set_password(self.cleaned_data['password'])
         if commit:
             user.save()
-            UserProfile.objects.create(user=user, contact_number=self.cleaned_data['contact_number'])
+            # Set contact number on the auto-created profile
+            if hasattr(user, 'userprofile'):
+                user.userprofile.contact_number = self.cleaned_data['contact_number']
+                user.userprofile.save()
         return user
 
 class LoginForm(forms.Form):
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput)
+
+class ItemForm(forms.ModelForm):
+    class Meta:
+        model = Item
+        fields = ['title', 'description', 'category', 'location', 'photo', 'status']
+        widgets = {
+            'status': forms.RadioSelect,
+        }
+
+class MessageForm(forms.Form):
+    message = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Type your message...'}), label='Message')

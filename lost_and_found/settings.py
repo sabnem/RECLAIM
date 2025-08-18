@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'LostAndFoundDB',
+        'NAME': 'ReClaimDB',
         'USER': 'postgres',
         'PASSWORD': 'Joyce@2003',
         'HOST': 'localhost',
@@ -132,3 +132,7 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Email settings for contact form
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@lostandfound.com'

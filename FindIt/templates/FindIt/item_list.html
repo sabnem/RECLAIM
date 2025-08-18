@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-12">
+    <form method="get" class="row g-2 align-items-end bg-white p-3 rounded-4 shadow-sm">
+      <div class="col-md-4">
+        <input type="text" name="q" class="form-control" placeholder="Search by title, description, or location" value="{{ query }}">
+      </div>
+      <div class="col-md-3">
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="status" class="form-select">
+          <option value="">All Status</option>
+          <option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Lost</option>
+          <option value="found" {% if selected_status == 'found' %}selected{% endif %}>Found</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Search</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="row">
+  {% for item in items %}
+    <div class="col-md-4 mb-4">
+      <div class="card h-100 shadow-lg border-0 rounded-4">
+        {% if item.photo %}
+          <img src="{{ item.photo.url }}" class="card-img-top" style="max-height:200px;object-fit:cover;" alt="Item photo">
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title fw-bold">{{ item.title }}</h5>
+          <p class="card-text">{{ item.description|truncatewords:20 }}</p>
+          <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-1">{{ item.get_status_display }}</span>
+          <span class="badge bg-secondary me-1">{{ item.category }}</span>
+          <div class="mt-2"><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ item.location }}</small></div>
+          <div><small class="text-muted"><i class="bi bi-calendar-event"></i> {{ item.date_reported|date:'Y-m-d H:i' }}</small></div>
+          <a href="{% url 'item_detail' item.id %}" class="btn btn-sm btn-outline-primary mt-2"><i class="bi bi-eye"></i> View Details</a>
+          <a href="{% url 'contact_item_owner' item.id %}" class="btn btn-sm btn-outline-success mt-2"><i class="bi bi-envelope"></i> Contact Owner</a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12"><div class="alert alert-warning">No items found.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}
