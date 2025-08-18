@@ -39,6 +39,7 @@ class Item(models.Model):
 	status = models.CharField(max_length=5, choices=STATUS_CHOICES)
 	date_reported = models.DateTimeField(auto_now_add=True)
 	reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+	is_returned = models.BooleanField(default=False)
 
 	def __str__(self):
 		return f"{self.title} ({self.get_status_display()})"
@@ -51,6 +52,8 @@ class Message(models.Model):
 	content = models.TextField()
 	timestamp = models.DateTimeField(auto_now_add=True)
 	is_read = models.BooleanField(default=False)
+	deleted_by_sender = models.BooleanField(default=False)
+	deleted_by_recipient = models.BooleanField(default=False)
 
 	def __str__(self):
 		return f"From {self.sender.username} to {self.recipient.username} about {self.item.title}"

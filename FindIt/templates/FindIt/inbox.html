@@ -7,15 +7,21 @@
         <h2 class="fw-bold mb-4"><i class="bi bi-envelope"></i> Inbox</h2>
         <div class="list-group">
           {% for msg in messages %}
-            <a href="{% url 'item_detail' msg.item.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {% if not msg.is_read %}list-group-item-info{% endif %}">
+            <div class="list-group-item d-flex justify-content-between align-items-center {% if not msg.is_read %}list-group-item-info{% endif %}">
               <div>
                 <i class="bi bi-person-circle me-2 text-primary"></i>
                 <span class="fw-bold">{{ msg.sender.username }}</span>
                 <span class="badge bg-light text-dark ms-2">{{ msg.item.title }}</span>
                 <div class="small text-muted mt-1">{{ msg.content|truncatewords:15 }}</div>
               </div>
-              <small class="text-muted">{{ msg.timestamp|date:'Y-m-d H:i' }}</small>
-            </a>
+              <div class="d-flex flex-column align-items-end">
+                <small class="text-muted mb-2">{{ msg.timestamp|date:'Y-m-d H:i' }}</small>
+                {% if msg.sender != user %}
+                  <a href="{% url 'send_message' item_id=msg.item.id recipient_id=msg.sender.id %}" class="btn btn-sm btn-primary">Reply</a>
+                {% endif %}
+                <a href="{% url 'item_detail' msg.item.id %}" class="btn btn-sm btn-outline-secondary mt-1">View Item</a>
+              </div>
+            </div>
           {% empty %}
             <div class="alert alert-warning mt-3">No messages.</div>
           {% endfor %}

@@ -11,12 +11,35 @@
         </div>
         <p><strong>To:</strong> {{ recipient.username }}</p>
         <p><strong>About Item:</strong> {{ item.title }}</p>
-        <form method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="btn btn-primary w-100 mt-3">Send</button>
-        </form>
-        <a href="{% url 'item_detail' item.id %}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back to Item</a>
+        <div class="row">
+          <div class="col-md-7">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <button type="submit" class="btn btn-primary w-100 mt-3">Send</button>
+            </form>
+            <form method="post" class="mt-2">
+                {% csrf_token %}
+                <button type="submit" name="clear_conversation" class="btn btn-outline-danger w-100">Clear Conversation</button>
+            </form>
+            <a href="{% url 'item_detail' item.id %}" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Back to Item</a>
+          </div>
+          <div class="col-md-5 border-start">
+            <h5 class="mb-3">Conversation</h5>
+            <div style="max-height: 350px; overflow-y: auto;">
+              {% for msg in conversation %}
+                <div class="mb-2 {% if msg.sender == user %}text-end{% endif %}">
+                  <div class="p-2 rounded {% if msg.sender == user %}bg-primary text-white{% else %}bg-light{% endif %}">
+                    <small><strong>{{ msg.sender.username }}</strong> <span class="text-muted">{{ msg.timestamp|date:'Y-m-d H:i' }}</span></small><br>
+                    {{ msg.content|linebreaksbr }}
+                  </div>
+                </div>
+              {% empty %}
+                <div class="text-muted">No conversation yet.</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
