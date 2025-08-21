@@ -8,14 +8,16 @@
     <div class="sidebar-header fw-bold p-3 border-bottom">My messages</div>
     <ul class="list-unstyled m-0">
       {% for convo in conversations %}
-      <li class="conversation p-3 d-flex align-items-center conversation-hover {% if convo.id == active_conversation.id %}bg-success-subtle active-convo{% endif %}" style="cursor:pointer; border-radius: 12px; margin-bottom: 6px;">
-        <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/40' }}" class="rounded-circle me-3 border border-2 border-success" width="44" height="44" alt="">
-        <div class="flex-grow-1">
-          <div class="fw-bold">{{ convo.name }}</div>
-          <div class="small text-muted">{{ convo.last_message|truncatewords:6 }}</div>
-        </div>
-        <div class="text-end small text-muted ms-2">{{ convo.last_date|date:'M d' }}</div>
-      </li>
+      <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
+        <li class="conversation p-3 d-flex align-items-center conversation-hover {% if convo.id == active_conversation.id %}bg-success-subtle active-convo{% endif %}" style="cursor:pointer; border-radius: 12px; margin-bottom: 6px;">
+          <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/40' }}" class="rounded-circle me-3 border border-2 border-success" width="44" height="44" alt="">
+          <div class="flex-grow-1">
+            <div class="fw-bold">{{ convo.name }}</div>
+            <div class="small text-muted">{{ convo.last_message|truncatewords:6 }}</div>
+          </div>
+          <div class="text-end small text-muted ms-2">{{ convo.last_date|date:'M d' }}</div>
+        </li>
+      </a>
       {% endfor %}
     </ul>
   </aside>
