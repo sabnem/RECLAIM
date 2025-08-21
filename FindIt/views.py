@@ -155,10 +155,140 @@ def contact_item_owner(request, item_id):
     return render(request, 'FindIt/contact_owner.html', {'form': form, 'item': item})
 
 def inbox(request):
-    messages_qs = request.user.received_messages.select_related('sender', 'item').order_by('-timestamp')
+    item_id = request.GET.get('item_id')
+    recipient_id = request.GET.get('recipient_id')
+
+    # Handle sending a message
+    if request.method == 'POST':
+        # Use hidden fields or query params to get item and recipient
+        item_id = request.POST.get('item_id') or item_id
+        recipient_id = request.POST.get('recipient_id') or recipient_id
+        content = request.POST.get('message')
+        if item_id and recipient_id and content:
+            item = get_object_or_404(Item, id=item_id)
+            recipient = get_object_or_404(User, id=recipient_id)
+            Message.objects.create(
+                sender=request.user,
+                recipient=recipient,
+                item=item,
+                content=content
+            )
+            # Redirect to clear POST and reload conversation
+            return redirect(f"{request.path}?item_id={item_id}&recipient_id={recipient_id}")
+
+    # Get all conversations for the sidebar
+    conversations = Message.objects.filter(
+        Q(sender=request.user) | Q(recipient=request.user)
+    ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
+
+    # Group conversations by (item, other_user)
+    convo_dict = {}
+    for msg in conversations:
+        other_user = msg.recipient if msg.sender == request.user else msg.sender
+        key = (msg.item.id, other_user.id)
+        if key not in convo_dict or msg.timestamp > convo_dict[key].timestamp:
+            convo_dict[key] = msg
+    convo_list = list(convo_dict.values())
+
+    # Determine active conversation
+    active_conversation = None
+    active_messages = []
+    if item_id and recipient_id:
+        item = get_object_or_404(Item, id=item_id)
+        recipient = get_object_or_404(User, id=recipient_id)
+        active_messages = Message.objects.filter(
+            item=item,
+            sender__in=[request.user, recipient],
+            recipient__in=[request.user, recipient]
+        ).order_by('timestamp')
+        # For sidebar highlighting
+        for msg in convo_list:
+            if msg.item.id == int(item_id) and (msg.sender.id == int(recipient_id) or msg.recipient.id == int(recipient_id)):
+                active_conversation = msg
+                break
+        if not active_conversation and active_messages:
+            active_conversation = active_messages.last()
+    elif convo_list:
+        active_conversation = convo_list[0]
+        active_messages = Message.objects.filter(
+            item=active_conversation.item,
+            sender__in=[request.user, active_conversation.sender, active_conversation.recipient],
+            recipient__in=[request.user, active_conversation.sender, active_conversation.recipient]
+        ).order_by('timestamp')
+
     # Mark all unread messages as read
-    messages_qs.filter(is_read=False).update(is_read=True)
-    return render(request, 'FindIt/inbox.html', {'messages': messages_qs})
+    Message.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).update(is_read=True)
+
+    # Prepare context for template
+    sidebar_conversations = []
+    for msg in convo_list:
+        other_user = msg.recipient if msg.sender == request.user else msg.sender
+        # Use userprofile.profile_picture if available
+        avatar_url = ''
+        if hasattr(other_user, 'userprofile') and other_user.userprofile.profile_picture:
+            avatar_url = other_user.userprofile.profile_picture.url
+        sidebar_conversations.append({
+            'id': f"{msg.item.id}-{other_user.id}",
+            'avatar_url': avatar_url,
+            'name': other_user.get_full_name() or other_user.username,
+            'last_message': msg.content,
+            'last_date': msg.timestamp,
+            'item_title': msg.item.title,
+            'item_image': msg.item.photo.url if msg.item.photo else '',
+            'item_price': getattr(msg.item, 'price', ''),
+            'other_user_id': other_user.id,
+            'item_id': msg.item.id,
+        })
+
+    active_convo_data = None
+    if active_conversation:
+        other_user = active_conversation.recipient if active_conversation.sender == request.user else active_conversation.sender
+        avatar_url = ''
+        if hasattr(other_user, 'userprofile') and other_user.userprofile.profile_picture:
+            avatar_url = other_user.userprofile.profile_picture.url
+        active_convo_data = {
+            'id': f"{active_conversation.item.id}-{other_user.id}",
+            'avatar_url': avatar_url,
+            'name': other_user.get_full_name() or other_user.username,
+            'item_title': active_conversation.item.title,
+            'item_image': active_conversation.item.photo.url if active_conversation.item.photo else '',
+            'item_price': getattr(active_conversation.item, 'price', ''),
+            'date': active_conversation.timestamp,
+            'messages': active_messages,
+        }
+    # If no messages exist but item_id and recipient_id are provided, show chat UI for new conversation
+    elif item_id and recipient_id:
+        item = get_object_or_404(Item, id=item_id)
+        recipient = get_object_or_404(User, id=recipient_id)
+        avatar_url = ''
+        if hasattr(recipient, 'userprofile') and recipient.userprofile.profile_picture:
+            avatar_url = recipient.userprofile.profile_picture.url
+        active_convo_data = {
+            'id': f"{item.id}-{recipient.id}",
+            'avatar_url': avatar_url,
+            'name': recipient.get_full_name() or recipient.username,
+            'item_title': item.title,
+            'item_image': item.photo.url if item.photo else '',
+            'item_price': getattr(item, 'price', ''),
+            'date': None,
+            'messages': [],
+        }
+
+    # Ensure item_id and recipient_id are set for the form
+    if (not item_id or not recipient_id) and active_convo_data:
+        item_id = active_convo_data['id'].split('-')[0]
+        recipient_id = active_convo_data['id'].split('-')[1]
+
+    return render(request, 'FindIt/inbox.html', {
+        'conversations': sidebar_conversations,
+        'active_conversation': active_convo_data,
+        'user': request.user,
+        'item_id': item_id,
+        'recipient_id': recipient_id,
+    })
 
 def send_message(request, item_id, recipient_id):
     item = get_object_or_404(Item, id=item_id)

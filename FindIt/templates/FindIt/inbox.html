@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+{% if active_conversation %}
 <div class="d-flex justify-content-center" style="min-height:90vh;margin-top: 40px;">
   <div class="messaging-app d-flex shadow-lg" style="height:80vh; max-width:1200px; width:100%; border-radius: 10px; overflow: hidden;">
   <!-- Sidebar: Conversation List -->
@@ -29,13 +30,10 @@
           <div class="text-success fw-bold">{{ active_conversation.item_price }}</div>
         </div>
       </div>
-      <button class="btn btn-success">Show contact</button>
+      <!--<button class="btn btn-success">Show contact</button>-->
     </header>
   <section class="chat-history flex-grow-1 p-4" style="overflow-y:auto; background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%);">
       <div class="text-center text-secondary small mb-3">{{ active_conversation.date|date:'F d, Y' }}</div>
-      <!--<div class="alert alert-info text-center py-2 mb-4" style="max-width:400px;margin:auto;">
-        <i class="bi bi-exclamation-triangle"></i> Avoid paying in advance! Even for delivery
-      </div> -->
       {% for msg in active_conversation.messages %}
         <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
           <div class="chat-bubble p-3 shadow-sm {% if msg.sender == user %}sent{% else %}received{% endif %}" style="max-width:60%;">
@@ -48,6 +46,8 @@
     <footer class="chat-footer p-3 border-top bg-white position-relative" style="border-radius: 0 0 18px 0;">
       <form method="post" class="d-flex mt-2">
         {% csrf_token %}
+        <input type="hidden" name="item_id" value="{{ item_id }}">
+        <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
         <input type="text" name="message" class="form-control me-2 shadow-sm" placeholder="Write your message here">
         <button type="submit" class="btn btn-success shadow-sm">Send</button>
       </form>
@@ -55,6 +55,26 @@
   </main>
   </div>
 </div>
+{% else %}
+<!-- Make sure Font Awesome is included in your project -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<div class="d-flex justify-content-center align-items-center" style="min-height:60vh; background: #f8fafc;">
+  <div class="card shadow-lg border-0 text-center p-4" style="max-width: 450px; border-radius: 20px;">
+    <div class="mb-3">
+      <i class="fa-solid fa-comments text-primary" style="font-size: 60px;"></i>
+    </div>
+    <h4 class="fw-bold text-primary">No Active Conversation</h4>
+    <p class="text-muted mb-3">Looks like you don’t have any active message conversations right now.</p>
+  </div>
+</div>
+
+
+<!--<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;">
+  <div class="alert alert-info">No Active Conversation selected. Click <strong>Send In-site Message</strong> on an item to start a chat.</div>
+</div> -->
+
+{% endif %}
 <style>
 .messaging-app { font-family: 'Segoe UI', Arial, sans-serif; }
 .sidebar-header { font-size: 1.2rem; letter-spacing: 0.5px; }
