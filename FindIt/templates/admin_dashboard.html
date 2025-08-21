@@ -67,7 +67,7 @@
             <h4>Recent Users</h4>
             <ul>
                 {% for user in recent_users %}
-                    <li>{{ user.username }}</li>
+                    <li>{{ user.first_name }} {{ user.last_name }} ({{ user.username }})</li>
                 {% empty %}
                     <li>No recent users.</li>
                 {% endfor %}

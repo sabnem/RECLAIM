@@ -1,8 +1,6 @@
 from django.urls import path
 from . import views
 
-from .views_profile import profile_view, edit_profile
-
 urlpatterns = [
     path('', views.home, name='home'),
     path('register/', views.register, name='register'),
@@ -15,7 +13,7 @@ urlpatterns = [
     path('items/<int:item_id>/mark_returned/', views.mark_item_returned, name='mark_item_returned'),
     path('inbox/', views.inbox, name='inbox'),
     path('items/<int:item_id>/message/<int:recipient_id>/', views.send_message, name='send_message'),
-    path('profile/', profile_view, name='profile'),
-    path('profile/edit/', edit_profile, name='edit_profile'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
 ]

@@ -16,21 +16,17 @@
                             {% endif %}
                             <input type="file" name="profile_picture" id="id_profile_picture" accept="image/*" style="display:none;">
                         </label>
-                        <div class="mb-3 text-start">
-                            <label for="id_first_name" class="form-label"><strong>First Name:</strong></label>
+                        <h4>{{ user.username }}</h4>
+                        <div class="mb-3 text">
                             {{ form.first_name }}
                         </div>
-                        <div class="mb-3 text-start">
-                            <label for="id_last_name" class="form-label"><strong>Last Name:</strong></label>
+                        <div class="mb-3 text">
                             {{ form.last_name }}
                         </div>
-                        <div class="mb-3 text-start">
-                            <label for="id_email" class="form-label"><strong>Email:</strong></label>
+                        <div class="mb-3 text">
                             {{ form.email }}
                         </div>
-                        <h4>{{ user.username }}</h4>
-                        <div class="mb-3 text-start">
-                            <label for="id_contact_number" class="form-label"><strong>Phone Number:</strong></label>
+                        <div class="mb-3 text">
                             {{ form.contact_number }}
                         </div>
                         <button type="submit" class="btn btn-success">Save Changes</button>
