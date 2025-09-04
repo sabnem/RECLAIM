@@ -16,4 +16,5 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path("remove-profile-picture/", views.remove_profile_picture, name="remove_profile_picture"),
 ]
