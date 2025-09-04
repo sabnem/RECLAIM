@@ -1,9 +1,12 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% block title %}Edit Profile{% endblock %}
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card">
+            <div class="card" style="max-width: 400px; margin: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
                 <div class="card-header bg-primary text-white">Edit Profile</div>
                 <div class="card-body text-center">
                     <form method="post" enctype="multipart/form-data" id="edit-profile-form">
@@ -18,16 +21,28 @@
                         </label>
                         <h4>{{ user.username }}</h4>
                         <div class="mb-3 text">
-                            {{ form.first_name }}
+                            {{ form.username|as_crispy_field }}
                         </div>
                         <div class="mb-3 text">
-                            {{ form.last_name }}
+                            {{ form.first_name|as_crispy_field }}
                         </div>
                         <div class="mb-3 text">
-                            {{ form.email }}
+                            {{ form.last_name|as_crispy_field }}
                         </div>
                         <div class="mb-3 text">
-                            {{ form.contact_number }}
+                            {{ form.email|as_crispy_field }}
+                        </div>
+                        <div class="mb-3 text">
+                            {{ form.contact_number|as_crispy_field }}
+                        </div>
+                        <div class="mb-3 text">
+                            {{ form.address|as_crispy_field }}
+                        </div>
+                        <div class="mb-3 text">
+                            {{ form.bio|as_crispy_field }}
+                        </div>
+                        <div class="mb-3 text">
+                            {{ form.social_links|as_crispy_field }}
                         </div>
                         <button type="submit" class="btn btn-success">Save Changes</button>
                         <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>

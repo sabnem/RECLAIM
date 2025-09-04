@@ -84,6 +84,10 @@ class MessageForm(forms.Form):
 
 #USER PROFILE
 class UserProfileForm(forms.ModelForm):
+    username = forms.CharField(
+        label='',
+        widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )
     first_name = forms.CharField(
         label='',
         widget=forms.TextInput(attrs={'placeholder': 'First Name'})
@@ -103,11 +107,29 @@ class UserProfileForm(forms.ModelForm):
         label='',
         widget=forms.TextInput(attrs={'placeholder': 'Contact Number'})
     )
+    profile_picture = forms.ImageField(required=False)
+    
+    address = forms.CharField(
+        label='',
+        widget=forms.TextInput(attrs={'placeholder': 'Address'})
+    )
+    
+    bio = forms.CharField(
+        label='',
+        widget=forms.Textarea(attrs={'placeholder': 'Bio', 'rows': 3}),
+        required=False
+    )
+    
+    social_links = forms.CharField(
+        label='',
+        widget=forms.TextInput(attrs={'placeholder': 'Social Links (comma separated)'}),
+        required=False
+    )
 
     class Meta:
         model = UserProfile
-        fields = ['first_name', 'last_name', 'email', 'contact_number', 'profile_picture']
-        
+        fields = ['first_name', 'last_name', 'email', 'contact_number', 'profile_picture', 'username', 'address', 'bio', 'social_links']
+
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -116,6 +138,11 @@ class UserProfileForm(forms.ModelForm):
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
             self.fields['email'].initial = self.instance.user.email
+            self.fields['username'].initial = self.instance.user.username
+            self.fields['contact_number'].initial = self.instance.contact_number
+            self.fields['address'].initial = self.instance.address
+            self.fields['bio'].initial = self.instance.bio
+            self.fields['social_links'].initial = self.instance.social_links
 
     def save(self, commit=True):
         profile = super().save(commit=False)
@@ -123,6 +150,11 @@ class UserProfileForm(forms.ModelForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
+        user.username = self.cleaned_data['username']  
+        profile.contact_number = self.cleaned_data['contact_number']
+        profile.address = self.cleaned_data['address']
+        profile.bio = self.cleaned_data['bio']
+        profile.social_links = self.cleaned_data['social_links']
         if commit:
             user.save()
             profile.save()

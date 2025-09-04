@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="container py-5">
+<div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-            <div class="card shadow-lg border-0 rounded-4">
-                <div class="card-header bg-primary text-white text-center rounded-top-4">
+        <div class=" col-md-6">
+            <div class="card" style="max-width: 400px; margin: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                <div class="card-header bg-primary text-white text-center">
                     <h4 class="mb-0">My Profile</h4>
                 </div>
                 <div class="card-body text-center">
@@ -19,21 +19,25 @@
                              width="130" height="130" alt="Profile Picture">
                     {% endif %}
 
-
-                    <!-- Name -->
-                    {% if user.first_name or user.last_name %}
-                        <h4 class="fw-bold text-dark">{{ user.first_name }} {{ user.last_name }}</h4>
-                    {% endif %}
                     <!-- Username -->
-                    <!--<h5 class="text-dark">{{ user.username }}</h5> -->
+                    <h5 class="text-dark">{{ user.username }}</h5>
                     <p class="text-muted mb-4">Member since {{ user.date_joined|date:"F Y" }}</p>
 
                     <!-- Info Section -->
-                    <div class="text-start px-3">
-                        <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p>
-                        <p class="mb-2"><strong>Phone:</strong> 
-                            {{ profile.contact_number|default:"Not provided" }}
-                        </p>
+                    <div class="text-center px-3">
+                        <p class="mb-2"><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+                        <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p> 
+                        <p class="mb-2"><strong>Contact Number:</strong> {{ profile.contact_number|default:"Not provided" }}</p>
+                        <p class="mb-2"><strong>Address:</strong> {{ profile.address|default:"Not provided" }}</p>
+                        <p class="mb-2"><strong>Bio:</strong> {{ profile.bio|default:"Not provided" }}</p>
+                        {% if profile.social_links %}
+                            <p>
+                                <strong>Social Link:</strong>
+                                <a href="{{ profile.social_links }}" target="_blank" rel="noopener">
+                                    {{ profile.social_links }}
+                                </a>
+                            </p>
+                       {% endif %}
                     </div>
 
                     <!-- Edit Button -->
