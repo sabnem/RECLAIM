@@ -26,9 +26,9 @@ SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
-
+DEBUG = True
+#ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
+ALLOWED_HOSTS = ['*']
 
 
 
@@ -47,6 +47,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'FindIt',
 ]
+
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -82,35 +85,29 @@ WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# POSTGRES
+DATABASES = {
+   'default': {
+       'ENGINE': 'django.db.backends.postgresql',
+       'NAME': 'ReClaimDB',
+       'USER': 'postgres',
+       'PASSWORD': 'Joyce@2003',
+       'HOST': 'localhost',
+       'PORT': '5432',
+    }
+}
 
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'ReClaimDB',
-#        'USER': 'postgres',
-#        'PASSWORD': 'Joyce@2003',
-#        'HOST': 'localhost',
-#        'PORT': '5432',
-#     }
-# }
 
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'JsNEM$ReclaimDB',
+#         'USER': 'JsNEM',
+#         'PASSWORD': 'Joyce@2010',
+#         'HOST': 'JsNEM.mysql.pythonanywhere-services.com',
+#         'PORT': '3306',
 #     }
 # }
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'JsNEM$ReclaimDB',
-        'USER': 'JsNEM',
-        'PASSWORD': 'Joyce@2003',
-        'HOST': 'JsNEM.mysql.pythonanywhere-services.com',
-        'PORT': '3306',
-    }
-}
 
 
 # Password validation
@@ -145,8 +142,9 @@ USE_TZ = True
 
 
 
-# Static files (CSS, JavaScript, Images)
+
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
+# Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
@@ -154,9 +152,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Crispy Forms settings
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
