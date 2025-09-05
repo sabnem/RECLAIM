@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}Delete Account{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card" id="step1">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">Delete Account</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p>We see you want to delete your account. What might be the possible reason?</p>
+                    <form id="delete-reason-form">
+                        <div class="mb-3 text-start">
+                            <label class="form-label">Choose a reason:</label>
+                            <div>
+                                <input type="radio" name="reason" value="Privacy concerns" id="reason1"> <label for="reason1">Privacy concerns</label><br>
+                                <input type="radio" name="reason" value="Not useful" id="reason2"> <label for="reason2">Not useful</label><br>
+                                <input type="radio" name="reason" value="Found a better service" id="reason3"> <label for="reason3">Found a better service</label><br>
+                                <input type="radio" name="reason" value="Other" id="reason4"> <label for="reason4">Other</label>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="other-reason-box" style="display:none;">
+                            <label for="other_reason" class="form-label">Please tell us or share with us the reason so as we can improve this service for easily and friendly user usage and handling:</label>
+                            <textarea name="other_reason" id="other_reason" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-danger" id="next-step">Next</button>
+                        <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+            <div class="card" id="step2" style="display:none;">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4 class="mb-0">Final Confirmation</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p>Are you sure? This action cannot be undone.</p>
+                    <form method="post" id="final-delete-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="reason" id="final_reason">
+                        <input type="hidden" name="other_reason" id="final_other_reason">
+                        <button type="submit" class="btn btn-danger">Yes, delete account</button>
+                        <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+// Animate step transition
+const nextStepBtn = document.getElementById('next-step');
+const step1 = document.getElementById('step1');
+const step2 = document.getElementById('step2');
+const reasonRadios = document.querySelectorAll('input[name="reason"]');
+const otherReasonBox = document.getElementById('other-reason-box');
+const otherReasonInput = document.getElementById('other_reason');
+
+reasonRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.value === 'Other') {
+            otherReasonBox.style.display = 'block';
+        } else {
+            otherReasonBox.style.display = 'none';
+        }
+    });
+});
+
+nextStepBtn.addEventListener('click', function() {
+    let selectedReason = document.querySelector('input[name="reason"]:checked');
+    if (!selectedReason) {
+        alert('Please select a reason.');
+        return;
+    }
+    document.getElementById('final_reason').value = selectedReason.value;
+    document.getElementById('final_other_reason').value = otherReasonInput.value;
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+});
+</script>
+{% endblock %}

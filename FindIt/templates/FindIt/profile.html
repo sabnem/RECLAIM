@@ -41,11 +41,39 @@
                     </div>
 
                     <!-- Edit Button -->
-                    <div class="mt-4">
-                        <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary px-4 rounded-pill">
-                            Edit Profile
-                        </a>
-                    </div>
+                            <div class="mt-4 d-flex justify-content-center gap-2">
+                                <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary px-4 rounded-pill">
+                                    Edit Profile
+                                </a>
+                                <a href="{% url 'delete_account' %}" class="btn btn-outline-danger px-4 rounded-pill">
+                                    Delete Account
+                                </a>
+                            </div>
+
+                        <!-- Reputation Section -->
+                        <div class="mt-4">
+                            <h5 class="mb-2">User Reputation</h5>
+                            <p><strong>Average Rating:</strong>
+                                {% if avg_rating %}
+                                    {{ avg_rating|floatformat:1 }} / 5
+                                {% else %}
+                                    No ratings yet
+                                {% endif %}
+                            </p>
+                            <a href="{% url 'submit_review' user.id %}" class="btn btn-sm btn-success mb-2">Leave a Review</a>
+                            <ul class="list-group">
+                                {% for review in reviews %}
+                                    <li class="list-group-item">
+                                        <strong>{{ review.reviewer.username }}</strong>:
+                                        <span class="text-warning">&#9733; {{ review.rating }}</span><br>
+                                        <span>{{ review.comment }}</span>
+                                        <small class="text-muted float-end">{{ review.created_at|date:"M d, Y" }}</small>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item">No reviews yet.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                 </div>
             </div>
         </div>

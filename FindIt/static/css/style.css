@@ -133,3 +133,19 @@ body {
     opacity: 0;
     pointer-events: none;
 }
+
+
+ #ownerModal .modal-dialog {
+   max-width: 400px;
+   margin: 1.75rem auto;
+   overflow: hidden;
+   position: relative;
+ }
+ #ownerModal .modal-content {
+   transition: none !important;
+   overflow: hidden;
+ }
+ #ownerModal .form-control {
+   transition: none !important;
+ }
+         

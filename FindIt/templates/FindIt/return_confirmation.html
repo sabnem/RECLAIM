@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Return Confirmation{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white text-center">
+                    <h4 class="mb-0">Return Confirmation for {{ item.title }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% if is_finder %}
+                            <div class="mb-3">
+                                <label for="id_finder_confirmed" class="form-label">Finder Confirmation</label>
+                                {{ form.finder_confirmed }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_finder_photo" class="form-label">Finder Photo Evidence</label>
+                                {{ form.finder_photo }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_finder_signature" class="form-label">Finder Signature</label>
+                                {{ form.finder_signature }}
+                            </div>
+                        {% endif %}
+                        {% if is_owner %}
+                            <div class="mb-3">
+                                <label for="id_owner_confirmed" class="form-label">Owner Confirmation</label>
+                                {{ form.owner_confirmed }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_owner_photo" class="form-label">Owner Photo Evidence</label>
+                                {{ form.owner_photo }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_owner_signature" class="form-label">Owner Signature</label>
+                                {{ form.owner_signature }}
+                            </div>
+                        {% endif %}
+                        <button type="submit" class="btn btn-success">Submit Confirmation</button>
+                        <a href="{% url 'item_detail' item.id %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                    {% if confirmation.is_fully_confirmed %}
+                        <div class="alert alert-info mt-4">Item return fully confirmed!</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

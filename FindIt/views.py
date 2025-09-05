@@ -5,6 +5,14 @@ from django.contrib.auth.decorators import login_required
 def mark_item_returned(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     if request.user == item.reported_by or request.user.is_superuser:
+        owner_username = request.POST.get('owner_username')
+        if owner_username and not item.is_returned:
+            try:
+                owner_user = User.objects.get(username=owner_username)
+                item.owner = owner_user
+            except User.DoesNotExist:
+                messages.error(request, f"User '{owner_username}' does not exist.")
+                return redirect('item_detail', item_id=item.id)
         item.is_returned = not item.is_returned
         item.save()
         if item.is_returned:
@@ -21,6 +29,8 @@ def unread_inbox_count(request):
     return {'unread_inbox_count': 0}
 # Context processor to provide categories to all templates
 from .models import ItemCategory
+from .models import ReturnConfirmation, Item
+from .forms import ReturnConfirmationForm
 def categories_context(request):
     return {'categories': ItemCategory.objects.all()}
 from django.contrib.auth.decorators import user_passes_test
@@ -47,14 +57,66 @@ def admin_dashboard(request):
         'recent_users': recent_users,
     })
 from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
 from .forms import UserRegistrationForm, LoginForm, ItemForm, MessageForm
 from django.contrib import messages
 from .models import Item, ItemCategory, Message
+from django.db import models
 from django.contrib.auth.models import User
 from django.db.models import Q
 from django.core.mail import send_mail
 from django.conf import settings
+
+from .forms import UserReviewForm
+from .models import UserReview
+
+# Submit review for reputation system
+from django.contrib.auth.decorators import login_required
+
+# Return confirmation view
+@login_required
+def return_confirmation(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    confirmation, created = ReturnConfirmation.objects.get_or_create(item=item)
+    user = request.user
+    is_finder = (user == item.reported_by)
+    is_owner = (user == item.owner) if hasattr(item, 'owner') else False
+    if request.method == 'POST':
+        form = ReturnConfirmationForm(request.POST, request.FILES, instance=confirmation)
+        if form.is_valid():
+            conf = form.save(commit=False)
+            if is_finder:
+                conf.finder_confirmed = True
+            if is_owner:
+                conf.owner_confirmed = True
+            if conf.is_fully_confirmed():
+                conf.confirmed_at = timezone.now()
+            conf.save()
+            return redirect('item_detail', item_id=item.id)
+    else:
+        form = ReturnConfirmationForm(instance=confirmation)
+    return render(request, 'FindIt/return_confirmation.html', {
+        'form': form,
+        'item': item,
+        'confirmation': confirmation,
+        'is_finder': is_finder,
+        'is_owner': is_owner,
+    })
+@login_required
+def submit_review(request, user_id):
+    reviewed_user = get_object_or_404(User, pk=user_id)
+    if request.method == 'POST':
+        form = UserReviewForm(request.POST)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.reviewer = request.user
+            review.reviewed = reviewed_user
+            review.save()
+            return redirect('profile')
+    else:
+        form = UserReviewForm()
+    return render(request, 'FindIt/submit_review.html', {'form': form, 'reviewed_user': reviewed_user})
 
 def register(request):
     if request.method == 'POST':
@@ -125,7 +187,14 @@ def item_list(request):
 
 def item_detail(request, item_id):
     item = get_object_or_404(Item, id=item_id)
-    return render(request, 'FindIt/item_detail.html', {'item': item})
+    confirmation = getattr(item, 'return_confirmation', None)
+    if not confirmation:
+        from .models import ReturnConfirmation
+        confirmation = ReturnConfirmation.objects.create(item=item)
+    return render(request, 'FindIt/item_detail.html', {
+        'item': item,
+        'confirmation': confirmation,
+    })
 
 def contact_item_owner(request, item_id):
     item = get_object_or_404(Item, id=item_id)
@@ -351,7 +420,15 @@ from .forms import UserProfileForm
 @login_required
 def profile_view(request):
     profile = request.user.userprofile
-    return render(request, 'FindIt/profile.html', {'profile': profile})
+    user = request.user
+    reviews = user.received_reviews.select_related('reviewer').order_by('-created_at')
+    avg_rating = reviews.aggregate(models.Avg('rating'))['rating__avg']
+    return render(request, 'FindIt/profile.html', {
+        'profile': profile,
+        'user': user,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+    })
 
 @login_required
 def edit_profile(request):
@@ -376,3 +453,24 @@ def remove_profile_picture(request):
         profile.profile_picture = None
         profile.save()
     return redirect('profile')  # back to profile page
+
+from .models import AccountDeletionFeedback
+from django.contrib import messages
+from django.contrib.auth import logout
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '')
+        other_reason = request.POST.get('other_reason', '')
+        AccountDeletionFeedback.objects.create(
+            username=request.user.username,
+            email=request.user.email,
+            reason=reason,
+            other_reason=other_reason
+        )
+        user = request.user
+        logout(request)
+        user.delete()
+        messages.success(request, 'Your account has been successfully deleted.')
+        return render(request, 'FindIt/delete_account_success.html')
+    return render(request, 'FindIt/delete_account_confirm.html')

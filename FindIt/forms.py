@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from .models import UserProfile, Item
-
+from .models import UserReview
+from .models import ReturnConfirmation
 class UserRegistrationForm(forms.ModelForm):
     email = forms.EmailField(
         label='',
@@ -83,6 +84,22 @@ class MessageForm(forms.Form):
 
 
 #USER PROFILE
+class UserReviewForm(forms.ModelForm):
+    class Meta:
+        model = UserReview
+        fields = ['rating', 'comment']
+class ReturnConfirmationForm(forms.ModelForm):
+    class Meta:
+        model = ReturnConfirmation
+        fields = [
+            'finder_confirmed', 'owner_confirmed',
+            'finder_photo', 'owner_photo',
+            'finder_signature', 'owner_signature'
+        ]
+        widgets = {
+            'finder_signature': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Paste signature data here or sign below.'}),
+            'owner_signature': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Paste signature data here or sign below.'}),
+        }
 class UserProfileForm(forms.ModelForm):
     username = forms.CharField(
         label='',

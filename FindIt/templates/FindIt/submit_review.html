@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Submit Review{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Review {{ reviewed_user.username }}</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.rating.label_tag }}
+                            {{ form.rating }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.comment.label_tag }}
+                            {{ form.comment }}
+                        </div>
+                        <button type="submit" class="btn btn-success">Submit Review</button>
+                        <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

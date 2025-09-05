@@ -22,13 +22,83 @@
             <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-warning"><i class="bi bi-chat-dots"></i> Send In-site Message</a>
           {% endif %}
           {% if user.is_authenticated and user == item.reported_by %}
-            <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
+            <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;" id="markReturnedForm">
               {% csrf_token %}
               {% if item.is_returned %}
                 <button type="submit" class="btn btn-outline-info"><i class="bi bi-x-circle"></i> Mark as Not Returned</button>
               {% else %}
-                <button type="submit" class="btn btn-info text-white"><i class="bi bi-check-circle"></i> Mark as Returned</button>
+                <button type="button" class="btn btn-info text-white" id="markReturnedBtn"><i class="bi bi-check-circle"></i> Mark as Returned</button>
               {% endif %}
+            </form>
+
+            <!-- Modal for entering owner's username -->
+            <div class="modal fade" id="ownerModal" tabindex="-1" aria-labelledby="ownerModalLabel" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="ownerModalLabel">Enter Owner's Username</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="text" class="form-control" id="ownerUsername" name="owner_username" placeholder="Owner's Username" required autocomplete="off">
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="submitOwnerBtn">Submit</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var markReturnedBtn = document.getElementById('markReturnedBtn');
+                var ownerModalEl = document.getElementById('ownerModal');
+                var ownerModal = ownerModalEl ? new bootstrap.Modal(ownerModalEl) : null;
+                var markReturnedForm = document.getElementById('markReturnedForm');
+                var ownerUsernameInput = document.getElementById('ownerUsername');
+                var submitOwnerBtn = document.getElementById('submitOwnerBtn');
+
+                if (markReturnedBtn && ownerModal) {
+                  markReturnedBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    ownerUsernameInput.value = '';
+                    ownerModal.show();
+                    setTimeout(function() {
+                      ownerUsernameInput.focus();
+                    }, 300);
+                  });
+                }
+
+                if (submitOwnerBtn && ownerModal) {
+                  submitOwnerBtn.addEventListener('click', function() {
+                    var username = ownerUsernameInput.value.trim();
+                    if (!username) {
+                      ownerUsernameInput.focus();
+                      return;
+                    }
+                    // Remove any previous hidden input to avoid duplicates
+                    var oldInput = markReturnedForm.querySelector('input[name="owner_username"]');
+                    if (oldInput) oldInput.remove();
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'owner_username';
+                    input.value = username;
+                    markReturnedForm.appendChild(input);
+                    // Submit only after modal finishes hiding
+                    ownerModalEl.addEventListener('hidden.bs.modal', function onHidden() {
+                      markReturnedForm.submit();
+                      ownerModalEl.removeEventListener('hidden.bs.modal', onHidden);
+                    });
+                    ownerModal.hide();
+                  });
+                }
+              });
+            </script>
+          {% elif user.is_authenticated and item.owner and user == item.owner and item.is_returned and confirmation and not confirmation.owner_confirmed %}
+            <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-info text-white"><i class="bi bi-check-circle"></i> Confirm Return</button>
             </form>
           {% elif user.is_authenticated and user.is_superuser %}
             <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
