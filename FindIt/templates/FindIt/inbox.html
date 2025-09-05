@@ -3,64 +3,97 @@
 {% if active_conversation %}
 <div class="d-flex justify-content-center" style="min-height:90vh;margin-top: 40px;">
   <div class="messaging-app d-flex shadow-lg" style="height:80vh; max-width:1200px; width:100%; border-radius: 10px; overflow: hidden;">
-  <!-- Sidebar: Conversation List -->
-  <aside class="sidebar bg-white border-end shadow-sm" style="width:320px;overflow-y:auto;">
-    <div class="sidebar-header fw-bold p-3 border-bottom">My messages</div>
-    <ul class="list-unstyled m-0">
-      {% for convo in conversations %}
-      <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
-        <li class="conversation p-3 d-flex align-items-center conversation-hover {% if convo.id == active_conversation.id %}bg-success-subtle active-convo{% endif %}" style="cursor:pointer; border-radius: 12px; margin-bottom: 6px;">
-          <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/40' }}" class="rounded-circle me-3 border border-2 border-success" width="44" height="44" alt="">
-          <div class="flex-grow-1">
-            <div class="fw-bold">{{ convo.name }}</div>
-            <div class="small text-muted">{{ convo.last_message|truncatewords:6 }}</div>
-          </div>
-          <div class="text-end small text-muted ms-2">{{ convo.last_date|date:'M d' }}</div>
-        </li>
-      </a>
-      {% endfor %}
-    </ul>
-  </aside>
 
-  <!-- Chat Area -->
-  <main class="chat-area flex-grow-1 d-flex flex-column shadow-sm" style="background: #fff;">
-  <header class="chat-header d-flex align-items-center justify-content-between p-4 border-bottom bg-white shadow-sm" style="border-radius: 0 18px 0 0;">
-      <div class="d-flex align-items-center">
-  <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/48' }}" class="rounded me-3 border border-2 border-success" width="54" height="54" alt="">
-        <div>
-          <div class="fw-bold">{{ active_conversation.item_title }}</div>
-          <div class="text-success fw-bold">{{ active_conversation.item_price }}</div>
+    <!-- Sidebar: Conversation List -->
+    <aside class="sidebar bg-white border-end shadow-sm" style="width:320px;overflow-y:auto;">
+      <div class="sidebar-header fw-bold p-3 border-bottom">My messages</div>
+      <ul class="list-unstyled m-0">
+        {% for convo in conversations %}
+        <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
+          <li class="conversation p-3 d-flex align-items-center conversation-hover {% if convo.id == active_conversation.id %}bg-success-subtle active-convo{% endif %}" style="cursor:pointer; border-radius: 12px; margin-bottom: 6px;">
+            <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/40' }}" class="rounded-circle me-3 border border-2 border-success" width="44" height="44" alt="">
+            <div class="flex-grow-1">
+              <div class="fw-bold">{{ convo.name }}</div>
+              <div class="small text-muted">{{ convo.last_message|truncatewords:6 }}</div>
+            </div>
+            <div class="text-end small text-muted ms-2">{{ convo.last_date|date:'M d' }}</div>
+          </li>
+        </a>
+        {% endfor %}
+      </ul>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="chat-area flex-grow-1 d-flex flex-column shadow-sm" style="background: #fff;">
+      <header class="chat-header d-flex align-items-center justify-content-between p-4 border-bottom bg-white shadow-sm" style="border-radius: 0 18px 0 0;">
+        <div class="d-flex align-items-center">
+          <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/48' }}" class="rounded me-3 border border-2 border-success" width="54" height="54" alt="">
+          <div>
+            <div class="fw-bold">{{ active_conversation.item_title }}</div>
+            <div class="text-success fw-bold">{{ active_conversation.item_price }}</div>
+          </div>
         </div>
-      </div>
-      <!--<button class="btn btn-success">Show contact</button>-->
-    </header>
-  <section class="chat-history flex-grow-1 p-4" style="overflow-y:auto; background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%);">
-      <div class="text-center text-secondary small mb-3">{{ active_conversation.date|date:'F d, Y' }}</div>
-      {% for msg in active_conversation.messages %}
+      </header>
+
+      <section class="chat-history flex-grow-1 p-4" style="overflow-y:auto; background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%);" id="chatHistory">
+        <div class="text-center text-secondary small mb-3">{{ active_conversation.date|date:'F d, Y' }}</div>
+        {% for msg in active_conversation.messages %}
         <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
           <div class="chat-bubble p-3 shadow-sm {% if msg.sender == user %}sent{% else %}received{% endif %}" style="max-width:60%;">
+            {% if msg.image %}
+            <div class="mb-1">
+              <img src="{{ msg.image.url }}" class="img-fluid rounded shadow-sm mb-2" style="max-width:220px; max-height:220px; cursor:pointer;" alt="Chat Image">
+            </div>
+            {% endif %}
+            {% if msg.content %}
             <div class="mb-1">{{ msg.content }}</div>
+            {% endif %}
             <div class="small text-muted text-end">{{ msg.timestamp|time:'H:i' }}</div>
           </div>
         </div>
-      {% endfor %}
-    </section>
-    <footer class="chat-footer p-3 border-top bg-white position-relative" style="border-radius: 0 0 18px 0;">
-      <form method="post" class="d-flex mt-2">
-        {% csrf_token %}
-        <input type="hidden" name="item_id" value="{{ item_id }}">
-        <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
-        <input type="text" name="message" class="form-control me-2 shadow-sm" placeholder="Write your message here">
-        <button type="submit" class="btn btn-success shadow-sm">Send</button>
-      </form>
-    </footer>
-  </main>
+        {% endfor %}
+      </section>
+
+      <footer class="chat-footer p-3 border-top bg-white position-relative" style="border-radius: 0 0 18px 0;">
+        <form method="post" enctype="multipart/form-data" class="d-flex align-items-center mt-2 gap-2" id="chatForm">
+          {% csrf_token %}
+          <label for="chatImageUpload" class="btn btn-outline-secondary mb-0" style="border-radius:50%;">
+            <i class="bi bi-file-image" style="font-size:1.3rem;"></i>
+          </label>
+          <input type="file" id="chatImageUpload" name="chat_image" accept="image/*" style="display:none;">
+          <input type="hidden" name="item_id" value="{{ item_id }}">
+          <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
+          <input type="text" name="message" class="form-control shadow-sm" placeholder="Write your message here">
+
+          <!-- Image preview with remove button -->
+          <div id="chatImagePreviewWrapper" class="ms-2" style="max-width:120px; display:none; position: relative;">
+            <img id="chatImagePreview" src="" alt="Preview" style="max-width:100px; border-radius:8px; display:block; cursor:pointer;">
+            <button type="button" id="removeImageBtn" style="
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: #dc3545;
+                border: none;
+                color: white;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                display: none;
+                cursor: pointer;
+              ">×</button>
+          </div>
+
+          <button type="submit" class="btn btn-success shadow-sm px-4">Send</button>
+        </form>
+      </footer>
+    </main>
+
   </div>
 </div>
-{% else %}
-<!-- Make sure Font Awesome is included in your project -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+{% else %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <div class="d-flex justify-content-center align-items-center" style="min-height:60vh; background: #f8fafc;">
   <div class="card shadow-lg border-0 text-center p-4" style="max-width: 450px; border-radius: 20px;">
     <div class="mb-3">
@@ -70,17 +103,12 @@
     <p class="text-muted mb-3">Looks like you don’t have any active message conversations right now.</p>
   </div>
 </div>
-
-
-<!--<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;">
-  <div class="alert alert-info">No Active Conversation selected. Click <strong>Send In-site Message</strong> on an item to start a chat.</div>
-</div> -->
-
 {% endif %}
+
 <style>
 .messaging-app { font-family: 'Segoe UI', Arial, sans-serif; }
 .sidebar-header { font-size: 1.2rem; letter-spacing: 0.5px; }
-.conversation.bg-success-subtle, .active-convo { background: #e6f4ea !important; }
+.conversation.bg-success-subtle, .active-convo { background: #e6f4ea !important; border-left: 4px solid #16a34a; }
 .conversation-hover:hover { background: #f0fdf4 !important; box-shadow: 0 2px 8px rgba(0,128,0,0.07); }
 .chat-header { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
 .chat-history { background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%); }
@@ -91,5 +119,110 @@
 .chat-footer input.form-control { border-radius: 20px; }
 .chat-footer { box-shadow: 0 -2px 8px rgba(0,0,0,0.04); }
 .quick-replies button { min-width: 120px; }
+#imageLightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:1050; }
+#imageLightbox img { max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.5); }
 </style>
+
+<!-- Lightbox overlay -->
+<div id="imageLightbox">
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Scroll chat to bottom
+  let chatHistory = document.getElementById("chatHistory");
+  if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+
+  // Elements
+  const fileInput = document.getElementById("chatImageUpload");
+  const previewWrapper = document.getElementById("chatImagePreviewWrapper");
+  const previewImg = document.getElementById("chatImagePreview");
+  const removeBtn = document.getElementById("removeImageBtn");
+  const lightbox = document.getElementById("imageLightbox");
+  const lightboxImg = document.getElementById("lightboxImg");
+
+  // Image preview
+  fileInput.addEventListener("change", function() {
+    if (this.files && this.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        previewWrapper.style.display = "block";
+        removeBtn.style.display = "block";
+      };
+      reader.readAsDataURL(this.files[0]);
+    }
+  });
+
+  // Remove image
+  removeBtn.addEventListener("click", function() {
+    fileInput.value = ""; 
+    previewImg.src = "";
+    previewWrapper.style.display = "none";
+    removeBtn.style.display = "none";
+  });
+
+  // Click preview to enlarge
+  previewImg.addEventListener("click", function() {
+    lightboxImg.src = this.src;
+    lightbox.style.display = "flex";
+  });
+
+  // Click chat images to enlarge
+  document.querySelectorAll('.chat-bubble img').forEach(img => {
+    img.addEventListener("click", function() {
+      lightboxImg.src = this.src;
+      lightbox.style.display = "flex";
+    });
+  });
+
+  // Close lightbox
+  lightbox.addEventListener("click", function() {
+    lightbox.style.display = "none";
+    lightboxImg.src = "";
+    lightboxImg.style.transform = "translate(0,0) scale(1)";
+  });
+
+  // Mobile drag & pinch zoom
+  let isDragging = false, startX = 0, startY = 0, currentX = 0, currentY = 0;
+  let scale = 1, initialDistance = 0;
+
+  lightboxImg.addEventListener("touchstart", function(e) {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      startX = e.touches[0].clientX - currentX;
+      startY = e.touches[0].clientY - currentY;
+    } else if (e.touches.length === 2) {
+      isDragging = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      initialDistance = Math.hypot(dx, dy);
+    }
+  });
+
+  lightboxImg.addEventListener("touchmove", function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1 && isDragging) {
+      currentX = e.touches[0].clientX - startX;
+      currentY = e.touches[0].clientY - startY;
+      lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const distance = Math.hypot(dx, dy);
+      scale = distance / initialDistance;
+      lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
+    }
+  }, { passive: false });
+
+  lightboxImg.addEventListener("touchend", function(e) {
+    if (e.touches.length === 0) isDragging = false;
+    if (scale < 1) scale = 1;
+    lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
+  });
+
+});
+</script>
+
 {% endblock %}

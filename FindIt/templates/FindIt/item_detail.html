@@ -4,7 +4,10 @@
   <div class="col-md-8">
     <div class="card shadow-lg border-0 bg-white rounded-4">
       {% if item.photo %}
-        <img src="{{ item.photo.url }}" class="card-img-top" style="max-height:300px;object-fit:cover;" alt="Item photo">
+      {% comment %} full item display regardless of aspect ratio {% endcomment %}
+          <div style="width:100%; max-width:400px; height:300px; margin:auto; background:#f8f9fa; display:flex; align-items:center; justify-content:center; border-radius:0.5rem;">
+            <img src="{{ item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="Item photo">
+          </div>
       {% endif %}
       <div class="card-body p-5">
         <h2 class="card-title fw-bold mb-3">{{ item.title }}</h2>
@@ -17,7 +20,43 @@
         <div><strong>Location:</strong> <i class="bi bi-geo-alt"></i> {{ item.location }}</div>
         <div><strong>Reported by:</strong> <i class="bi bi-person"></i> {{ item.reported_by.username }}</div>
         <div><strong>Date Reported:</strong> <i class="bi bi-calendar-event"></i> {{ item.date_reported|date:'Y-m-d H:i' }}</div>
+          {% if user.is_authenticated and user == item.reported_by %}
+                <button type="button" class="btn btn-info text-white" id="editItemBtn" style="display:inline; margin-top: 12px;">
+                  <i class="bi bi-pencil-square"></i> Edit Item
+                </button>
+                <form method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3" id="editItemForm" style="display:none;">
+                  {% csrf_token %}
+                  <div class="mb-2">
+                    <label for="itemPhoto" class="form-label">Change Image</label>
+                    <input type="file" class="form-control" id="itemPhoto" name="photo">
+                  </div>
+                  <div class="mb-2">
+                    <label for="itemDescription" class="form-label">Edit Description</label>
+                    <textarea class="form-control" id="itemDescription" name="description" rows="2">{{ item.description }}</textarea>
+                  </div>
+                  <div class="mb-2">
+                    <label for="itemLocation" class="form-label">Edit Location</label>
+                    <input type="text" class="form-control" id="itemLocation" name="location" value="{{ item.location }}">
+                  </div>
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    var editBtn = document.getElementById('editItemBtn');
+                    var editForm = document.getElementById('editItemForm');
+                    if (editBtn && editForm) {
+                      editBtn.addEventListener('click', function() {
+                        editForm.style.display = (editForm.style.display === 'none') ? 'block' : 'none';
+                      });
+                    }
+                  });
+                </script>
+          {% endif %}
         <div class="d-flex flex-wrap gap-2 mt-4">
+            <!-- Safety Tips Modal Trigger -->
+            <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info mb-2" target="_blank">
+              <i class="bi bi-shield-check"></i> Safety & Terms
+            </a>
           {% if user.is_authenticated and user != item.reported_by %}
             <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-warning"><i class="bi bi-chat-dots"></i> Send In-site Message</a>
           {% endif %}

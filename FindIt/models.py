@@ -87,11 +87,13 @@ class Item(models.Model):
 		return f"{self.title} ({self.get_status_display()})"
 # Trigger migration recreation
 
+
 class Message(models.Model):
 	sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
 	recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
 	item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='messages')
-	content = models.TextField()
+	content = models.TextField(blank=True)
+	image = models.ImageField(upload_to='chat_images/', blank=True, null=True)
 	timestamp = models.DateTimeField(auto_now_add=True)
 	is_read = models.BooleanField(default=False)
 	deleted_by_sender = models.BooleanField(default=False)

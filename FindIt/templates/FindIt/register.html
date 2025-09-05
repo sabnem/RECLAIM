@@ -10,9 +10,15 @@
                     <h2 class="fw-bold mt-2">Create Account</h2>
                 </div>
                 <form method="post">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
+                            {% csrf_token %}
+                            {{ form|crispy }}
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="agreeTerms" name="agree_terms" required>
+                                <label class="form-check-label" for="agreeTerms">
+                                    I have read and agree to the <a href="{% url 'terms_and_conditions' %}" target="_blank">Terms and Conditions</a>.
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 mt-3">Register</button>
                 </form>
                 <p class="mt-4 text-center">Already have an account? <a href="{% url 'login' %}">Login here</a>.</p>
             </div>

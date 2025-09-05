@@ -229,20 +229,20 @@ def inbox(request):
 
     # Handle sending a message
     if request.method == 'POST':
-        # Use hidden fields or query params to get item and recipient
         item_id = request.POST.get('item_id') or item_id
         recipient_id = request.POST.get('recipient_id') or recipient_id
-        content = request.POST.get('message')
-        if item_id and recipient_id and content:
+        content = request.POST.get('message', '').strip()
+        image = request.FILES.get('chat_image')
+        if item_id and recipient_id and (content or image):
             item = get_object_or_404(Item, id=item_id)
             recipient = get_object_or_404(User, id=recipient_id)
             Message.objects.create(
                 sender=request.user,
                 recipient=recipient,
                 item=item,
-                content=content
+                content=content,
+                image=image
             )
-            # Redirect to clear POST and reload conversation
             return redirect(f"{request.path}?item_id={item_id}&recipient_id={recipient_id}")
 
     # Get all conversations for the sidebar
@@ -474,3 +474,28 @@ def delete_account(request):
         messages.success(request, 'Your account has been successfully deleted.')
         return render(request, 'FindIt/delete_account_success.html')
     return render(request, 'FindIt/delete_account_confirm.html')
+
+@login_required
+def edit_item_fields(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+    if request.user != item.reported_by:
+        messages.error(request, 'You do not have permission to edit this item.')
+        return redirect('item_detail', item_id=item.id)
+    if request.method == 'POST':
+        description = request.POST.get('description', '').strip()
+        location = request.POST.get('location', '').strip()
+        photo = request.FILES.get('photo')
+        if description:
+            item.description = description
+        if location:
+            item.location = location
+        if photo:
+            item.photo = photo
+        item.save()
+        messages.success(request, 'Item updated successfully.')
+        return redirect('item_detail', item_id=item.id)
+    else:
+        messages.error(request, 'Invalid request method.')
+        return redirect('item_detail', item_id=item.id)
+def terms_and_conditions(request):
+    return render(request, 'FindIt/terms_and_conditions.html')
