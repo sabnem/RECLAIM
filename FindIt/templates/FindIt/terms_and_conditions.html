@@ -1,22 +1,38 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container py-5">
-  <h2 class="fw-bold mb-4">Terms and Conditions</h2>
-  <p>Welcome to our Lost and Found platform. By using this site, you agree to the following terms and guidelines:</p>
-  <ul>
-    <li>Only report items you have genuinely lost or found.</li>
-    <li>Respect other users and communicate honestly.</li>
-    <li>Meet in safe, public places for item exchanges.</li>
-    <li>Do not share sensitive personal information.</li>
-    <li>Return items promptly and confirm returns as required.</li>
-    <li>Violations may result in account suspension or removal.</li>
-  </ul>
-  <h4 class="mt-4">Safe Meeting Practices</h4>
-  <ul>
-    <li>Arrange meetings in well-lit, public locations.</li>
-    <li>Bring a friend or inform someone about your meeting.</li>
-    <li>Verify the identity of the other party before exchanging items.</li>
-    <li>Trust your instincts and cancel if you feel unsafe.</li>
-  </ul>
+  <div class="row justify-content-center mb-4">
+    <div class="col-lg-8">
+      <div class="bg-white rounded-4 shadow-sm p-5">
+        <h1 class="fw-bold mb-4 text-primary"><i class="bi bi-file-earmark-text"></i> Terms & Conditions</h1>
+        <p class="lead mb-4">By using the Lost & Found Portal, you agree to follow these guidelines to keep our community safe and helpful for everyone.</p>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h4 class="fw-bold mb-3 text-info"><i class="bi bi-list-check"></i> General Guidelines</h4>
+            <ul class="list-unstyled">
+              <li><i class="bi bi-check-circle text-success"></i> Only report items you have genuinely lost or found.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Respect other users and communicate honestly.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Do not share sensitive personal information.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Return items promptly and confirm returns as required.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Violations may result in account suspension or removal.</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h4 class="fw-bold mb-3 text-warning"><i class="bi bi-shield-check"></i> Safe Meeting Practices</h4>
+            <ul class="list-unstyled">
+              <li><i class="bi bi-check-circle text-success"></i> Arrange meetings in well-lit, public locations.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Bring a friend or inform someone about your meeting.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Verify the identity of the other party before exchanging items.</li>
+              <li><i class="bi bi-check-circle text-success"></i> Trust your instincts and cancel if you feel unsafe.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="mt-5">
+          <h5 class="fw-bold mb-2 text-secondary"><i class="bi bi-info-circle"></i> Need Help?</h5>
+          <p>If you have questions or concerns about our policies, please <a href="mailto:support@lostfound.com" class="text-info">contact support</a>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

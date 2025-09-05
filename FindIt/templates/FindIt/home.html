@@ -19,4 +19,58 @@
         </div>
     {% endif %}
 </div>
+<div class="container mb-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-search text-info"></i> Find Items</h4>
+                    <p class="card-text">Browse and search for lost or found items posted by other users. Use filters to narrow down your search and quickly locate your belongings.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-plus-circle text-primary"></i> Report Lost/Found</h4>
+                    <p class="card-text">Easily report items you've lost or found. Add details, upload photos, and help reunite owners with their property.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="card-title"><i class="bi bi-chat-dots text-success"></i> In-App Messaging</h4>
+                    <p class="card-text">Communicate securely with other users to arrange item returns or ask questions. Share images and details directly in the chat.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="p-4 bg-white rounded-4 shadow-sm">
+                <h5 class="fw-bold mb-3"><i class="bi bi-shield-check text-warning"></i> Safety Tips</h5>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success"></i> Meet in public, well-lit places.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Bring a friend or inform someone about your meeting.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Verify the identity of the other party before exchanging items.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Trust your instincts and cancel if you feel unsafe.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="p-4 bg-white rounded-4 shadow-sm">
+                <h5 class="fw-bold mb-3"><i class="bi bi-file-earmark-text text-info"></i> Terms & Guidelines</h5>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success"></i> Only report items you have genuinely lost or found.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Respect other users and communicate honestly.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Return items promptly and confirm returns as required.</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Violations may result in account suspension or removal.</li>
+                </ul>
+                <a href="{% url 'terms_and_conditions' %}" target="_blank" class="btn btn-outline-info mt-2">Read Full Terms</a>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

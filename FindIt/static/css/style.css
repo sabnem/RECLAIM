@@ -1,38 +1,28 @@
-/* General styling */
 body {
-    background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1500&q=80') no-repeat center center fixed;
-    background-size: cover;
     font-family: 'Montserrat', Arial, sans-serif;
-    color: #333;
+    background: #f6f8fa url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1500&q=80') no-repeat center center fixed;
+    background-size: cover;
+    position: relative;
 }
-
-/* Navbar */
-.navbar {
-    transition: all 0.3s ease-in-out;
+body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(246,248,250,0.5); 
+    z-index: 0;
+    pointer-events: none;
 }
-
-.navbar .nav-link {
-    font-weight: 500;
-    transition: color 0.3s ease-in-out, transform 0.2s;
-}
-
-.navbar .nav-link:hover {
-    color: #1565c0 !important;
-    transform: translateY(-2px);
-}
-
-.custom-logo {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #1565c0 !important;
-    letter-spacing: 2px;
-    text-shadow: 1px 1px 2px #e3eafc;
-    transition: transform 0.3s ease-in-out;
-}
-
-.custom-logo:hover {
-    transform: scale(1.05);
-}
+.custom-logo { font-weight: 700; font-size: 1.7rem; letter-spacing: 1px; color: #1565c0 !important; }
+.navbar { border-radius: 0 0 18px 18px; }
+.navbar-nav .nav-link { font-weight: 500; font-size: 1.08rem; }
+.navbar-nav .nav-link.active, .navbar-nav .nav-link:focus, .navbar-nav .nav-link:hover { color: #1565c0 !important; }
+.dropdown-menu { border-radius: 12px; }
+.container { max-width: 1200px; position: relative; z-index: 1; }
+.alert { font-size: 1.05rem; }
+footer { background: #f8f9fa; box-shadow: 0 -2px 8px rgba(21,101,192,0.04); }
+footer a { color: #1565c0; text-decoration: underline; }
+.profile-pic-navbar { border: 2px solid #1565c0; }
+            
 
 /* Cards */
 .card {
@@ -134,7 +124,6 @@ body {
     pointer-events: none;
 }
 
-
  #ownerModal .modal-dialog {
    max-width: 400px;
    margin: 1.75rem auto;
@@ -148,4 +137,21 @@ body {
  #ownerModal .form-control {
    transition: none !important;
  }
+ 
+.messaging-app { font-family: 'Segoe UI', Arial, sans-serif; }
+.sidebar-header { font-size: 1.2rem; letter-spacing: 0.5px; }
+.conversation.bg-success-subtle, .active-convo { background: #e6f4ea !important; border-left: 4px solid #16a34a; }
+.conversation-hover:hover { background: #f0fdf4 !important; box-shadow: 0 2px 8px rgba(0,128,0,0.07); }
+.chat-header { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.chat-history { background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%); }
+.chat-bubble { border-radius: 18px; min-width: 60px; word-break: break-word; }
+.chat-bubble.sent { background: linear-gradient(135deg, #e6f4ea 80%, #b9fbc0 100%); color: #222; border-bottom-right-radius: 6px; }
+.chat-bubble.received { background: #fff; border: 1px solid #e0e0e0; color: #222; border-bottom-left-radius: 6px; }
+.chat-footer .btn { border-radius: 20px; }
+.chat-footer input.form-control { border-radius: 20px; }
+.chat-footer { box-shadow: 0 -2px 8px rgba(0,0,0,0.04); }
+.quick-replies button { min-width: 120px; }
+#imageLightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:1050; }
+#imageLightbox img { max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.5); }
+
          
