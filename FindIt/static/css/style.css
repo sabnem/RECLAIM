@@ -9,9 +9,12 @@ body::before {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(246,248,250,0.5); 
-    z-index: 0;
-    pointer-events: none;
+    z-index: 0; /* background overlay stays at the very bottom */
 }
+/* Ensure Bootstrap modals are always above overlays */
+.modal-backdrop { z-index: 1040 !important; }
+.modal { z-index: 1060 !important; pointer-events: auto !important; }
+
 .custom-logo { font-weight: 700; font-size: 1.7rem; letter-spacing: 1px; color: #1565c0 !important; }
 .navbar { border-radius: 0 0 18px 18px; }
 .navbar-nav .nav-link { font-weight: 500; font-size: 1.08rem; }

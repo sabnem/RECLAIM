@@ -10,13 +10,71 @@
                 <div class="card-body text-center">
                     <!-- Profile Picture -->
                     {% if profile.profile_picture %}
-                        <img src="{{ profile.profile_picture.url }}" 
-                             class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
-                             width="130" height="130" alt="Profile Picture">
+                            <img src="{{ profile.profile_picture.url }}" 
+                                     class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
+                                     width="130" height="130" alt="Profile Picture">
+                            <!-- Modal for profile picture actions -->
+                            <div class="modal fade" id="profilePicActionsModal" tabindex="-1" aria-labelledby="profilePicActionsModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="profilePicActionsModalLabel">Profile Picture Options</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <input type="file" class="form-control mb-2" name="profile_picture" accept="image/*">
+                                                <button type="submit" class="btn btn-primary w-100 mb-2">Change Picture</button>
+                                            </form>
+                                            {% if profile.profile_picture and profile.profile_picture.url != default_profile_pic_url %}
+                                            <form method="post" action="{% url 'remove_profile_picture' %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger w-100 mb-2" id="removePictureBtn"> <i class="bi bi-trash"></i> Remove Picture</button>
+                                            </form>
+                                            {% endif %}
+                                            <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="position-absolute top-0 end-0" style="pointer-events:auto;cursor:pointer;" data-bs-toggle="modal" data-bs-target="#profilePicActionsModal">
+                                <span class="bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                                </span>
+                            </span>
                     {% else %}
-                        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" 
-                             class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
-                             width="130" height="130" alt="Profile Picture">
+                            <div class="position-relative d-inline-block mb-3" style="width:130px;height:130px;">
+                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" 
+                                             class="rounded-circle shadow-sm border border-3 border-light" 
+                                             width="130" height="130" alt="Default Profile Picture">
+                                    <span class="position-absolute top-50 start-50 translate-middle" style="pointer-events:auto;cursor:pointer;" data-bs-toggle="modal" data-bs-target="#uploadProfilePicModal">
+                                            <span class="bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
+                                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                                            </span>
+                                    </span>
+                            </div>
+                            <!-- Modal for uploading profile picture -->
+                            <div class="modal fade" id="uploadProfilePicModal" tabindex="-1" aria-labelledby="uploadProfilePicModalLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="uploadProfilePicModalLabel">Upload Profile Picture</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <input type="file" class="form-control" name="profile_picture" accept="image/*" required>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Upload</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                     {% endif %}
 
                     <!-- Username -->
