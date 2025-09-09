@@ -1,140 +1,161 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+.profile-pic-hover {
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 130px;
+}
+.profile-pic-hover img {
+    width: 130px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+.camera-overlay {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 2;
+    transition: opacity 0.2s;
+}
+.profile-pic-hover:hover .camera-overlay,
+.profile-pic-hover.touch-active .camera-overlay {
+    display: flex !important;
+    opacity: 1;
+}
+</style>
 <div class="container mt-5">
-    <div class="row justify-content-center mb-5">
-        <div class=" col-md-6">
-            <div class="card" style="max-width: 400px; margin: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                <div class="card-header bg-primary text-white text-center">
-                    <h4 class="mb-0">My Profile</h4>
-                </div>
-                <div class="card-body text-center">
-                    <!-- Profile Picture -->
-                    {% if profile.profile_picture %}
-                            <img src="{{ profile.profile_picture.url }}" 
-                                     class="rounded-circle shadow-sm mb-3 border border-3 border-light" 
-                                     width="130" height="130" alt="Profile Picture">
-                            <!-- Modal for profile picture actions -->
-                            <div class="modal fade" id="profilePicActionsModal" tabindex="-1" aria-labelledby="profilePicActionsModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="profilePicActionsModalLabel">Profile Picture Options</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
-                                                {% csrf_token %}
-                                                <input type="file" class="form-control mb-2" name="profile_picture" accept="image/*">
-                                                <button type="submit" class="btn btn-primary w-100 mb-2">Change Picture</button>
-                                            </form>
-                                            {% if profile.profile_picture and profile.profile_picture.url != default_profile_pic_url %}
-                                            <form method="post" action="{% url 'remove_profile_picture' %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger w-100 mb-2" id="removePictureBtn"> <i class="bi bi-trash"></i> Remove Picture</button>
-                                            </form>
-                                            {% endif %}
-                                            <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cancel</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="position-absolute top-0 end-0" style="pointer-events:auto;cursor:pointer;" data-bs-toggle="modal" data-bs-target="#profilePicActionsModal">
-                                <span class="bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                                </span>
-                            </span>
-                    {% else %}
-                            <div class="position-relative d-inline-block mb-3" style="width:130px;height:130px;">
-                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" 
-                                             class="rounded-circle shadow-sm border border-3 border-light" 
-                                             width="130" height="130" alt="Default Profile Picture">
-                                    <span class="position-absolute top-50 start-50 translate-middle" style="pointer-events:auto;cursor:pointer;" data-bs-toggle="modal" data-bs-target="#uploadProfilePicModal">
-                                            <span class="bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;">
-                                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                                            </span>
-                                    </span>
-                            </div>
-                            <!-- Modal for uploading profile picture -->
-                            <div class="modal fade" id="uploadProfilePicModal" tabindex="-1" aria-labelledby="uploadProfilePicModalLabel" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title" id="uploadProfilePicModalLabel">Upload Profile Picture</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                        </div>
-                                        <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
-                                            {% csrf_token %}
-                                            <div class="modal-body">
-                                                <input type="file" class="form-control" name="profile_picture" accept="image/*" required>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-primary">Upload</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                    {% endif %}
-
-                    <!-- Username -->
-                    <h5 class="text-dark">{{ user.username }}</h5>
-                    <p class="text-muted mb-4">Member since {{ user.date_joined|date:"F Y" }}</p>
-
-                    <!-- Info Section -->
-                    <div class="text-center px-3">
-                        <p class="mb-2"><strong>Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
-                        <p class="mb-2"><strong>Email:</strong> {{ user.email }}</p> 
-                        <p class="mb-2"><strong>Contact Number:</strong> {{ profile.contact_number|default:"Not provided" }}</p>
-                        <p class="mb-2"><strong>Address:</strong> {{ profile.address|default:"Not provided" }}</p>
-                        <p class="mb-2"><strong>Bio:</strong> {{ profile.bio|default:"Not provided" }}</p>
-                        {% if profile.social_links %}
-                            <p>
-                                <strong>Social Link:</strong>
-                                <a href="{{ profile.social_links }}" target="_blank" rel="noopener">
-                                    {{ profile.social_links }}
-                                </a>
-                            </p>
-                       {% endif %}
+    <div class="row justify-content-center mb-5" style="align-items: flex-start;">
+        <div class="col-md-4 d-flex justify-content-center mb-4 mb-md-0">
+            <div class="card shadow" style="border-radius: 20px; width: 340px; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
+                <div class="card-body w-100 text-center d-flex flex-column justify-content-center align-items-center p-4">
+                    <div class="profile-pic-hover mb-3" style="width:130px;height:130px;">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" width="130" height="130" alt="Profile Picture">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" width="130" height="130" alt="Default Profile Picture">
+                        {% endif %}
+                        <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" data-bs-toggle="modal" data-bs-target="#profilePicModal">
+                            <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                        </span>
                     </div>
-
-                    <!-- Edit Button -->
-                            <div class="mt-4 d-flex justify-content-center gap-2">
-                                <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary px-4 rounded-pill">
-                                    Edit Profile
-                                </a>
-                                <a href="{% url 'delete_account' %}" class="btn btn-outline-danger px-4 rounded-pill">
-                                    Delete Account
-                                </a>
+                    <!-- Modal for profile picture actions -->
+                    <div class="modal fade" id="profilePicModal" tabindex="-1" aria-labelledby="profilePicModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="profilePicModalLabel">Profile Picture Options</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <input type="file" class="form-control mb-2" name="profile_picture" accept="image/*">
+                                        <button type="submit" class="btn btn-primary w-100 mb-2">Upload Picture</button>
+                                    </form>
+                                    {% if profile.profile_picture and profile.profile_picture.url != default_profile_pic_url %}
+                                    <form method="post" action="{% url 'remove_profile_picture' %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger w-100 mb-2">Remove Picture</button>
+                                    </form>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cancel</button>
+                                </div>
                             </div>
-
-                        <!-- Reputation Section -->
-                        <div class="mt-4">
-                            <h5 class="mb-2">User Reputation</h5>
-                            <p><strong>Average Rating:</strong>
-                                {% if avg_rating %}
-                                    {{ avg_rating|floatformat:1 }} / 5
-                                {% else %}
-                                    No ratings yet
-                                {% endif %}
-                            </p>
-                            <a href="{% url 'submit_review' user.id %}" class="btn btn-sm btn-success mb-2">Leave a Review</a>
-                            <ul class="list-group">
-                                {% for review in reviews %}
-                                    <li class="list-group-item">
-                                        <strong>{{ review.reviewer.username }}</strong>:
-                                        <span class="text-warning">&#9733; {{ review.rating }}</span><br>
-                                        <span>{{ review.comment }}</span>
-                                        <small class="text-muted float-end">{{ review.created_at|date:"M d, Y" }}</small>
-                                    </li>
-                                {% empty %}
-                                    <li class="list-group-item">No reviews yet.</li>
-                                {% endfor %}
-                            </ul>
                         </div>
+                    </div>
+                    <h4 class="fw-bold text-primary mb-1" style="font-size: 1.6rem;">{{ user.first_name }} {{ user.last_name }}</h4>
+                    <p class="text-muted mb-1" style="font-size: 1.1rem;"><i class="bi bi-envelope"></i> {{ user.email }}</p>
+                    <p class="text-muted mb-3" style="font-size: 1rem;">Member since {{ user.date_joined|date:"F Y" }}</p>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-danger w-75 mt-2" style="font-size: 1.1rem;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8 d-flex align-items-stretch">
+            <div class="card w-100 h-100 shadow" style="border-radius: 15px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold mb-0"><i class="bi bi-person-circle text-primary"></i> Profile Information</h4>
+                        <a href="{% url 'edit_profile' %}" class="btn btn-primary px-4"><i class="bi bi-pencil-square"></i> Edit</a>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-person"></i> <strong>First Name</strong><br>{{ user.first_name }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-person"></i> <strong>Last Name</strong><br>{{ user.last_name }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-envelope"></i> <strong>Email Address</strong><br>{{ user.email }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-telephone"></i> <strong>Phone Number</strong><br>{{ profile.contact_number|default:"Not provided" }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-calendar"></i> <strong>Date Joined</strong><br>{{ user.date_joined|date:"M d, Y" }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-geo-alt"></i> <strong>Address</strong><br>{{ profile.address|default:"Not provided" }}
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-person-lines-fill"></i> <strong>Bio</strong><br>{{ profile.bio|default:"Not provided" }}
+                        </div>
+                        {% if profile.social_links %}
+                        <div class="col-md-6 mb-2">
+                            <i class="bi bi-link-45deg"></i> <strong>Social Link</strong><br>
+                            <a href="{{ profile.social_links }}" target="_blank" rel="noopener">{{ profile.social_links }}</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mt-4">
+                        <h5 class="mb-2">User Reputation</h5>
+                        <p><strong>Average Rating:</strong>
+                            {% if avg_rating %}
+                                {{ avg_rating|floatformat:1 }} / 5
+                            {% else %}
+                                No ratings yet
+                            {% endif %}
+                        </p>
+                        <a href="{% url 'submit_review' user.id %}" class="btn btn-sm btn-success mb-2">Leave a Review</a>
+                        <ul class="list-group">
+                            {% for review in reviews %}
+                                <li class="list-group-item">
+                                    <strong>{{ review.reviewer.username }}</strong>:
+                                    <span class="text-warning">&#9733; {{ review.rating }}</span><br>
+                                    <span>{{ review.comment }}</span>
+                                    <small class="text-muted float-end">{{ review.created_at|date:"M d, Y" }}</small>
+                                </li>
+                            {% empty %}
+                                <li class="list-group-item">No reviews yet.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var pic = document.querySelector('.profile-pic-hover');
+    if (pic) {
+        pic.addEventListener('touchstart', function() {
+            pic.classList.add('touch-active');
+        });
+        pic.addEventListener('touchend', function() {
+            setTimeout(function() {
+                pic.classList.remove('touch-active');
+            }, 2000);
+        });
+    }
+});
+</script>
 {% endblock %}

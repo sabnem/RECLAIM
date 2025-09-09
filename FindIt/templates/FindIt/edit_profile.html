@@ -10,63 +10,6 @@
                 <div class="card-header bg-primary text-white">Edit Profile</div>
                 <div class="card-body text-center">
 
-                    <!-- Profile Picture Section -->
-                                        <div class="profile-pic-wrapper mb-3 position-relative" style="width:128px; height:128px; margin:auto;">
-                                                <div id="profilePicClickable" style="cursor:pointer; width:100%; height:100%; position:relative;">
-                                                        {% if profile.profile_picture %}
-                                                                <img src="{{ profile.profile_picture.url }}" 
-                                                                         class="rounded-circle shadow-sm border border-2 border-light" 
-                                                                         width="128" height="128" 
-                                                                         alt="{{ user.username }}'s Profile Picture" 
-                                                                         id="profile-pic">
-                                                        {% else %}
-                                                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=cccccc&color=fff&size=128" 
-                                                                         class="rounded-circle shadow-sm border border-2 border-light" 
-                                                                         width="128" height="128" 
-                                                                         alt="{{ user.username }}'s Profile Picture" 
-                                                                         id="profile-pic">
-                                                        {% endif %}
-                                                        <span class="edit-icon position-absolute bottom-0 end-0" style="width:38px; height:38px; color:white; font-size:1.5rem; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(0,0,0,0.12);">
-                                                                <i class="bi bi-camera" style="color:#1565c0;"></i>
-                                                        </span>
-                                                </div>
-                                                <!-- Modal for profile picture actions -->
-                                                <div class="modal fade" id="profilePicModal" tabindex="-1" aria-labelledby="profilePicModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="profilePicModalLabel">Profile Picture Options</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data" id="changePicForm">
-                                                                    {% csrf_token %}
-                                                                    <input type="file" class="form-control mb-3" name="profile_picture" accept="image/*">
-                                                                    <button type="submit" class="btn btn-primary w-100 mb-2">Change Picture</button>
-                                                                </form>
-                                                                {% if profile.profile_picture and profile.profile_picture.url != default_profile_pic_url %}
-                                                                <form method="post" action="{% url 'remove_profile_picture' %}">
-                                                                    {% csrf_token %}
-                                                                    <button type="submit" class="btn btn-danger w-100 mb-2">Remove Picture</button>
-                                                                </form>
-                                                                {% endif %}
-                                                                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cancel</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <script>
-                                                    document.addEventListener('DOMContentLoaded', function() {
-                                                        var clickable = document.getElementById('profilePicClickable');
-                                                        var modal = new bootstrap.Modal(document.getElementById('profilePicModal'));
-                                                        if (clickable) {
-                                                            clickable.addEventListener('click', function() {
-                                                                modal.show();
-                                                            });
-                                                        }
-                                                    });
-                                                </script>
-                                        </div>
 
 
 

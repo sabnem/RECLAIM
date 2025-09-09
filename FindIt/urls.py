@@ -16,7 +16,6 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
-    path("remove-profile-picture/", views.remove_profile_picture, name="remove_profile_picture"),
     path('delete-account/', views.delete_account, name='delete_account'),
     path('items/<int:item_id>/return_confirmation/', views.return_confirmation, name='return_confirmation'),
     path('review/<int:user_id>/', views.submit_review, name='submit_review'),

@@ -442,17 +442,6 @@ def edit_profile(request):
         form = UserProfileForm(instance=profile, user=request.user)
     return render(request, 'FindIt/edit_profile.html', {'form': form, 'profile': profile})
 
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-
-@login_required
-def remove_profile_picture(request):
-    profile = request.user.userprofile
-    if request.method == "POST" and profile.profile_picture:
-        profile.profile_picture.delete(save=False)  # delete file from storage
-        profile.profile_picture = None
-        profile.save()
-    return redirect('profile')  # back to profile page
 
 from .models import AccountDeletionFeedback
 from django.contrib import messages

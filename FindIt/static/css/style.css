@@ -1,4 +1,4 @@
-body {
+/* body {
     font-family: 'Montserrat', Arial, sans-serif;
     background: #f6f8fa url('https://images.unsplash.com/photo-1464983953574-0892a716854b?auto=format&fit=crop&w=1500&q=80') no-repeat center center fixed;
     background-size: cover;
@@ -10,6 +10,29 @@ body::before {
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(246,248,250,0.5); 
     z-index: 0; /* background overlay stays at the very bottom */
+/* } */ 
+
+
+/* Background image for RECLAIM lost-and-found project */
+body {
+    background-image: url('https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1500&q=80');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+/* Optional: add a semi-transparent overlay for readability */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.3); /* dark overlay */
+    z-index: -1;
 }
 /* Ensure Bootstrap modals are always above overlays */
 .modal-backdrop { z-index: 1040 !important; }
@@ -83,50 +106,6 @@ footer a { color: #1565c0; text-decoration: underline; }
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
 }
 
-.profile-pic-wrapper {
-        position: relative;
-        display: inline-block;
-}
-/* Hide edit/remove icons until hover */
-.profile-pic-wrapper .edit-icon,
-.profile-pic-wrapper .remove-icon {
-    position: absolute;
-    bottom: 5px;
-    background: #1565c0;
-    color: #fff;
-    border-radius: 50%;
-    padding: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.profile-pic-wrapper .remove-icon {
-    left: 5px;   /* bottom-left corner */
-    background: #e53935;
-}
-
-.edit-icon:hover {
-    background: #0d47a1;
-    opacity: 1 !important;
-    pointer-events: auto;
-    transform: translateY(-2px) scale(1); ;
-}
-
-.profile-pic-wrapper:hover .edit-icon {
-    opacity: 1 !important;
-    pointer-events: auto;
-}
-.profile-pic-wrapper:hover .remove-profile-pic-form {
-    opacity: 1 !important;
-    pointer-events: auto;
-}
-.edit-icon, .remove-profile-pic-form {
-    opacity: 0;
-    pointer-events: none;
-}
-
  #ownerModal .modal-dialog {
    max-width: 400px;
    margin: 1.75rem auto;
@@ -157,4 +136,34 @@ footer a { color: #1565c0; text-decoration: underline; }
 #imageLightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); justify-content:center; align-items:center; z-index:1050; }
 #imageLightbox img { max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.5); }
 
-         
+/* Profile picture hover camera icon */
+.profile-pic-hover {
+    position: relative;
+    display: inline-block;
+    width: 130px;
+    height: 130px;
+}
+.profile-pic-hover img {
+    width: 130px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+}
+.profile-pic-hover .camera-overlay {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    z-index: 2;
+    transition: opacity 0.2s;
+}
+.profile-pic-hover:hover .camera-overlay,
+.profile-pic-hover.touch-active .camera-overlay {
+    display: flex !important;
+    opacity: 1;
+}
+
