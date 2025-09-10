@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 
 # Mark item as returned (owner or superuser only)
 @login_required
@@ -441,6 +442,26 @@ def edit_profile(request):
     else:
         form = UserProfileForm(instance=profile, user=request.user)
     return render(request, 'FindIt/edit_profile.html', {'form': form, 'profile': profile})
+
+@login_required
+@require_POST
+def upload_profile_picture(request):
+    profile = request.user.userprofile
+    form = UserProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+    if 'profile_picture' in request.FILES:
+        profile.profile_picture = request.FILES['profile_picture']
+        profile.save()
+    return redirect('profile')
+
+@login_required
+@require_POST
+def remove_profile_picture(request):
+    profile = request.user.userprofile
+    if profile.profile_picture:
+        profile.profile_picture.delete(save=False)
+        profile.profile_picture = None
+        profile.save()
+    return redirect('profile')
 
 
 from .models import AccountDeletionFeedback

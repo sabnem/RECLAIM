@@ -24,11 +24,12 @@
     cursor: pointer;
     z-index: 2;
     transition: opacity 0.2s;
+    opacity: 0;
 }
 .profile-pic-hover:hover .camera-overlay,
 .profile-pic-hover.touch-active .camera-overlay {
     display: flex !important;
-    opacity: 1;
+    opacity: 1 !important;
 }
 </style>
 <div class="container mt-5">
@@ -36,41 +37,28 @@
         <div class="col-md-4 d-flex justify-content-center mb-4 mb-md-0">
             <div class="card shadow" style="border-radius: 20px; width: 340px; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
                 <div class="card-body w-100 text-center d-flex flex-column justify-content-center align-items-center p-4">
-                    <div class="profile-pic-hover mb-3" style="width:130px;height:130px;">
-                        {% if profile.profile_picture %}
-                            <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" width="130" height="130" alt="Profile Picture">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" width="130" height="130" alt="Default Profile Picture">
-                        {% endif %}
-                        <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" data-bs-toggle="modal" data-bs-target="#profilePicModal">
-                            <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                        </span>
-                    </div>
-                    <!-- Modal for profile picture actions -->
-                    <div class="modal fade" id="profilePicModal" tabindex="-1" aria-labelledby="profilePicModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="profilePicModalLabel">Profile Picture Options</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <form method="post" action="{% url 'edit_profile' %}" enctype="multipart/form-data">
-                                        {% csrf_token %}
-                                        <input type="file" class="form-control mb-2" name="profile_picture" accept="image/*">
-                                        <button type="submit" class="btn btn-primary w-100 mb-2">Upload Picture</button>
-                                    </form>
-                                    {% if profile.profile_picture and profile.profile_picture.url != default_profile_pic_url %}
-                                    <form method="post" action="{% url 'remove_profile_picture' %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger w-100 mb-2">Remove Picture</button>
-                                    </form>
-                                    {% endif %}
-                                    <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Cancel</button>
-                                </div>
-                            </div>
+                    <form id="profilePicUploadForm" method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data" style="display:inline;">
+                        {% csrf_token %}
+                        <div class="profile-pic-hover mb-3">
+                            {% if profile.profile_picture %}
+                                <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" alt="Profile Picture">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" alt="Default Profile Picture">
+                            {% endif %}
+                            <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('profilePicInput').click();">
+                                <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                            </span>
+                            <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
                         </div>
-                    </div>
+                    </form>
+                        {% if user.userprofile.profile_picture %}
+                            <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                  <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        {% endif %}
                     <h4 class="fw-bold text-primary mb-1" style="font-size: 1.6rem;">{{ user.first_name }} {{ user.last_name }}</h4>
                     <p class="text-muted mb-1" style="font-size: 1.1rem;"><i class="bi bi-envelope"></i> {{ user.email }}</p>
                     <p class="text-muted mb-3" style="font-size: 1rem;">Member since {{ user.date_joined|date:"F Y" }}</p>

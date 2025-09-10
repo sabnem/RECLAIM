@@ -18,7 +18,10 @@ urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('delete-account/', views.delete_account, name='delete_account'),
     path('items/<int:item_id>/return_confirmation/', views.return_confirmation, name='return_confirmation'),
+    path('profile/remove-picture/', views.remove_profile_picture, name='remove_profile_picture'),
     path('review/<int:user_id>/', views.submit_review, name='submit_review'),
     path('items/<int:item_id>/edit/', views.edit_item_fields, name='edit_item_fields'),
     path('terms-and-conditions/', views.terms_and_conditions, name='terms_and_conditions'),
+    path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
+    path('profile/remove-picture/', views.remove_profile_picture, name='remove_profile_picture'),
 ]

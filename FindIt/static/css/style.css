@@ -137,33 +137,5 @@ footer a { color: #1565c0; text-decoration: underline; }
 #imageLightbox img { max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.5); }
 
 /* Profile picture hover camera icon */
-.profile-pic-hover {
-    position: relative;
-    display: inline-block;
-    width: 130px;
-    height: 130px;
-}
-.profile-pic-hover img {
-    width: 130px;
-    height: 130px;
-    object-fit: cover;
-    border-radius: 50%;
-    display: block;
-}
-.profile-pic-hover .camera-overlay {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    pointer-events: auto;
-    cursor: pointer;
-    z-index: 2;
-    transition: opacity 0.2s;
-}
-.profile-pic-hover:hover .camera-overlay,
-.profile-pic-hover.touch-active .camera-overlay {
-    display: flex !important;
-    opacity: 1;
-}
+
 
