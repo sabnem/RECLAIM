@@ -14,15 +14,25 @@
     border-radius: 50%;
     display: block;
 }
-.camera-overlay {
-    display: none;
+.icon-overlay-center {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    z-index: 3;
+    pointer-events: none;
+}
+.icon-overlay-center > * {
+    pointer-events: auto;
+}
+.camera-overlay {
+    display: none;
     pointer-events: auto;
     cursor: pointer;
-    z-index: 2;
     transition: opacity 0.2s;
     opacity: 0;
 }
@@ -45,20 +55,23 @@
                             {% else %}
                                 <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" alt="Default Profile Picture">
                             {% endif %}
-                            <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('profilePicInput').click();">
-                                <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                            </span>
+                            <div class="icon-overlay-center">
+                                <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('profilePicInput').click();">
+                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                                </span>
+                                {% if user.userprofile.profile_picture %}
+                                    <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger p-2 rounded-circle camera-overlay" title="Remove Profile Picture" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
                             <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
                         </div>
                     </form>
-                        {% if user.userprofile.profile_picture %}
-                            <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">
-                                  <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        {% endif %}
+                        {# Removed duplicate remove button below profile image. Only the button inside the overlay remains, side by side with the camera icon. #}
                     <h4 class="fw-bold text-primary mb-1" style="font-size: 1.6rem;">{{ user.first_name }} {{ user.last_name }}</h4>
                     <p class="text-muted mb-1" style="font-size: 1.1rem;"><i class="bi bi-envelope"></i> {{ user.email }}</p>
                     <p class="text-muted mb-3" style="font-size: 1rem;">Member since {{ user.date_joined|date:"F Y" }}</p>
