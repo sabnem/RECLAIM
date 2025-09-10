@@ -42,36 +42,52 @@
     opacity: 1 !important;
 }
 </style>
+
 <div class="container mt-5">
     <div class="row justify-content-center mb-5" style="align-items: flex-start;">
         <div class="col-md-4 d-flex justify-content-center mb-4 mb-md-0">
             <div class="card shadow" style="border-radius: 20px; width: 340px; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
                 <div class="card-body w-100 text-center d-flex flex-column justify-content-center align-items-center p-4">
-                    <form id="profilePicUploadForm" method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data" style="display:inline;">
-                        {% csrf_token %}
-                        <div class="profile-pic-hover mb-3">
-                            {% if profile.profile_picture %}
-                                <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" alt="Profile Picture">
-                            {% else %}
-                                <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" alt="Default Profile Picture">
+
+                    <!-- Profile Picture Section -->
+                    <div class="profile-pic-hover mb-3">
+                        {% if profile.profile_picture %}
+                            <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" alt="Profile Picture">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" alt="Default Profile Picture">
+                        {% endif %}
+
+                        <!-- Overlay icons -->
+                        <div class="icon-overlay-center">
+                            <!-- Upload -->
+                            <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                  style="width:40px;height:40px;"
+                                  onclick="document.getElementById('profilePicInput').click();">
+                                <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
+                            </span>
+
+                            <!-- Remove -->
+                            {% if user.userprofile.profile_picture %}
+                            <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-danger p-2 rounded-circle camera-overlay"
+                                        title="Remove Profile Picture"
+                                        style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                             {% endif %}
-                            <div class="icon-overlay-center">
-                                <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width:40px;height:40px;" onclick="document.getElementById('profilePicInput').click();">
-                                    <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                                </span>
-                                {% if user.userprofile.profile_picture %}
-                                    <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-danger p-2 rounded-circle camera-overlay" title="Remove Profile Picture" style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                            <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
                         </div>
-                    </form>
-                        {# Removed duplicate remove button below profile image. Only the button inside the overlay remains, side by side with the camera icon. #}
+
+                        <!-- Hidden upload form -->
+                        <form id="profilePicUploadForm" method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
+                        </form>
+                    </div>
+
+                    <!-- User Info -->
                     <h4 class="fw-bold text-primary mb-1" style="font-size: 1.6rem;">{{ user.first_name }} {{ user.last_name }}</h4>
                     <p class="text-muted mb-1" style="font-size: 1.1rem;"><i class="bi bi-envelope"></i> {{ user.email }}</p>
                     <p class="text-muted mb-3" style="font-size: 1rem;">Member since {{ user.date_joined|date:"F Y" }}</p>
@@ -79,6 +95,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Profile Info Section -->
         <div class="col-md-8 d-flex align-items-stretch">
             <div class="card w-100 h-100 shadow" style="border-radius: 15px;">
                 <div class="card-body">
@@ -115,6 +133,8 @@
                         </div>
                         {% endif %}
                     </div>
+
+                    <!-- User Reputation -->
                     <div class="mt-4">
                         <h5 class="mb-2">User Reputation</h5>
                         <p><strong>Average Rating:</strong>
