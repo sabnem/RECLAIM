@@ -18,6 +18,7 @@ body {
     background-image: url('https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=1500&q=80');
     background-size: cover;
     background-repeat: no-repeat;
+    padding-top: 120px; /* space for fixed navbar */
     background-position: center center;
     min-height: 100vh;
     font-family: Arial, sans-serif;
@@ -39,7 +40,7 @@ body::before {
 .modal { z-index: 1060 !important; pointer-events: auto !important; }
 
 .custom-logo { font-weight: 700; font-size: 1.7rem; letter-spacing: 1px; color: #1565c0 !important; }
-.navbar { border-radius: 0 0 18px 18px; }
+.navbar { border-radius: 18px 18px 18px 18px; margin-top: 20px; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 1200px; z-index: 1030; }
 .navbar-nav .nav-link { font-weight: 500; font-size: 1.08rem; }
 .navbar-nav .nav-link.active, .navbar-nav .nav-link:focus, .navbar-nav .nav-link:hover { color: #1565c0 !important; }
 .dropdown-menu { border-radius: 12px; }
