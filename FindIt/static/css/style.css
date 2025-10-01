@@ -46,7 +46,7 @@ body::before {
 .dropdown-menu { border-radius: 12px; }
 .container { max-width: 1200px; position: relative; z-index: 1; }
 .alert { font-size: 1.05rem; }
-footer { background: #f8f9fa; box-shadow: 0 -2px 8px rgba(21,101,192,0.04); }
+footer { background: #f8f9fa; box-shadow: 0 -2px 8px rgba(21,101,192,0.04); border-radius: 18px 18px 0 0; margin-top: 40px; padding: 20px 0; }
 footer a { color: #1565c0; text-decoration: underline; }
 .profile-pic-navbar { border: 2px solid #1565c0; }
             

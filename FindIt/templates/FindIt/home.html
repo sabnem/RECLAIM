@@ -9,9 +9,9 @@
             <a href="{% url 'item_list' %}" class="btn btn-info btn-lg px-4 text-white"><i class="bi bi-search"></i> View All Items</a>
             <!-- <a href="{% url 'inbox' %}" class="btn btn-dark btn-lg px-4"><i class="bi bi-envelope"></i> Inbox</a> -->
         </div>
-        <div class="mt-4">
+        {% comment %} <div class="mt-4">
             <span class="badge bg-success fs-6">Logged in as {{ user.username }}</span>
-        </div>
+        </div> {% endcomment %}
     {% else %}
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
             <a href="{% url 'login' %}" class="btn btn-success btn-lg px-4"><i class="bi bi-box-arrow-in-right"></i> Login</a>
