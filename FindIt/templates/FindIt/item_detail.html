@@ -2,17 +2,17 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-8">
-    <div class="card shadow-lg border-0 bg-white rounded-4">
+    <div class="card border-0 rounded-4 feature-card shadow-sm" style="background: var(--surface);">
       {% if item.photo %}
       {% comment %} full item display regardless of aspect ratio {% endcomment %}
-          <div style="width:100%; max-width:400px; height:300px; margin:auto; background:#f8f9fa; display:flex; align-items:center; justify-content:center; border-radius:0.5rem;">
+          <div class="item-image-container" style="width:100%; max-width:400px; height:300px; margin:auto; background: #ffffff;">
             <img src="{{ item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="Item photo">
           </div>
       {% endif %}
       <div class="card-body p-5">
         <h2 class="card-title fw-bold mb-3">{{ item.title }}</h2>
-        <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-1">{{ item.get_status_display }}</span>
-        <span class="badge bg-secondary me-1">{{ item.category }}</span>
+        <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-2 rounded-pill">{{ item.get_status_display }}</span>
+        <span class="badge rounded-pill" style="background: var(--primary-subtle); color: var(--primary);">{{ item.category }}</span>
         {% if item.is_returned %}
           <span class="badge bg-info text-dark me-1"><i class="bi bi-check-circle"></i> Returned</span>
         {% endif %}
@@ -24,7 +24,7 @@
                 <button type="button" class="btn btn-info text-white" id="editItemBtn" style="display:inline; margin-top: 12px;">
                   <i class="bi bi-pencil-square"></i> Edit Item
                 </button>
-                <form method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3" id="editItemForm" style="display:none;">
+                <form method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3 p-3 rounded-4 mt-3" style="display:none; background: var(--primary-subtle);">
                   {% csrf_token %}
                   <div class="mb-2">
                     <label for="itemPhoto" class="form-label">Change Image</label>
@@ -52,7 +52,7 @@
                   });
                 </script>
           {% endif %}
-        <div class="d-flex flex-wrap gap-2 mt-4">
+        <div class="d-flex flex-wrap gap-3 mt-4">
             <!-- Safety Tips Modal Trigger -->
             <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info mb-2" target="_blank">
               <i class="bi bi-shield-check"></i> Safety & Terms
