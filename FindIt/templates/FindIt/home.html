@@ -15,7 +15,7 @@
     {% else %}
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
             <a href="{% url 'login' %}" class="btn btn-light btn-lg px-4 fw-semibold"><i class="bi bi-box-arrow-in-right"></i> Login</a>
-            <a href="{% url 'register' %}" class="btn btn-outline-light btn-lg px-4 fw-semibold"><i class="bi bi-person-plus"></i> Register</a>
+            <a href="{% url 'register' %}" class="btn btn-light btn-lg px-4 fw-semibold"><i class="bi bi-person-plus"></i> Register</a>
         </div>
     {% endif %}
 </section>
@@ -137,26 +137,5 @@
     navigation: { nextEl: ".tips-next", prevEl: ".tips-prev" }
   });
 
-  // Dark Mode Toggle with icon change
-  const darkModeToggle = document.getElementById('darkModeToggle');
-  const darkModeIcon = document.getElementById('darkModeIcon');
-  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-  if (prefersDark) {
-      document.body.classList.add('dark-mode');
-      darkModeIcon.className = 'bi bi-sun-fill';
-      darkModeToggle.innerHTML = '<i class="bi bi-sun-fill"></i> Light Mode';
-  }
-
-  darkModeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      if (document.body.classList.contains('dark-mode')) {
-          darkModeIcon.className = 'bi bi-sun-fill';
-          darkModeToggle.innerHTML = '<i class="bi bi-sun-fill"></i> Light Mode';
-      } else {
-          darkModeIcon.className = 'bi bi-moon-fill';
-          darkModeToggle.innerHTML = '<i class="bi bi-moon-fill"></i> Dark Mode';
-      }
-  });
 </script>
 {% endblock %}
