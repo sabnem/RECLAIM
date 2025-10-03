@@ -24,4 +24,5 @@ urlpatterns = [
     path('terms-and-conditions/', views.terms_and_conditions, name='terms_and_conditions'),
     path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
     path('profile/remove-picture/', views.remove_profile_picture, name='remove_profile_picture'),
+    path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
 ]

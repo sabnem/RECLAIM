@@ -509,3 +509,6 @@ def edit_item_fields(request, item_id):
         return redirect('item_detail', item_id=item.id)
 def terms_and_conditions(request):
     return render(request, 'FindIt/terms_and_conditions.html')
+
+def privacy_policy(request):
+    return render(request, 'FindIt/privacy_policy.html')

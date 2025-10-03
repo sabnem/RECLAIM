@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
+<!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/swipe.css' %}">
 <!-- Hero Section -->
 <section class="py-5 text-center rounded-4 shadow-sm mb-5 hero-section">
     <h1 class="display-5 fw-bold mb-3">Welcome to the Lost & Found Portal</h1>
@@ -7,7 +10,7 @@
     {% if user.is_authenticated %}
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
             <a href="{% url 'report_item' %}" class="btn btn-light btn-lg px-4 fw-semibold shadow-sm"><i class="bi bi-plus-circle"></i> Report Item</a>
-            <a href="{% url 'item_list' %}" class="btn btn-outline-light btn-lg px-4 fw-semibold"><i class="bi bi-search"></i> View All Items</a>
+            <a href="{% url 'item_list' %}" class="btn btn-light btn-lg px-4 fw-semibold shadow-sm"><i class="bi bi-search"></i> View All Items</a>
         </div>
     {% else %}
         <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
@@ -41,9 +44,9 @@
                 </div>
             </div>
         </div>
-        <div class="swiper-pagination"></div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination feature-pagination"></div>
+        <div class="swiper-button-next feature-next"></div>
+        <div class="swiper-button-prev feature-prev"></div>
     </div>
 </section>
 
@@ -75,40 +78,32 @@
                     <a href="{% url 'terms_and_conditions' %}" target="_blank" class="btn btn-outline-primary mt-3">Read Full Terms</a>
                 </div>
             </div>
+            <div class="swiper-slide">
+              <div class="p-4 rounded-4 shadow-sm h-100 text-center tips-card">
+                <h5 class="fw-bold mb-3">
+                  <i class="bi bi-shield-lock text-info"></i> Privacy Policy
+                </h5>
+                <ul class="list-unstyled text-start mx-auto" style="max-width: 300px;">
+                  <li class="mb-2"><i class="bi bi-check-circle text-success"></i> We protect your personal data with care.</li>
+                  <li class="mb-2"><i class="bi bi-check-circle text-success"></i> Your information is only used to connect owners and finders.</li>
+                  <li class="mb-2"><i class="bi bi-check-circle text-success"></i> We never sell or rent your data to third parties.</li>
+                  <li><i class="bi bi-check-circle text-success"></i> You can request deletion of your data anytime.</li>
+                </ul>
+                <a href="{% url 'privacy_policy' %}" target="_blank" class="btn btn-outline-secondary mt-3">
+                  Read Full Policy
+                </a>
+              </div>
+            </div>
         </div>
-        <div class="swiper-pagination"></div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-button-prev"></div>
+        <div class="swiper-pagination tips-pagination"></div>
+        <div class="swiper-button-next tips-next"></div>
+        <div class="swiper-button-prev tips-prev"></div>
     </div>
 </section>
 
 <!-- Swiper CSS & JS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-
-<style>
-  /* Smooth transition for dark/light mode */
-  body, .hero-section, .feature-card, .tips-card, .btn-outline-light {
-      transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
-  }
-
-  /* Hero gradient & card styles */
-  .hero-section { background: linear-gradient(135deg,#6a11cb,#2575fc); color: white; }
-  .feature-card, .tips-card { transition: all 0.3s ease; }
-
-  /* Swiper effects */
-  .swiper-slide { transition: transform 0.6s ease, box-shadow 0.6s ease; }
-  .swiper-slide-active { transform: scale(1.15); z-index: 10; box-shadow: 0 12px 28px rgba(0,0,0,0.2); }
-  .swiper-slide-next, .swiper-slide-prev { transform: scale(0.9); opacity: 0.7; }
-  .swiper-slide-prev-prev, .swiper-slide-next-next { transform: scale(0.8); opacity: 0.5; }
-
-  /* Dark Mode */
-  body.dark-mode { background-color: #121212; color: #e0e0e0; }
-  body.dark-mode .hero-section { background: linear-gradient(135deg,#333399,#6611cc); }
-  body.dark-mode .card, body.dark-mode .tips-card { background-color: #1e1e1e; color: #e0e0e0; }
-  body.dark-mode .btn-outline-light { color: #e0e0e0; border-color: #e0e0e0; }
-  body.dark-mode .btn-outline-light:hover { background-color: #e0e0e0; color: #121212; }
-</style>
 
 <script>
   const commonSwiperConfig = {
@@ -120,15 +115,27 @@
     coverflowEffect: { rotate: 25, stretch: 0, depth: 250, modifier: 1.5, slideShadows: true },
     loop: true,
     speed: 1000,
-    autoplay: { delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true },
     observer: true,
     observeParents: true,
-    pagination: { clickable: true },
-    navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" }
   };
 
-  new Swiper(".featureSwiper", commonSwiperConfig);
-  new Swiper(".tipsSwiper", {...commonSwiperConfig, spaceBetween: 25, coverflowEffect: { rotate: 20, depth: 220, modifier: 1.4 }});
+  // Features Swiper (5s autoplay)
+  new Swiper(".featureSwiper", {
+    ...commonSwiperConfig,
+    autoplay: { delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true },
+    pagination: { el: ".feature-pagination", clickable: true },
+    navigation: { nextEl: ".feature-next", prevEl: ".feature-prev" }
+  });
+
+  // Tips Swiper (faster autoplay 3s)
+  new Swiper(".tipsSwiper", {
+    ...commonSwiperConfig,
+    autoplay: { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true },
+    spaceBetween: 25,
+    coverflowEffect: { rotate: 20, depth: 220, modifier: 1.4 },
+    pagination: { el: ".tips-pagination", clickable: true },
+    navigation: { nextEl: ".tips-next", prevEl: ".tips-prev" }
+  });
 
   // Dark Mode Toggle with icon change
   const darkModeToggle = document.getElementById('darkModeToggle');
@@ -152,5 +159,4 @@
       }
   });
 </script>
-
 {% endblock %}
