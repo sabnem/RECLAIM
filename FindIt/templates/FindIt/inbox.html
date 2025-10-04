@@ -19,7 +19,7 @@
           {% for convo in conversations %}
           <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
             <div class="conversation d-flex align-items-center {% if convo.id == active_conversation.id %}active-convo{% endif %}">
-              <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/50' }}" 
+              <img src="{% if convo.avatar_url %}{{ convo.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ convo.name|urlencode }}&background=D97706&color=fff&size=50{% endif %}" 
                    class="rounded-circle me-3 conversation-avatar" 
                    width="50" height="50" alt="Avatar">
               <div class="flex-grow-1">
@@ -53,8 +53,18 @@
               </div>
             </div>
           </div>
-          <div class="text-white">
-            <i class="bi bi-three-dots-vertical fs-4" style="cursor: pointer;"></i>
+          <div class="dropdown">
+            <button class="btn btn-link text-white p-0" type="button" id="chatOptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-three-dots-vertical fs-4"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chatOptionsDropdown">
+              <li>
+                <a class="dropdown-item text-danger" href="#" id="clearConversationBtn">
+                  <i class="bi bi-archive me-2"></i>
+                  Archive Conversation
+                </a>
+              </li>
+            </ul>
           </div>
         </header>
 
@@ -120,9 +130,8 @@
                      placeholder="Type your message..."
                      autocomplete="off">
 
-              <button type="submit" class="btn btn-send">
-                <i class="bi bi-send-fill me-2"></i>
-                Send
+              <button type="submit" class="btn btn-send" title="Send message">
+                <i class="bi bi-send-fill"></i>
               </button>
             </div>
           </form>
@@ -138,13 +147,14 @@
 <div class="messaging-container">
   <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
     <div class="empty-state text-center">
-      <i class="bi bi-chat-left-dots-fill" style="font-size: 80px;"></i>
-      <h3 class="fw-bold mt-4 mb-3" style="color: var(--text, #e5e5e5);">No Active Conversation</h3>
-      <p class="mb-4" style="color: rgba(229, 229, 229, 0.7);">
+      <div class="empty-icon-wrapper mb-4">
+        <i class="bi bi-chat-left-dots-fill"></i>
+      </div>
+      <h3 class="fw-bold mb-3">No Active Conversation</h3>
+      <p class="mb-4 empty-description">
         Start a conversation by contacting the owner or finder of an item.
       </p>
-      <a href="{% url 'item_list' %}" class="btn btn-send">
-        <i class="bi bi-search me-2"></i>
+      <a href="{% url 'item_list' %}" class="btn-browse-items">
         Browse Items
       </a>
     </div>
@@ -297,6 +307,45 @@ document.addEventListener("DOMContentLoaded", function() {
       fileInput.value = "";
       previewImg.src = "";
       previewContainer.style.display = "none";
+    });
+  }
+
+  // Archive conversation functionality
+  const clearConversationBtn = document.getElementById('clearConversationBtn');
+  if (clearConversationBtn) {
+    clearConversationBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      if (confirm('Archive this conversation? You can still access it later for reference if needed, but it will be hidden from your inbox.')) {
+        // Send request to backend to archive messages
+        fetch('{% url "clear_conversation" %}', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            item_id: {{ item_id|default:"null" }},
+            recipient_id: {{ recipient_id|default:"null" }}
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            alert('✅ Conversation archived successfully! Messages are preserved for reference.');
+            
+            // Redirect to inbox home
+            window.location.href = '{% url "inbox" %}';
+          } else {
+            alert('Failed to archive conversation: ' + data.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while archiving the conversation.');
+        });
+      }
     });
   }
 

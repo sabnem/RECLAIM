@@ -348,6 +348,7 @@ footer .social-icons a:hover{transform:scale(1.15); color:#fff}
     display: inline-block;
     padding: 0.25rem 0;
     opacity: 0.75;
+    width: fit-content;
 }
 
 .footer-link:hover {
@@ -696,11 +697,14 @@ body.dark-mode .footer .quick-links h6 {
     opacity: 0.85;
     font-weight: 500;
     transition: all 0.3s ease;
+    display: inline-block;
+    text-decoration: none;
 }
 
 .footer .footer-link:hover {
     opacity: 1;
     transform: translateX(5px);
+    color: var(--primary) !important;
 }
 
 /* Dark mode text visibility improvements */

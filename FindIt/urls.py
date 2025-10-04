@@ -30,4 +30,5 @@ urlpatterns = [
     path('items/<int:item_id>/rate/', views.rate_finder, name='rate_finder'),
     path('statistics/returns/', views.returns_statistics, name='returns_statistics'),
     path('export/recovered-items/pdf/', views.export_recovered_items_pdf, name='export_recovered_items_pdf'),
+    path('clear-conversation/', views.clear_conversation, name='clear_conversation'),
 ]

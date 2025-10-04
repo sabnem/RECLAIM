@@ -297,9 +297,10 @@ def inbox(request):
             )
             return redirect(f"{request.path}?item_id={item_id}&recipient_id={recipient_id}")
 
-    # Get all conversations for the sidebar
+    # Get all conversations for the sidebar (exclude archived messages)
     conversations = Message.objects.filter(
-        Q(sender=request.user) | Q(recipient=request.user)
+        Q(sender=request.user, deleted_by_sender=False) | 
+        Q(recipient=request.user, deleted_by_recipient=False)
     ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
 
     # Group conversations by (item, other_user)
@@ -317,10 +318,14 @@ def inbox(request):
     if item_id and recipient_id:
         item = get_object_or_404(Item, id=item_id)
         recipient = get_object_or_404(User, id=recipient_id)
+        # Filter out archived messages for the active conversation
         active_messages = Message.objects.filter(
             item=item,
             sender__in=[request.user, recipient],
             recipient__in=[request.user, recipient]
+        ).filter(
+            Q(sender=request.user, deleted_by_sender=False) | 
+            Q(recipient=request.user, deleted_by_recipient=False)
         ).order_by('timestamp')
         # For sidebar highlighting
         for msg in convo_list:
@@ -335,6 +340,9 @@ def inbox(request):
             item=active_conversation.item,
             sender__in=[request.user, active_conversation.sender, active_conversation.recipient],
             recipient__in=[request.user, active_conversation.sender, active_conversation.recipient]
+        ).filter(
+            Q(sender=request.user, deleted_by_sender=False) | 
+            Q(recipient=request.user, deleted_by_recipient=False)
         ).order_by('timestamp')
 
     # Mark all unread messages as read
@@ -831,5 +839,53 @@ def export_recovered_items_pdf(request):
     response.write(pdf)
     
     return response
+
+
+@login_required
+@require_POST
+def clear_conversation(request):
+    """Archive conversation - soft delete for current user while preserving for reference"""
+    import json
+    from django.http import JsonResponse
+    
+    try:
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        recipient_id = data.get('recipient_id')
+        
+        if not item_id or not recipient_id:
+            return JsonResponse({'success': False, 'error': 'Missing item_id or recipient_id'}, status=400)
+        
+        item = get_object_or_404(Item, id=item_id)
+        recipient = get_object_or_404(User, id=recipient_id)
+        
+        # Soft delete: Mark messages as deleted for current user only
+        # Messages sent by current user
+        sender_messages = Message.objects.filter(
+            item=item,
+            sender=request.user,
+            recipient=recipient
+        )
+        sender_count = sender_messages.update(deleted_by_sender=True)
+        
+        # Messages received by current user
+        recipient_messages = Message.objects.filter(
+            item=item,
+            sender=recipient,
+            recipient=request.user
+        )
+        recipient_count = recipient_messages.update(deleted_by_recipient=True)
+        
+        total_archived = sender_count + recipient_count
+        
+        return JsonResponse({
+            'success': True, 
+            'message': f'Conversation archived ({total_archived} messages hidden)',
+            'archived_count': total_archived
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 
