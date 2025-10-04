@@ -2,114 +2,159 @@
 {% load static %}
 {% block title %}Inbox{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/inbox.css' %}">
+
 {% if active_conversation %}
-<div class="d-flex justify-content-center" style="min-height:90vh;margin-top: 40px;">
-  <div class="messaging-app d-flex shadow-lg" style="height:80vh; max-width:1200px; width:100%; border-radius: 10px; overflow: hidden;">
+<div class="messaging-container">
+  <div class="container">
+    <div class="messaging-app d-flex">
 
-    <!-- Sidebar: Conversation List -->
-    <aside class="sidebar bg-white border-end shadow-sm" style="width:320px;overflow-y:auto;">
-      <div class="sidebar-header fw-bold p-3 border-bottom">My messages</div>
-      <ul class="list-unstyled m-0">
-        {% for convo in conversations %}
-        <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
-          <li class="conversation p-3 d-flex align-items-center conversation-hover {% if convo.id == active_conversation.id %}bg-success-subtle active-convo{% endif %}" style="cursor:pointer; border-radius: 12px; margin-bottom: 6px;">
-            <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/40' }}" class="rounded-circle me-3 border border-2 border-success" width="44" height="44" alt="">
-            <div class="flex-grow-1">
-              <div class="fw-bold">{{ convo.name }}</div>
-              <div class="small text-muted">{{ convo.last_message|truncatewords:6 }}</div>
-            </div>
-            <div class="text-end small text-muted ms-2">{{ convo.last_date|date:'M d' }}</div>
-          </li>
-        </a>
-        {% endfor %}
-      </ul>
-    </aside>
-
-    <!-- Chat Area -->
-    <main class="chat-area flex-grow-1 d-flex flex-column shadow-sm" style="background: #fff;">
-      <header class="chat-header d-flex align-items-center justify-content-between p-4 border-bottom bg-white shadow-sm" style="border-radius: 0 18px 0 0;">
-        <div class="d-flex align-items-center">
-          <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/48' }}" class="rounded me-3 border border-2 border-success" width="54" height="54" alt="">
-          <div>
-            <div class="fw-bold">{{ active_conversation.item_title }}</div>
-            <div class="text-success fw-bold">{{ active_conversation.item_price }}</div>
-          </div>
+      <!-- Sidebar: Conversation List -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <i class="bi bi-chat-dots-fill me-2"></i>
+          Messages
         </div>
-      </header>
-
-      <section class="chat-history flex-grow-1 p-4" style="overflow-y:auto; background: linear-gradient(120deg, #f9f9f9 60%, #e6f4ea 100%);" id="chatHistory">
-        <div class="text-center text-secondary small mb-3">{{ active_conversation.date|date:'F d, Y' }}</div>
-        {% for msg in active_conversation.messages %}
-        <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
-          <div class="chat-bubble p-3 shadow-sm {% if msg.sender == user %}sent{% else %}received{% endif %}" style="max-width:60%;">
-            {% if msg.image %}
-            <div class="mb-1">
-              <img src="{{ msg.image.url }}" class="img-fluid rounded shadow-sm mb-2" style="max-width:220px; max-height:220px; cursor:pointer;" alt="Chat Image">
+        <div class="p-2">
+          {% for convo in conversations %}
+          <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
+            <div class="conversation d-flex align-items-center {% if convo.id == active_conversation.id %}active-convo{% endif %}">
+              <img src="{{ convo.avatar_url|default:'https://via.placeholder.com/50' }}" 
+                   class="rounded-circle me-3 conversation-avatar" 
+                   width="50" height="50" alt="Avatar">
+              <div class="flex-grow-1">
+                <div class="fw-bold mb-1" style="color: var(--text-primary);">{{ convo.name }}</div>
+                <div class="small" style="color: var(--text-secondary);">
+                  {{ convo.last_message|truncatewords:5 }}
+                </div>
+              </div>
+              <div class="text-end small ms-2" style="color: var(--primary, #D97706);">
+                {{ convo.last_date|date:'M d' }}
+              </div>
             </div>
-            {% endif %}
-            {% if msg.content %}
-            <div class="mb-1">{{ msg.content }}</div>
-            {% endif %}
-            <div class="small text-muted text-end">{{ msg.timestamp|time:'H:i' }}</div>
-          </div>
+          </a>
+          {% endfor %}
         </div>
-        {% endfor %}
-      </section>
+      </aside>
 
-      <footer class="chat-footer p-3 border-top bg-white position-relative" style="border-radius: 0 0 18px 0;">
-        <form method="post" enctype="multipart/form-data" class="d-flex align-items-center mt-2 gap-2" id="chatForm">
-          {% csrf_token %}
-          <label for="chatImageUpload" class="btn btn-outline-secondary mb-0" style="border-radius:50%;">
-            <i class="bi bi-file-image" style="font-size:1.3rem;"></i>
-          </label>
-          <input type="file" id="chatImageUpload" name="chat_image" accept="image/*" style="display:none;">
-          <input type="hidden" name="item_id" value="{{ item_id }}">
-          <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
-          <input type="text" name="message" class="form-control shadow-sm" placeholder="Write your message here">
-
-          <!-- Image preview with remove button -->
-          <div id="chatImagePreviewWrapper" class="ms-2" style="max-width:120px; display:none; position: relative;">
-            <img id="chatImagePreview" src="" alt="Preview" style="max-width:100px; border-radius:8px; display:block; cursor:pointer;">
-            <button type="button" id="removeImageBtn" style="
-                position: absolute;
-                top: -8px;
-                right: -8px;
-                background: #dc3545;
-                border: none;
-                color: white;
-                border-radius: 50%;
-                width: 20px;
-                height: 20px;
-                font-size: 12px;
-                display: none;
-                cursor: pointer;
-              ">×</button>
+      <!-- Chat Area -->
+      <main class="chat-area flex-grow-1 d-flex flex-column">
+        <!-- Chat Header -->
+        <header class="chat-header d-flex align-items-center justify-content-between">
+          <div class="d-flex align-items-center">
+            <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/60' }}" 
+                 class="rounded me-3 chat-header-avatar" 
+                 width="60" height="60" alt="Item">
+            <div>
+              <div class="fw-bold text-white fs-5">{{ active_conversation.item_title }}</div>
+              <div class="text-white opacity-75">
+                <i class="bi bi-person-circle me-1"></i>
+                {{ active_conversation.name }}
+              </div>
+            </div>
           </div>
+          <div class="text-white">
+            <i class="bi bi-three-dots-vertical fs-4" style="cursor: pointer;"></i>
+          </div>
+        </header>
 
-          <button type="submit" class="btn btn-success shadow-sm px-4">Send</button>
-        </form>
-      </footer>
-    </main>
+        <!-- Chat History -->
+        <section class="chat-history flex-grow-1" id="chatHistory">
+          <div class="date-divider">
+            <span>{{ active_conversation.date|date:'F d, Y' }}</span>
+          </div>
+          
+          {% for msg in active_conversation.messages %}
+          <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
+            <div class="chat-bubble {% if msg.sender == user %}sent{% else %}received{% endif %}">
+              {% if msg.image %}
+              <div class="mb-2">
+                <img src="{{ msg.image.url }}" 
+                     class="img-fluid" 
+                     alt="Chat Image"
+                     onclick="openLightbox('{{ msg.image.url }}')">
+              </div>
+              {% endif %}
+              {% if msg.content %}
+              <div class="mb-1">{{ msg.content }}</div>
+              {% endif %}
+              <div class="small opacity-75 text-end mt-1">
+                {{ msg.timestamp|time:'H:i' }}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </section>
 
+        <!-- Chat Footer -->
+        <footer class="chat-footer">
+          <form method="post" enctype="multipart/form-data" id="chatForm">
+            {% csrf_token %}
+            <input type="hidden" name="item_id" value="{{ item_id }}">
+            <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
+            
+            <!-- Image Preview -->
+            <div id="imagePreviewContainer" style="display: none;" class="mb-3">
+              <div class="image-preview-wrapper">
+                <img id="chatImagePreview" src="" alt="Preview" class="image-preview">
+                <button type="button" id="removeImageBtn" class="remove-image-btn">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Input Row -->
+            <div class="d-flex align-items-center gap-2">
+              <label for="chatImageUpload" class="btn-attach mb-0">
+                <i class="bi bi-paperclip fs-5"></i>
+              </label>
+              <input type="file" 
+                     id="chatImageUpload" 
+                     name="chat_image" 
+                     accept="image/*" 
+                     style="display:none;">
+              
+              <input type="text" 
+                     name="message" 
+                     class="form-control message-input flex-grow-1" 
+                     placeholder="Type your message..."
+                     autocomplete="off">
+
+              <button type="submit" class="btn btn-send">
+                <i class="bi bi-send-fill me-2"></i>
+                Send
+              </button>
+            </div>
+          </form>
+        </footer>
+      </main>
+
+    </div>
   </div>
 </div>
 
 {% else %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<div class="d-flex justify-content-center align-items-center" style="min-height:60vh; background: #f8fafc;">
-  <div class="card shadow-lg border-0 text-center p-4" style="max-width: 450px; border-radius: 20px;">
-    <div class="mb-3">
-      <i class="fa-solid fa-comments text-primary" style="font-size: 60px;"></i>
+<!-- Empty State -->
+<div class="messaging-container">
+  <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="empty-state text-center">
+      <i class="bi bi-chat-left-dots-fill" style="font-size: 80px;"></i>
+      <h3 class="fw-bold mt-4 mb-3" style="color: var(--text, #e5e5e5);">No Active Conversation</h3>
+      <p class="mb-4" style="color: rgba(229, 229, 229, 0.7);">
+        Start a conversation by contacting the owner or finder of an item.
+      </p>
+      <a href="{% url 'item_list' %}" class="btn btn-send">
+        <i class="bi bi-search me-2"></i>
+        Browse Items
+      </a>
     </div>
-    <h4 class="fw-bold text-primary">No Active Conversation</h4>
-    <p class="text-muted mb-3">Looks like you don’t have any active message conversations right now.</p>
   </div>
 </div>
 {% endif %}
 
-<!-- Lightbox overlay -->
-<div id="imageLightbox">
-  <img id="lightboxImg" src="" alt="">
+<!-- Lightbox -->
+<div id="imageLightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Full Image">
 </div>
 
 <script>
@@ -118,95 +163,159 @@ document.addEventListener("DOMContentLoaded", function() {
   let chatHistory = document.getElementById("chatHistory");
   if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
 
-  // Elements
+  // WebSocket Setup for Real-Time Messaging
+  {% if active_conversation %}
+  const conversationId = '{{ active_conversation.id }}';
+  const currentUserId = {{ user.id }};
+  const recipientId = {{ recipient_id|default:"null" }};
+  const itemId = {{ item_id|default:"null" }};
+  
+  console.log('WebSocket Debug Info:', {
+    conversationId: conversationId,
+    currentUserId: currentUserId,
+    recipientId: recipientId,
+    itemId: itemId
+  });
+  
+  // WebSocket connection
+  const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
+  console.log('Connecting to WebSocket:', wsUrl);
+  const chatSocket = new WebSocket(wsUrl);
+
+  chatSocket.onopen = function(e) {
+    console.log('✅ WebSocket connection established');
+  };
+
+  chatSocket.onmessage = function(e) {
+    console.log('📨 Received message:', e.data);
+    const data = JSON.parse(e.data);
+    
+    // Only add message if it's not from current user (to avoid duplicates)
+    if (data.sender_id != currentUserId) {
+      console.log('Adding message from other user');
+      appendMessage(data);
+    } else {
+      console.log('Skipping own message (already displayed)');
+    }
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('❌ WebSocket closed unexpectedly', e);
+  };
+
+  chatSocket.onerror = function(e) {
+    console.error('❌ WebSocket error:', e);
+  };
+
+  // Function to append message to chat
+  function appendMessage(data) {
+    const chatHistory = document.getElementById('chatHistory');
+    const isCurrentUser = data.sender_id == currentUserId;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `d-flex mb-3 ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
+    
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = `chat-bubble ${isCurrentUser ? 'sent' : 'received'}`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'mb-1';
+    contentDiv.textContent = data.message;
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'small opacity-75 text-end mt-1';
+    const now = new Date();
+    timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    
+    bubbleDiv.appendChild(contentDiv);
+    bubbleDiv.appendChild(timeDiv);
+    messageDiv.appendChild(bubbleDiv);
+    chatHistory.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  }
+
+  // Handle form submission
+  const chatForm = document.getElementById('chatForm');
+  const messageInput = chatForm.querySelector('input[name="message"]');
+  
+  chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const message = messageInput.value.trim();
+    if (!message) return;
+    
+    console.log('📤 Sending message via WebSocket:', message);
+    
+    // Send message via WebSocket
+    const messageData = {
+      'message': message,
+      'sender_id': currentUserId,
+      'recipient_id': recipientId,
+      'item_id': itemId,
+      'image': null
+    };
+    
+    console.log('Message data:', messageData);
+    chatSocket.send(JSON.stringify(messageData));
+    
+    // Add message to chat immediately for current user
+    appendMessage({
+      'message': message,
+      'sender_id': currentUserId,
+      'timestamp': new Date().toISOString()
+    });
+    
+    // Clear input
+    messageInput.value = '';
+  });
+  {% endif %}
+
+  // Image upload preview
   const fileInput = document.getElementById("chatImageUpload");
-  const previewWrapper = document.getElementById("chatImagePreviewWrapper");
+  const previewContainer = document.getElementById("imagePreviewContainer");
   const previewImg = document.getElementById("chatImagePreview");
   const removeBtn = document.getElementById("removeImageBtn");
-  const lightbox = document.getElementById("imageLightbox");
-  const lightboxImg = document.getElementById("lightboxImg");
 
-  // Image preview
-  fileInput.addEventListener("change", function() {
-    if (this.files && this.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        previewWrapper.style.display = "block";
-        removeBtn.style.display = "block";
-      };
-      reader.readAsDataURL(this.files[0]);
-    }
-  });
-
-  // Remove image
-  removeBtn.addEventListener("click", function() {
-    fileInput.value = ""; 
-    previewImg.src = "";
-    previewWrapper.style.display = "none";
-    removeBtn.style.display = "none";
-  });
-
-  // Click preview to enlarge
-  previewImg.addEventListener("click", function() {
-    lightboxImg.src = this.src;
-    lightbox.style.display = "flex";
-  });
-
-  // Click chat images to enlarge
-  document.querySelectorAll('.chat-bubble img').forEach(img => {
-    img.addEventListener("click", function() {
-      lightboxImg.src = this.src;
-      lightbox.style.display = "flex";
+  if (fileInput) {
+    fileInput.addEventListener("change", function() {
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          previewContainer.style.display = "block";
+        };
+        reader.readAsDataURL(this.files[0]);
+      }
     });
-  });
+  }
 
-  // Close lightbox
-  lightbox.addEventListener("click", function() {
-    lightbox.style.display = "none";
-    lightboxImg.src = "";
-    lightboxImg.style.transform = "translate(0,0) scale(1)";
-  });
-
-  // Mobile drag & pinch zoom
-  let isDragging = false, startX = 0, startY = 0, currentX = 0, currentY = 0;
-  let scale = 1, initialDistance = 0;
-
-  lightboxImg.addEventListener("touchstart", function(e) {
-    if (e.touches.length === 1) {
-      isDragging = true;
-      startX = e.touches[0].clientX - currentX;
-      startY = e.touches[0].clientY - currentY;
-    } else if (e.touches.length === 2) {
-      isDragging = false;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      initialDistance = Math.hypot(dx, dy);
-    }
-  });
-
-  lightboxImg.addEventListener("touchmove", function(e) {
-    e.preventDefault();
-    if (e.touches.length === 1 && isDragging) {
-      currentX = e.touches[0].clientX - startX;
-      currentY = e.touches[0].clientY - startY;
-      lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
-    } else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const distance = Math.hypot(dx, dy);
-      scale = distance / initialDistance;
-      lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
-    }
-  }, { passive: false });
-
-  lightboxImg.addEventListener("touchend", function(e) {
-    if (e.touches.length === 0) isDragging = false;
-    if (scale < 1) scale = 1;
-    lightboxImg.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
-  });
+  if (removeBtn) {
+    removeBtn.addEventListener("click", function() {
+      fileInput.value = "";
+      previewImg.src = "";
+      previewContainer.style.display = "none";
+    });
+  }
 
 });
+
+// Lightbox functions
+function openLightbox(src) {
+  const lightbox = document.getElementById('imageLightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  lightboxImg.src = src;
+  lightbox.style.display = 'flex';
+}
+
+function closeLightbox() {
+  const lightbox = document.getElementById('imageLightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  lightbox.style.display = 'none';
+  lightboxImg.src = '';
+}
 </script>
 
 {% endblock %}

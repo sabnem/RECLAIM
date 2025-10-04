@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: var(--surface);">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <i class="bi bi-star-fill display-1 text-warning mb-3"></i>
+            <h2 class="fw-bold mb-3">Rate Your Experience</h2>
+            <p class="text-muted">
+              <strong>{{ recovered_item.finder.username }}</strong> returned your item: 
+              <strong>{{ item.title }}</strong>
+            </p>
+          </div>
+
+          {% if item.photo %}
+            <div class="text-center mb-4">
+              <div class="item-image-container" style="width:100%; max-width:300px; height:200px; margin:auto; background: #ffffff;">
+                <img src="{{ item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="{{ item.title }}">
+              </div>
+            </div>
+          {% endif %}
+
+          <form method="post" class="mt-4">
+            {% csrf_token %}
+            
+            <!-- Star Rating -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">How would you rate this experience?</label>
+              <div class="rating-stars text-center py-3" id="ratingStars">
+                {% for i in "12345" %}
+                  <i class="bi bi-star star-rating" data-rating="{{ forloop.counter }}" style="font-size: 2.5rem; cursor: pointer; color: #ddd; margin: 0 5px;"></i>
+                {% endfor %}
+              </div>
+              <input type="hidden" name="rating" id="ratingInput" required>
+              <div class="text-center">
+                <small class="text-muted" id="ratingText">Click to rate</small>
+              </div>
+            </div>
+
+            <!-- Feedback -->
+            <div class="mb-4">
+              <label for="feedback" class="form-label fw-bold">
+                Share your experience (optional)
+              </label>
+              <textarea 
+                name="feedback" 
+                id="feedback" 
+                class="form-control" 
+                rows="4" 
+                placeholder="Tell us about your experience with {{ recovered_item.finder.username }}..."
+              ></textarea>
+              <small class="text-muted">
+                Your feedback helps build trust in our community
+              </small>
+            </div>
+
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                <i class="bi bi-send-fill me-2"></i>Submit Rating
+              </button>
+              <a href="{% url 'my_recovered_items' %}" class="btn btn-outline-secondary rounded-pill">
+                Skip for now
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const stars = document.querySelectorAll('.star-rating');
+  const ratingInput = document.getElementById('ratingInput');
+  const ratingText = document.getElementById('ratingText');
+  
+  const ratingLabels = {
+    1: '⭐ Poor',
+    2: '⭐⭐ Fair',
+    3: '⭐⭐⭐ Good',
+    4: '⭐⭐⭐⭐ Very Good',
+    5: '⭐⭐⭐⭐⭐ Excellent!'
+  };
+  
+  stars.forEach(star => {
+    star.addEventListener('click', function() {
+      const rating = parseInt(this.getAttribute('data-rating'));
+      ratingInput.value = rating;
+      ratingText.textContent = ratingLabels[rating];
+      
+      // Update star colors
+      stars.forEach((s, index) => {
+        if (index < rating) {
+          s.classList.remove('bi-star');
+          s.classList.add('bi-star-fill');
+          s.style.color = '#ffc107';
+        } else {
+          s.classList.remove('bi-star-fill');
+          s.classList.add('bi-star');
+          s.style.color = '#ddd';
+        }
+      });
+    });
+    
+    // Hover effect
+    star.addEventListener('mouseenter', function() {
+      const rating = parseInt(this.getAttribute('data-rating'));
+      stars.forEach((s, index) => {
+        if (index < rating) {
+          s.style.color = '#ffc107';
+        }
+      });
+    });
+    
+    star.addEventListener('mouseleave', function() {
+      const currentRating = parseInt(ratingInput.value) || 0;
+      stars.forEach((s, index) => {
+        if (index < currentRating) {
+          s.style.color = '#ffc107';
+        } else {
+          s.style.color = '#ddd';
+        }
+      });
+    });
+  });
+});
+</script>
+{% endblock %}

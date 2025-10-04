@@ -1,8 +1,11 @@
-asgiref==3.8.1
+asgiref==3.9.2
 certifi==2025.6.15
+channels==4.3.1
+channels-redis==4.3.0
 charset-normalizer==3.4.2
 crispy-bootstrap4==2024.1
 crispy-bootstrap5==2025.6
+daphne==4.2.1
 Django==5.1.4
 django-crispy-forms==2.3
 django-widget-tweaks==1.5.0
@@ -12,6 +15,8 @@ psycopg==3.2.9
 psycopg-binary==3.2.9
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
+redis==6.4.0
+reportlab==4.0.4
 requests==2.32.4
 sqlparse==0.5.3
 stripe==12.2.0

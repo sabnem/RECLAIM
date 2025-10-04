@@ -25,4 +25,9 @@ urlpatterns = [
     path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
     path('profile/remove-picture/', views.remove_profile_picture, name='remove_profile_picture'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
+    path('my-recovered-items/', views.my_recovered_items, name='my_recovered_items'),
+    path('my-returned-items/', views.my_returned_items, name='my_returned_items'),
+    path('items/<int:item_id>/rate/', views.rate_finder, name='rate_finder'),
+    path('statistics/returns/', views.returns_statistics, name='returns_statistics'),
+    path('export/recovered-items/pdf/', views.export_recovered_items_pdf, name='export_recovered_items_pdf'),
 ]

@@ -1,27 +1,67 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 
-# Mark item as returned (owner or superuser only)
+# Mark item as returned (reporter, owner, or superuser only)
 @login_required
 def mark_item_returned(request, item_id):
     item = get_object_or_404(Item, id=item_id)
-    if request.user == item.reported_by or request.user.is_superuser:
+    
+    # Check if user has permission: reporter, owner, or superuser
+    is_reporter = (request.user == item.reported_by)
+    is_owner = (item.owner == request.user) if item.owner else False
+    is_superuser = request.user.is_superuser
+    
+    if is_reporter or is_owner or is_superuser:
         owner_username = request.POST.get('owner_username')
-        if owner_username and not item.is_returned:
+        
+        # Only reporter can set the owner initially
+        if owner_username and not item.is_returned and is_reporter:
             try:
                 owner_user = User.objects.get(username=owner_username)
                 item.owner = owner_user
+                item.is_returned = True
+                item.save()
+                messages.success(request, f'Item marked as returned. Waiting for {owner_user.username} to confirm.')
+                return redirect('item_detail', item_id=item.id)
             except User.DoesNotExist:
                 messages.error(request, f"User '{owner_username}' does not exist.")
                 return redirect('item_detail', item_id=item.id)
-        item.is_returned = not item.is_returned
-        item.save()
-        if item.is_returned:
-            messages.success(request, 'Item marked as returned.')
+        
+        # If owner is confirming, create recovered record
+        if is_owner and not is_reporter and not is_superuser:
+            # Check if already recovered
+            from .models import RecoveredItem
+            if RecoveredItem.objects.filter(item=item, owner=request.user).exists():
+                messages.info(request, 'You have already confirmed this return.')
+                return redirect('my_recovered_items')
+            
+            # Create RecoveredItem record
+            RecoveredItem.objects.create(
+                item=item,
+                owner=item.owner,
+                finder=item.reported_by,
+                original_report_date=item.date_reported,
+                location=item.location
+            )
+            
+            # Ensure item is marked as returned
+            item.is_returned = True
+            item.save()
+            
+            messages.success(request, 'Return confirmed! The item has been moved to your recovered items. Please rate the finder.')
+            return redirect('rate_finder', item_id=item.id)
         else:
-            messages.success(request, 'Item marked as not returned.')
+            # Reporter or superuser can toggle the status
+            item.is_returned = not item.is_returned
+            item.save()
+            
+            if item.is_returned:
+                messages.success(request, 'Item marked as returned.')
+            else:
+                messages.success(request, 'Item marked as not returned.')
     else:
         messages.error(request, 'You do not have permission to perform this action.')
+    
     return redirect('item_detail', item_id=item.id)
 # Context processor to provide unread inbox count to all templates
 def unread_inbox_count(request):
@@ -167,10 +207,15 @@ def report_item(request):
     return render(request, 'FindIt/report_item.html', {'form': form})
 
 def item_list(request):
+    from .models import RecoveredItem
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
     status = request.GET.get('status', '')
-    items = Item.objects.all().order_by('-date_reported')
+    
+    # Exclude items that have been recovered (confirmed returns)
+    recovered_item_ids = RecoveredItem.objects.values_list('item_id', flat=True)
+    items = Item.objects.exclude(id__in=recovered_item_ids).order_by('-date_reported')
+    
     if query:
         items = items.filter(Q(title__icontains=query) | Q(description__icontains=query) | Q(location__icontains=query))
     if category_id:
@@ -187,14 +232,20 @@ def item_list(request):
     })
 
 def item_detail(request, item_id):
+    from .models import RecoveredItem
     item = get_object_or_404(Item, id=item_id)
     confirmation = getattr(item, 'return_confirmation', None)
     if not confirmation:
         from .models import ReturnConfirmation
         confirmation = ReturnConfirmation.objects.create(item=item)
+    
+    # Check if item has been recovered
+    has_recovered = RecoveredItem.objects.filter(item=item).exists()
+    
     return render(request, 'FindIt/item_detail.html', {
         'item': item,
         'confirmation': confirmation,
+        'has_recovered': has_recovered,
     })
 
 def contact_item_owner(request, item_id):
@@ -228,7 +279,7 @@ def inbox(request):
     item_id = request.GET.get('item_id')
     recipient_id = request.GET.get('recipient_id')
 
-    # Handle sending a message
+    # Handle sending a message (fallback for image uploads or non-WebSocket)
     if request.method == 'POST':
         item_id = request.POST.get('item_id') or item_id
         recipient_id = request.POST.get('recipient_id') or recipient_id
@@ -512,3 +563,273 @@ def terms_and_conditions(request):
 
 def privacy_policy(request):
     return render(request, 'FindIt/privacy_policy.html')
+
+
+# My Recovered Items - items that owner got back
+@login_required
+def my_recovered_items(request):
+    from .models import RecoveredItem
+    recovered_items = RecoveredItem.objects.filter(owner=request.user).select_related('item', 'finder')
+    return render(request, 'FindIt/my_recovered_items.html', {
+        'recovered_items': recovered_items
+    })
+
+
+# My Returned Items - items that finder returned to owners
+@login_required
+def my_returned_items(request):
+    from .models import RecoveredItem
+    returned_items = RecoveredItem.objects.filter(finder=request.user).select_related('item', 'owner')
+    return render(request, 'FindIt/my_returned_items.html', {
+        'returned_items': returned_items
+    })
+
+
+# Rate the finder who returned the item
+@login_required
+def rate_finder(request, item_id):
+    from .models import RecoveredItem
+    item = get_object_or_404(Item, id=item_id)
+    
+    try:
+        recovered_item = RecoveredItem.objects.get(item=item, owner=request.user)
+    except RecoveredItem.DoesNotExist:
+        messages.error(request, 'This item has not been recovered yet.')
+        return redirect('item_detail', item_id=item.id)
+    
+    # Check if already rated
+    if recovered_item.rating:
+        messages.info(request, 'You have already rated this return.')
+        return redirect('my_recovered_items')
+    
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        feedback = request.POST.get('feedback', '').strip()
+        
+        if rating:
+            recovered_item.rating = int(rating)
+            recovered_item.feedback = feedback
+            recovered_item.rated_at = timezone.now()
+            recovered_item.save()
+            
+            # Update finder's reputation score
+            if hasattr(recovered_item.finder, 'userprofile'):
+                recovered_item.finder.userprofile.update_reputation()
+            
+            # Send email notification to finder
+            if recovered_item.finder.email and hasattr(recovered_item.finder, 'userprofile') and recovered_item.finder.userprofile.notify_email:
+                try:
+                    send_mail(
+                        subject=f'You received a {rating}-star rating from {request.user.username}!',
+                        message=f'''Hi {recovered_item.finder.username},
+
+Great news! {request.user.username} has rated your return of "{item.title}".
+
+Rating: {'⭐' * int(rating)} ({rating}/5 stars)
+{f'Feedback: "{feedback}"' if feedback else ''}
+
+Your current reputation score: {recovered_item.finder.userprofile.reputation_score}/5.0
+Total returns: {recovered_item.finder.userprofile.total_returns}
+
+Keep up the great work helping others!
+
+View your returned items: {settings.SITE_URL}/my-returned-items/
+
+Best regards,
+FindIt Team
+''',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[recovered_item.finder.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    # Log error but don't stop the process
+                    print(f"Email notification failed: {e}")
+            
+            messages.success(request, f'Thank you for rating {recovered_item.finder.username}!')
+            return redirect('my_recovered_items')
+        else:
+            messages.error(request, 'Please select a rating.')
+    
+    return render(request, 'FindIt/rate_finder.html', {
+        'item': item,
+        'recovered_item': recovered_item
+    })
+
+
+# Statistics Dashboard for Returns
+@login_required
+def returns_statistics(request):
+    from .models import RecoveredItem
+    from django.db.models import Avg, Count, Q
+    from datetime import timedelta
+    
+    # Overall statistics
+    total_recovered = RecoveredItem.objects.count()
+    total_rated = RecoveredItem.objects.filter(rating__isnull=False).count()
+    avg_rating = RecoveredItem.objects.filter(rating__isnull=False).aggregate(Avg('rating'))['rating__avg'] or 0
+    
+    # User-specific statistics
+    user_recovered = RecoveredItem.objects.filter(owner=request.user).count()
+    user_returned = RecoveredItem.objects.filter(finder=request.user).count()
+    user_avg_rating = RecoveredItem.objects.filter(finder=request.user, rating__isnull=False).aggregate(Avg('rating'))['rating__avg'] or 0
+    
+    # Recent activity (last 30 days)
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_recovered = RecoveredItem.objects.filter(recovered_date__gte=thirty_days_ago).count()
+    
+    # Top finders (users with highest reputation)
+    from django.contrib.auth.models import User
+    top_finders = UserProfile.objects.filter(
+        total_returns__gt=0
+    ).select_related('user').order_by('-reputation_score', '-total_returns')[:10]
+    
+    # Rating distribution
+    rating_distribution = {
+        '5': RecoveredItem.objects.filter(rating=5).count(),
+        '4': RecoveredItem.objects.filter(rating=4).count(),
+        '3': RecoveredItem.objects.filter(rating=3).count(),
+        '2': RecoveredItem.objects.filter(rating=2).count(),
+        '1': RecoveredItem.objects.filter(rating=1).count(),
+    }
+    
+    # Recent recoveries
+    recent_recoveries = RecoveredItem.objects.select_related(
+        'item', 'owner', 'finder'
+    ).order_by('-recovered_date')[:10]
+    
+    # Monthly statistics (last 6 months)
+    from django.db.models.functions import TruncMonth
+    monthly_stats = RecoveredItem.objects.filter(
+        recovered_date__gte=timezone.now() - timedelta(days=180)
+    ).annotate(
+        month=TruncMonth('recovered_date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    context = {
+        'total_recovered': total_recovered,
+        'total_rated': total_rated,
+        'avg_rating': round(avg_rating, 2),
+        'user_recovered': user_recovered,
+        'user_returned': user_returned,
+        'user_avg_rating': round(user_avg_rating, 2),
+        'recent_recovered': recent_recovered,
+        'top_finders': top_finders,
+        'rating_distribution': rating_distribution,
+        'recent_recoveries': recent_recoveries,
+        'monthly_stats': monthly_stats,
+    }
+    
+    return render(request, 'FindIt/returns_statistics.html', context)
+
+
+# Export Recovered Items to PDF
+@login_required
+def export_recovered_items_pdf(request):
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import letter, A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import inch
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    from io import BytesIO
+    from .models import RecoveredItem
+    
+    # Create PDF buffer
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Title
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=24,
+        textColor=colors.HexColor('#D97706'),
+        spaceAfter=30,
+        alignment=TA_CENTER
+    )
+    elements.append(Paragraph("My Recovered Items Report", title_style))
+    elements.append(Spacer(1, 12))
+    
+    # User info
+    info_style = ParagraphStyle(
+        'Info',
+        parent=styles['Normal'],
+        fontSize=12,
+        spaceAfter=12
+    )
+    elements.append(Paragraph(f"<b>User:</b> {request.user.username}", info_style))
+    elements.append(Paragraph(f"<b>Generated:</b> {timezone.now().strftime('%B %d, %Y at %I:%M %p')}", info_style))
+    
+    # Get user's recovered items
+    recovered_items = RecoveredItem.objects.filter(
+        owner=request.user
+    ).select_related('item', 'finder').order_by('-recovered_date')
+    
+    elements.append(Paragraph(f"<b>Total Recovered Items:</b> {recovered_items.count()}", info_style))
+    elements.append(Spacer(1, 20))
+    
+    if recovered_items.exists():
+        # Create table data
+        data = [['Item', 'Finder', 'Date', 'Rating', 'Feedback']]
+        
+        for recovered in recovered_items:
+            rating_stars = '⭐' * (recovered.rating or 0) if recovered.rating else 'Not rated'
+            feedback_text = (recovered.feedback[:50] + '...') if recovered.feedback and len(recovered.feedback) > 50 else (recovered.feedback or 'N/A')
+            
+            data.append([
+                recovered.item.title[:30],
+                recovered.finder.username,
+                recovered.recovered_date.strftime('%Y-%m-%d'),
+                rating_stars,
+                feedback_text
+            ])
+        
+        # Create table
+        table = Table(data, colWidths=[2*inch, 1.2*inch, 1*inch, 1*inch, 2*inch])
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D97706')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        elements.append(table)
+        elements.append(Spacer(1, 20))
+        
+        # Summary statistics
+        rated_items = recovered_items.filter(rating__isnull=False)
+        if rated_items.exists():
+            avg_rating = sum(r.rating for r in rated_items) / rated_items.count()
+            elements.append(Paragraph(f"<b>Average Rating Given:</b> {avg_rating:.2f}/5.0 ⭐", info_style))
+        
+    else:
+        elements.append(Paragraph("No recovered items found.", info_style))
+    
+    # Build PDF
+    doc.build(elements)
+    
+    # Get PDF data
+    pdf = buffer.getvalue()
+    buffer.close()
+    
+    # Create HTTP response
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="recovered_items_{request.user.username}_{timezone.now().strftime("%Y%m%d")}.pdf"'
+    response.write(pdf)
+    
+    return response
+
+

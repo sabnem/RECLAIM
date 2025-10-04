@@ -38,12 +38,14 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',  # Must be first for Channels to work
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',  # Add Channels
     'crispy_forms',
     'crispy_bootstrap5',
     'FindIt',
@@ -164,3 +166,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Email settings for contact form
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@lostandfound.com'
+
+# Site URL for email links
+
+# Django Channels Configuration
+ASGI_APPLICATION = 'lost_and_found.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # For development
+        # For production, use Redis:
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],
+        # },
+    },
+}
+SITE_URL = 'http://127.0.0.1:8000'

@@ -134,11 +134,17 @@
                 }
               });
             </script>
-          {% elif user.is_authenticated and item.owner and user == item.owner and item.is_returned and confirmation and not confirmation.owner_confirmed %}
-            <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-info text-white"><i class="bi bi-check-circle"></i> Confirm Return</button>
-            </form>
+          {% elif user.is_authenticated and item.owner and user == item.owner and item.is_returned %}
+            {% if not has_recovered %}
+              <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info text-white"><i class="bi bi-check-circle"></i> Confirm Return</button>
+              </form>
+            {% else %}
+              <a href="{% url 'my_recovered_items' %}" class="btn btn-success">
+                <i class="bi bi-check-circle-fill"></i> View in Recovered Items
+              </a>
+            {% endif %}
           {% elif user.is_authenticated and user.is_superuser %}
             <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
               {% csrf_token %}

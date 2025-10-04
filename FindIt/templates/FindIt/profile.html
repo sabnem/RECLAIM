@@ -1,163 +1,163 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<style>
-.profile-pic-hover {
-    position: relative;
-    display: inline-block;
-    width: 130px;
-    height: 130px;
-}
-.profile-pic-hover img {
-    width: 130px;
-    height: 130px;
-    object-fit: cover;
-    border-radius: 50%;
-    display: block;
-}
-.icon-overlay-center {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    z-index: 3;
-    pointer-events: none;
-}
-.icon-overlay-center > * {
-    pointer-events: auto;
-}
-.camera-overlay {
-    display: none;
-    pointer-events: auto;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    opacity: 0;
-}
-.profile-pic-hover:hover .camera-overlay,
-.profile-pic-hover.touch-active .camera-overlay {
-    display: flex !important;
-    opacity: 1 !important;
-}
-</style>
 
-<div class="container mt-5">
-    <div class="row justify-content-center mb-5" style="align-items: flex-start;">
-        <div class="col-md-4 d-flex justify-content-center mb-4 mb-md-0">
-            <div class="card shadow" style="border-radius: 20px; width: 340px; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff;">
-                <div class="card-body w-100 text-center d-flex flex-column justify-content-center align-items-center p-4">
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+<div class="container mt-5 mb-5">
+    <!-- Profile Header Card -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12">
+            <div class="profile-card text-center py-5">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <!-- Profile Picture -->
+                        <div class="col-md-4 mb-4 mb-md-0">
+                            <div class="profile-pic-hover mx-auto">
+                                {% if profile.profile_picture %}
+                                    <img src="{{ profile.profile_picture.url }}" alt="Profile Picture">
+                                {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D97706&color=fff&size=200" alt="Default Profile Picture">
+                                {% endif %}
 
-                    <!-- Profile Picture Section -->
-                    <div class="profile-pic-hover mb-3">
-                        {% if profile.profile_picture %}
-                            <img src="{{ profile.profile_picture.url }}" class="rounded-circle shadow-sm border border-3 border-light" alt="Profile Picture">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=128" class="rounded-circle shadow-sm border border-3 border-light" alt="Default Profile Picture">
-                        {% endif %}
+                                <!-- Overlay icons -->
+                                <div class="icon-overlay-center">
+                                    <!-- Upload -->
+                                    <span class="camera-overlay rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                          style="width:45px;height:45px;"
+                                          onclick="document.getElementById('profilePicInput').click();">
+                                        <i class="bi bi-camera-fill text-white" style="font-size:1.3rem;"></i>
+                                    </span>
 
-                        <!-- Overlay icons -->
-                        <div class="icon-overlay-center">
-                            <!-- Upload -->
-                            <span class="camera-overlay bg-dark bg-opacity-50 rounded-circle p-2 d-flex align-items-center justify-content-center"
-                                  style="width:40px;height:40px;"
-                                  onclick="document.getElementById('profilePicInput').click();">
-                                <i class="bi bi-camera-fill text-white" style="font-size:1.5rem;"></i>
-                            </span>
+                                    <!-- Remove -->
+                                    {% if user.userprofile.profile_picture %}
+                                    <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="btn btn-danger p-2 rounded-circle camera-overlay"
+                                                title="Remove Profile Picture"
+                                                style="width:45px;height:45px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#dc2626,#ef4444)!important;border:none;">
+                                            <i class="bi bi-trash text-white"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
 
-                            <!-- Remove -->
-                            {% if user.userprofile.profile_picture %}
-                            <form method="post" action="{% url 'remove_profile_picture' %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit"
-                                        class="btn btn-danger p-2 rounded-circle camera-overlay"
-                                        title="Remove Profile Picture"
-                                        style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                            {% endif %}
+                                <!-- Hidden upload form -->
+                                <form id="profilePicUploadForm" method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
+                                </form>
+                            </div>
                         </div>
 
-                        <!-- Hidden upload form -->
-                        <form id="profilePicUploadForm" method="post" action="{% url 'upload_profile_picture' %}" enctype="multipart/form-data">
-                            {% csrf_token %}
-                            <input type="file" id="profilePicInput" name="profile_picture" accept="image/*" style="display:none;" onchange="document.getElementById('profilePicUploadForm').submit();">
-                        </form>
-                    </div>
+                        <!-- User Info -->
+                        <div class="col-md-8 text-md-start">
+                            <div class="user-info-wrapper">
+                                <h2 class="user-name mb-3">
+                                    {{ user.first_name }} {{ user.last_name }}
+                                </h2>
+                                
+                                <div class="user-details mb-4">
+                                    <div class="detail-item">
+                                        <i class="bi bi-at"></i>
+                                        <span class="detail-text">{{ user.username }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="bi bi-envelope"></i>
+                                        <span class="detail-text">{{ user.email }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="bi bi-calendar-check"></i>
+                                        <span class="detail-text">Joined {{ user.date_joined|date:"F Y" }}</span>
+                                    </div>
+                                </div>
 
-                    <!-- User Info -->
-                    <h4 class="fw-bold text-primary mb-1" style="font-size: 1.6rem;">{{ user.first_name }} {{ user.last_name }}</h4>
-                    <p class="text-muted mb-1" style="font-size: 1.1rem;"><i class="bi bi-envelope"></i> {{ user.email }}</p>
-                    <p class="text-muted mb-3" style="font-size: 1rem;">Member since {{ user.date_joined|date:"F Y" }}</p>
-                    <a href="{% url 'logout' %}" class="btn btn-outline-danger w-75 mt-2" style="font-size: 1.1rem;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                                <div class="profile-actions">
+                                    <a href="{% url 'edit_profile' %}" class="btn btn-edit-profile">
+                                        <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                                    </a>
+                                    <a href="{% url 'logout' %}" class="btn btn-logout">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Profile Info Section -->
-        <div class="col-md-8 d-flex align-items-stretch">
-            <div class="card w-100 h-100 shadow" style="border-radius: 15px;">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h4 class="fw-bold mb-0"><i class="bi bi-person-circle text-primary"></i> Profile Information</h4>
-                        <a href="{% url 'edit_profile' %}" class="btn btn-primary px-4"><i class="bi bi-pencil-square"></i> Edit</a>
-                    </div>
-                    <div class="row mb-2">
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-person"></i> <strong>First Name</strong><br>{{ user.first_name }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-person"></i> <strong>Last Name</strong><br>{{ user.last_name }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-envelope"></i> <strong>Email Address</strong><br>{{ user.email }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-telephone"></i> <strong>Phone Number</strong><br>{{ profile.contact_number|default:"Not provided" }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-calendar"></i> <strong>Date Joined</strong><br>{{ user.date_joined|date:"M d, Y" }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-geo-alt"></i> <strong>Address</strong><br>{{ profile.address|default:"Not provided" }}
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-person-lines-fill"></i> <strong>Bio</strong><br>{{ profile.bio|default:"Not provided" }}
-                        </div>
-                        {% if profile.social_links %}
-                        <div class="col-md-6 mb-2">
-                            <i class="bi bi-link-45deg"></i> <strong>Social Link</strong><br>
-                            <a href="{{ profile.social_links }}" target="_blank" rel="noopener">{{ profile.social_links }}</a>
-                        </div>
+    <!-- Profile Information and Statistics -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8 mb-4">
+            <div class="profile-card p-4">
+                <h4 class="section-header">
+                    <i class="bi bi-info-circle me-2"></i>Profile Information
+                </h4>
+                
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-person me-2"></i>Full Name</span>
+                    <span class="info-value">{{ user.first_name }} {{ user.last_name }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-envelope me-2"></i>Email Address</span>
+                    <span class="info-value">{{ user.email }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-telephone me-2"></i>Phone Number</span>
+                    <span class="info-value">{{ profile.contact_number|default:"Not provided" }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-geo-alt me-2"></i>Address</span>
+                    <span class="info-value">{{ profile.address|default:"Not provided" }}</span>
+                </div>
+
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-person-lines-fill me-2"></i>Bio</span>
+                    <span class="info-value">{{ profile.bio|default:"No bio provided yet" }}</span>
+                </div>
+
+                {% if profile.social_links %}
+                <div class="info-item">
+                    <span class="info-label"><i class="bi bi-link-45deg me-2"></i>Social Link</span>
+                    <span class="info-value">
+                        <a href="{{ profile.social_links }}" target="_blank" rel="noopener" style="color: var(--primary); text-decoration: none;">
+                            {{ profile.social_links }}
+                        </a>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Statistics Column -->
+        <div class="col-lg-4 mb-4">
+            <div class="mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ user.item_set.count }}</div>
+                    <div class="stat-label">Items Reported</div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">
+                        {% if profile.reputation_score %}
+                            {{ profile.reputation_score|floatformat:1 }}
+                        {% else %}
+                            0.0
                         {% endif %}
                     </div>
-
-                    <!-- User Reputation -->
-                    <div class="mt-4">
-                        <h5 class="mb-2">User Reputation</h5>
-                        <p><strong>Average Rating:</strong>
-                            {% if avg_rating %}
-                                {{ avg_rating|floatformat:1 }} / 5
-                            {% else %}
-                                No ratings yet
-                            {% endif %}
-                        </p>
-                        <a href="{% url 'submit_review' user.id %}" class="btn btn-sm btn-success mb-2">Leave a Review</a>
-                        <ul class="list-group">
-                            {% for review in reviews %}
-                                <li class="list-group-item">
-                                    <strong>{{ review.reviewer.username }}</strong>:
-                                    <span class="text-warning">&#9733; {{ review.rating }}</span><br>
-                                    <span>{{ review.comment }}</span>
-                                    <small class="text-muted float-end">{{ review.created_at|date:"M d, Y" }}</small>
-                                </li>
-                            {% empty %}
-                                <li class="list-group-item">No reviews yet.</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
+                    <div class="stat-label">Reputation Score</div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="stat-card">
+                    <div class="stat-number">{{ profile.total_returns|default:0 }}</div>
+                    <div class="stat-label">Items Returned</div>
                 </div>
             </div>
         </div>

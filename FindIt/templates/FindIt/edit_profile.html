@@ -3,74 +3,113 @@
 {% load static %}
 {% block title %}Edit Profile{% endblock %}
 {% block content %}
-<div class="container mt-5">
+
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card" style="max-width: 400px; margin: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                <div class="card-header bg-primary text-white">Edit Profile</div>
-                <div class="card-body text-center">
+        <div class="col-lg-8">
+            <div class="edit-profile-container">
+                <h2 class="edit-profile-header">
+                    <i class="bi bi-pencil-square"></i>
+                    Edit Profile
+                </h2>
 
+                <form method="post" enctype="multipart/form-data" id="edit-profile-form">
+                    {% csrf_token %}
+                    
+                    <!-- Account Information Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-person-badge"></i>
+                            Account Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.username|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.email|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- Personal Information Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-person-lines-fill"></i>
+                            Personal Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.first_name|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.last_name|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
 
+                    <!-- Contact Information Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-telephone"></i>
+                            Contact Information
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.contact_number|as_crispy_field }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                {{ form.address|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
 
-
-                    <!-- Edit Profile Form -->
-                    <form method="post" enctype="multipart/form-data" id="edit-profile-form">
-                        {% csrf_token %}
-                        <div class="mb-3 text">
-                            {{ form.username|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
-                            {{ form.first_name|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
-                            {{ form.last_name|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
-                            {{ form.email|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
-                            {{ form.contact_number|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
-                            {{ form.address|as_crispy_field }}
-                        </div>
-                        <div class="mb-3 text">
+                    <!-- Additional Information Section -->
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="bi bi-info-circle"></i>
+                            Additional Information
+                        </h5>
+                        <div class="mb-3">
                             {{ form.bio|as_crispy_field }}
                         </div>
-                        <div class="mb-3 text">
+                        <div class="mb-3">
                             {{ form.social_links|as_crispy_field }}
                         </div>
-                        <button type="submit" class="btn btn-success">Save Changes</button>
-                        <a href="{% url 'profile' %}" class="btn btn-secondary ms-2">Cancel</a>
-                    </form>
+                    </div>
 
-                    <script>
-                        // Auto-preview on picture change
-                        document.getElementById('id_profile_picture').addEventListener('change', function(event) {
-                            const [file] = event.target.files;
-                            if (file) {
-                                document.getElementById('profile-pic').src = URL.createObjectURL(file);
-                            }
-                        });
-                    </script>
-
-                </div>
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-save">
+                            <i class="bi bi-check-circle me-2"></i>Save Changes
+                        </button>
+                        <a href="{% url 'profile' %}" class="btn btn-cancel">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
 
 <script>
-document.getElementById('id_profile_picture').addEventListener('change', function(event) {
-    const [file] = event.target.files;
-    if (file) {
-        const preview = document.getElementById('profile-pic');
-        const objectUrl = URL.createObjectURL(file);
-        preview.src = objectUrl;
-        preview.onload = () => URL.revokeObjectURL(objectUrl); // free memory
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-preview on picture change if profile picture field exists
+    const profilePicInput = document.getElementById('id_profile_picture');
+    if (profilePicInput) {
+        profilePicInput.addEventListener('change', function(event) {
+            const [file] = event.target.files;
+            if (file) {
+                const preview = document.getElementById('profile-pic');
+                if (preview) {
+                    const objectUrl = URL.createObjectURL(file);
+                    preview.src = objectUrl;
+                    preview.onload = () => URL.revokeObjectURL(objectUrl);
+                }
+            }
+        });
     }
 });
 </script>
+{% endblock %}

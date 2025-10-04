@@ -35,9 +35,43 @@ class UserProfile(models.Model):
 	show_items = models.BooleanField(default=True, help_text='Show your reported items to others')
 	show_activity = models.BooleanField(default=True, help_text='Show your recent activity to others')
 	allow_messages = models.BooleanField(default=True, help_text='Allow others to send you messages')
+	
+	# Reputation fields
+	reputation_score = models.FloatField(default=0.0, help_text='Average rating score')
+	total_returns = models.IntegerField(default=0, help_text='Total items returned to owners')
+	total_ratings = models.IntegerField(default=0, help_text='Total ratings received')
 
 	def __str__(self):
 		return f"{self.user.username} Profile"
+	
+	def update_reputation(self):
+		"""Calculate and update reputation score based on ratings"""
+		from .models import RecoveredItem
+		ratings = RecoveredItem.objects.filter(finder=self.user, rating__isnull=False)
+		if ratings.exists():
+			total_rating = sum(r.rating for r in ratings)
+			self.total_ratings = ratings.count()
+			self.reputation_score = round(total_rating / self.total_ratings, 2)
+		else:
+			self.reputation_score = 0.0
+			self.total_ratings = 0
+		
+		# Update total returns
+		self.total_returns = RecoveredItem.objects.filter(finder=self.user).count()
+		self.save()
+	
+	def get_reputation_badge(self):
+		"""Get reputation badge based on score"""
+		if self.reputation_score >= 4.5:
+			return {'name': 'Hero', 'color': 'gold', 'icon': 'trophy-fill'}
+		elif self.reputation_score >= 4.0:
+			return {'name': 'Trusted', 'color': 'success', 'icon': 'patch-check-fill'}
+		elif self.reputation_score >= 3.5:
+			return {'name': 'Helpful', 'color': 'primary', 'icon': 'hand-thumbs-up-fill'}
+		elif self.reputation_score >= 3.0:
+			return {'name': 'Active', 'color': 'info', 'icon': 'star-fill'}
+		else:
+			return {'name': 'New', 'color': 'secondary', 'icon': 'person-fill'}
 
 
 # Reputation system: User reviews
@@ -115,3 +149,32 @@ class ReturnConfirmation(models.Model):
 
 	def is_fully_confirmed(self):
 		return self.finder_confirmed and self.owner_confirmed
+
+
+# Recovered Items - items successfully returned to owner
+class RecoveredItem(models.Model):
+	item = models.OneToOneField('Item', on_delete=models.CASCADE, related_name='recovered_record')
+	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recovered_items')
+	finder = models.ForeignKey(User, on_delete=models.CASCADE, related_name='returned_items')
+	recovered_date = models.DateTimeField(auto_now_add=True)
+	original_report_date = models.DateTimeField()
+	location = models.CharField(max_length=100)
+	
+	# Rating and feedback from owner to finder
+	rating = models.PositiveSmallIntegerField(
+		choices=[(i, i) for i in range(1, 6)],
+		null=True,
+		blank=True,
+		help_text='Rating from owner to finder (1-5 stars)'
+	)
+	feedback = models.TextField(
+		blank=True,
+		help_text='Feedback from owner about the return experience'
+	)
+	rated_at = models.DateTimeField(null=True, blank=True)
+	
+	class Meta:
+		ordering = ['-recovered_date']
+	
+	def __str__(self):
+		return f"{self.item.title} - Returned by {self.finder.username} to {self.owner.username}"

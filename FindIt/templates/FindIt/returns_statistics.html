@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block content %}
+<div class="container py-5">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="fw-bold mb-2">
+            <i class="bi bi-graph-up text-primary me-2"></i>
+            Returns Statistics Dashboard
+          </h2>
+          <p class="text-muted mb-0">Track your contributions and community impact</p>
+        </div>
+        <div>
+          <a href="{% url 'export_recovered_items_pdf' %}" class="btn btn-outline-danger">
+            <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #D97706, #FB923C);">
+        <div class="card-body text-white text-center">
+          <i class="bi bi-box-seam display-4 mb-2"></i>
+          <h3 class="fw-bold">{{ total_recovered }}</h3>
+          <p class="mb-0">Total Recovered</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #10b981, #34d399);">
+        <div class="card-body text-white text-center">
+          <i class="bi bi-star-fill display-4 mb-2"></i>
+          <h3 class="fw-bold">{{ avg_rating }}</h3>
+          <p class="mb-0">Avg Rating</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
+        <div class="card-body text-white text-center">
+          <i class="bi bi-hand-thumbs-up-fill display-4 mb-2"></i>
+          <h3 class="fw-bold">{{ user_returned }}</h3>
+          <p class="mb-0">Items You Returned</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+        <div class="card-body text-white text-center">
+          <i class="bi bi-check-circle-fill display-4 mb-2"></i>
+          <h3 class="fw-bold">{{ user_recovered }}</h3>
+          <p class="mb-0">Items You Recovered</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Your Stats -->
+  <div class="row mb-4">
+    <div class="col-md-6 mb-4">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: var(--surface);">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-person-badge me-2"></i>Your Performance
+          </h5>
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-2">
+              <span>Your Average Rating:</span>
+              <span class="fw-bold">
+                {{ user_avg_rating }}/5.0
+                {% for i in "12345" %}
+                  {% if forloop.counter <= user_avg_rating|floatformat:0 %}
+                    <i class="bi bi-star-fill text-warning"></i>
+                  {% else %}
+                    <i class="bi bi-star text-muted"></i>
+                  {% endif %}
+                {% endfor %}
+              </span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar" style="width: {{ user_avg_rating|mul:20 }}%; background: linear-gradient(90deg, var(--primary), var(--primary-2));"></div>
+            </div>
+          </div>
+          
+          <div class="row text-center mt-4">
+            <div class="col-6">
+              <h4 class="fw-bold text-primary">{{ user_returned }}</h4>
+              <small class="text-muted">Items Returned</small>
+            </div>
+            <div class="col-6">
+              <h4 class="fw-bold text-success">{{ user_recovered }}</h4>
+              <small class="text-muted">Items Recovered</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: var(--surface);">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-3">
+            <i class="bi bi-bar-chart me-2"></i>Rating Distribution
+          </h5>
+          {% for rating, count in rating_distribution.items reversed %}
+            <div class="mb-2">
+              <div class="d-flex justify-content-between mb-1">
+                <span>{{ rating }} ⭐</span>
+                <span class="text-muted">{{ count }} items</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-warning" style="width: {% widthratio count total_rated 100 %}%;"></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Finders Leaderboard -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: var(--surface);">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-4">
+            <i class="bi bi-trophy-fill text-warning me-2"></i>Top Finders Leaderboard
+          </h5>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>User</th>
+                  <th>Badge</th>
+                  <th>Reputation</th>
+                  <th>Total Returns</th>
+                  <th>Ratings</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for profile in top_finders %}
+                  <tr {% if profile.user == request.user %}class="table-primary"{% endif %}>
+                    <td class="fw-bold">
+                      {% if forloop.counter == 1 %}
+                        🥇
+                      {% elif forloop.counter == 2 %}
+                        🥈
+                      {% elif forloop.counter == 3 %}
+                        🥉
+                      {% else %}
+                        {{ forloop.counter }}
+                      {% endif %}
+                    </td>
+                    <td>
+                      <strong>{{ profile.user.username }}</strong>
+                      {% if profile.user == request.user %}
+                        <span class="badge bg-primary">You</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% with badge=profile.get_reputation_badge %}
+                        <span class="badge bg-{{ badge.color }}">
+                          <i class="bi bi-{{ badge.icon }}"></i> {{ badge.name }}
+                        </span>
+                      {% endwith %}
+                    </td>
+                    <td>
+                      <strong>{{ profile.reputation_score }}/5.0</strong>
+                      {% for i in "12345" %}
+                        {% if forloop.counter <= profile.reputation_score|floatformat:0 %}
+                          <i class="bi bi-star-fill text-warning"></i>
+                        {% else %}
+                          <i class="bi bi-star text-muted"></i>
+                        {% endif %}
+                      {% endfor %}
+                    </td>
+                    <td>{{ profile.total_returns }}</td>
+                    <td>{{ profile.total_ratings }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">No data available</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Recoveries -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 rounded-4 shadow-sm" style="background: var(--surface);">
+        <div class="card-body">
+          <h5 class="card-title fw-bold mb-4">
+            <i class="bi bi-clock-history me-2"></i>Recent Recoveries
+          </h5>
+          <div class="list-group list-group-flush">
+            {% for recovery in recent_recoveries %}
+              <div class="list-group-item px-0">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="mb-1">{{ recovery.item.title }}</h6>
+                    <small class="text-muted">
+                      <i class="bi bi-person-fill"></i> {{ recovery.finder.username }} 
+                      → {{ recovery.owner.username }}
+                      <span class="mx-2">|</span>
+                      <i class="bi bi-calendar-check"></i> {{ recovery.recovered_date|date:"M d, Y" }}
+                    </small>
+                  </div>
+                  <div>
+                    {% if recovery.rating %}
+                      <span class="badge bg-warning text-dark">
+                        {{ recovery.rating }} ⭐
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary">Pending</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% empty %}
+              <div class="text-center text-muted py-4">No recent recoveries</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

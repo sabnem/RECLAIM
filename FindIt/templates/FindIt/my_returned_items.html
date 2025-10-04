@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container py-5">
+  <div class="row mb-4">
+    <div class="col-12">
+      <h2 class="fw-bold mb-3">
+        <i class="bi bi-hand-thumbs-up-fill text-primary me-2"></i>
+        My Returned Items
+      </h2>
+      <p class="text-muted">Items you've successfully returned to their owners</p>
+    </div>
+  </div>
+
+  {% if returned_items %}
+    <div class="row">
+      {% for returned in returned_items %}
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card h-100 border-0 rounded-4 shadow-sm feature-card" style="background: var(--surface);">
+            {% if returned.item.photo %}
+              <div class="item-image-container" style="width:100%; max-width:100%; height:200px; margin:auto; background: #ffffff;">
+                <img src="{{ returned.item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="{{ returned.item.title }}">
+              </div>
+            {% endif %}
+            
+            <div class="card-body">
+              <h5 class="card-title fw-bold">{{ returned.item.title }}</h5>
+              <p class="card-text text-muted">{{ returned.item.description|truncatewords:15 }}</p>
+              
+              <div class="mb-2">
+                <small class="text-muted">
+                  <i class="bi bi-geo-alt-fill"></i> {{ returned.location }}
+                </small>
+              </div>
+              
+              <div class="mb-2">
+                <small class="text-muted">
+                  <i class="bi bi-calendar-check"></i> 
+                  Returned: {{ returned.recovered_date|date:"M d, Y" }}
+                </small>
+              </div>
+              
+              <div class="mb-3">
+                <small class="text-muted">
+                  <i class="bi bi-person-fill"></i> 
+                  Returned to: <strong>{{ returned.owner.username }}</strong>
+                </small>
+              </div>
+              
+              {% if returned.rating %}
+                <div class="mb-3 p-3 rounded-3" style="background: var(--primary-subtle);">
+                  <div class="d-flex align-items-center mb-2">
+                    <strong class="me-2">Owner's Rating:</strong>
+                    {% for i in "12345" %}
+                      {% if forloop.counter <= returned.rating %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                      {% else %}
+                        <i class="bi bi-star text-muted"></i>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  {% if returned.feedback %}
+                    <small class="fst-italic">
+                      "{{ returned.feedback }}"
+                    </small>
+                  {% endif %}
+                  <div class="mt-2">
+                    <small class="text-muted">
+                      Rated on {{ returned.rated_at|date:"M d, Y" }}
+                    </small>
+                  </div>
+                </div>
+              {% else %}
+                <div class="alert alert-warning alert-sm rounded-pill p-2 px-3">
+                  <i class="bi bi-hourglass-split"></i>
+                  <small>Awaiting owner's rating</small>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="row">
+      <div class="col-12">
+        <div class="alert alert-info rounded-4" style="background: var(--primary-subtle); border: none;">
+          <div class="text-center py-5">
+            <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+            <h4>No Returned Items Yet</h4>
+            <p class="text-muted">Items you've returned to their owners will appear here.</p>
+            <a href="{% url 'item_list' %}" class="btn btn-primary rounded-pill mt-3">
+              <i class="bi bi-search"></i> Browse Found Items
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
