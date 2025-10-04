@@ -54,7 +54,7 @@
           {% endif %}
         <div class="d-flex flex-wrap gap-3 mt-4">
             <!-- Safety Tips Modal Trigger -->
-            <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info mb-2" target="_blank">
+            <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info" target="_blank">
               <i class="bi bi-shield-check"></i> Safety & Terms
             </a>
           {% if user.is_authenticated and user != item.reported_by %}
