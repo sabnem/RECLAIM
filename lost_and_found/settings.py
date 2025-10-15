@@ -26,10 +26,10 @@ SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = False
-DEBUG = True
-# ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
-ALLOWED_HOSTS = ['*']
+DEBUG = False
+# DEBUG = True
+ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
+# ALLOWED_HOSTS = ['*']
 
 
 
