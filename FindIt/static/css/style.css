@@ -48,6 +48,38 @@ body{
     min-height: 100vh;
 }
 
+/* Unified card style for all cards */
+.card, .feature-card, .custom-card {
+  background: var(--surface, #fff);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  border: none;
+  transition: box-shadow 0.2s;
+}
+.tips-card {
+    box-shadow: none !important;
+}
+
+.card:hover, .feature-card:hover, .custom-card:hover {
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.12);
+}
+.tips-card:hover {
+    box-shadow: none !important;
+}
+
+body.dark-mode .card,
+body.dark-mode .feature-card,
+body.dark-mode .custom-card {
+  background: #232323;
+  color: #e5e5e5;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.32);
+}
+body.dark-mode .tips-card {
+    background: #232323;
+    color: #e5e5e5;
+    box-shadow: none !important;
+}
+
 /* Cards */
 .card{
     border-radius: var(--card-radius);
@@ -539,6 +571,34 @@ body.dark-mode input, body.dark-mode select, body.dark-mode textarea{background:
     height: 40px !important;
     border-radius: 50%;
     box-shadow: var(--shadow-1);
+}
+
+/* Swiper Coverflow Effect for Stay Safe & Informed */
+.tipsSwiper {
+    padding-bottom: 60px;
+}
+.tipsSwiper .swiper-wrapper {
+    perspective: 1200px;
+}
+.tipsSwiper .swiper-slide {
+    transition: transform 0.5s cubic-bezier(.25,.8,.25,1), box-shadow 0.3s;
+    box-shadow: none;
+    opacity: 0.7;
+    filter: blur(0.5px) grayscale(10%);
+}
+.tipsSwiper .swiper-slide-active {
+    transform: scale(1.08) translateY(-10px) rotateY(0deg) !important;
+    z-index: 2;
+    opacity: 1;
+    filter: none;
+}
+.tipsSwiper .swiper-slide-next,
+.tipsSwiper .swiper-slide-prev {
+    opacity: 0.9;
+    filter: blur(0.2px) grayscale(5%);
+}
+.tipsSwiper .swiper-slide {
+    border-radius: 24px;
 }
 
 .swiper-button-next::after,
