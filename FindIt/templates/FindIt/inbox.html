@@ -10,10 +10,15 @@
     <div class="messaging-app d-flex">
 
       <!-- Sidebar: Conversation List -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <i class="bi bi-chat-dots-fill me-2"></i>
-          Messages
+      <aside class="sidebar" id="conversationList">
+        <div class="sidebar-header d-flex align-items-center justify-content-between">
+          <div>
+            <i class="bi bi-chat-dots-fill me-2"></i>
+            Messages
+          </div>
+          <button class="btn btn-link text-white d-md-none p-0" id="backToChatBtn" style="display:none !important;">
+            <i class="bi bi-arrow-left fs-4"></i>
+          </button>
         </div>
         <div class="p-2">
           {% for convo in conversations %}
@@ -38,10 +43,13 @@
       </aside>
 
       <!-- Chat Area -->
-      <main class="chat-area flex-grow-1 d-flex flex-column">
+      <main class="chat-area flex-grow-1 d-flex flex-column" id="chatArea">
         <!-- Chat Header -->
         <header class="chat-header d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
+            <button class="btn btn-link text-white p-0 me-3 d-md-none" id="backToListBtn">
+              <i class="bi bi-arrow-left fs-4"></i>
+            </button>
             <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/60' }}" 
                  class="rounded me-3 chat-header-avatar" 
                  width="60" height="60" alt="Item">
@@ -145,18 +153,50 @@
 {% else %}
 <!-- Empty State -->
 <div class="messaging-container">
-  <div class="container d-flex justify-content-center align-items-center" style="min-height: 70vh;">
-    <div class="empty-state text-center">
-      <div class="empty-icon-wrapper mb-4">
-        <i class="bi bi-chat-left-dots-fill"></i>
-      </div>
-      <h3 class="fw-bold mb-3">No Active Conversation</h3>
-      <p class="mb-4 empty-description">
-        Start a conversation by contacting the owner or finder of an item.
-      </p>
-      <a href="{% url 'item_list' %}" class="btn-browse-items">
-        Browse Items
-      </a>
+  <div class="container">
+    <div class="messaging-app d-flex">
+      <!-- Sidebar: Conversation List (No Active Chat) -->
+      <aside class="sidebar" id="conversationListEmpty" style="width: 100%; border-right: none;">
+        <div class="sidebar-header">
+          <i class="bi bi-chat-dots-fill me-2"></i>
+          Messages
+        </div>
+        <div class="p-2">
+          {% for convo in conversations %}
+          <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
+            <div class="conversation d-flex align-items-center">
+              <img src="{% if convo.avatar_url %}{{ convo.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ convo.name|urlencode }}&background=D97706&color=fff&size=50{% endif %}" 
+                   class="rounded-circle me-3 conversation-avatar" 
+                   width="50" height="50" alt="Avatar">
+              <div class="flex-grow-1">
+                <div class="fw-bold mb-1" style="color: var(--text-primary);">{{ convo.name }}</div>
+                <div class="small" style="color: var(--text-secondary);">
+                  {{ convo.last_message|truncatewords:5 }}
+                </div>
+              </div>
+              <div class="text-end small ms-2" style="color: var(--primary, #D97706);">
+                {{ convo.last_date|date:'M d' }}
+              </div>
+            </div>
+          </a>
+          {% empty %}
+          <div class="d-flex justify-content-center align-items-center" style="min-height: 50vh;">
+            <div class="empty-state text-center">
+              <div class="empty-icon-wrapper mb-4">
+                <i class="bi bi-chat-left-dots-fill"></i>
+              </div>
+              <h3 class="fw-bold mb-3">No Messages Yet</h3>
+              <p class="mb-4 empty-description">
+                Start a conversation by contacting the owner or finder of an item.
+              </p>
+              <a href="{% url 'item_list' %}" class="btn-browse-items">
+                Browse Items
+              </a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </aside>
     </div>
   </div>
 </div>
@@ -169,6 +209,60 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  // Mobile navigation handling
+  const conversationList = document.getElementById('conversationList');
+  const chatArea = document.getElementById('chatArea');
+  const backToListBtn = document.getElementById('backToListBtn');
+  
+  // Check if mobile
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  // Initialize mobile view
+  function initMobileView() {
+    if (isMobile() && conversationList && chatArea) {
+      {% if active_conversation %}
+        // If there's an active conversation, show chat area
+        conversationList.style.display = 'none';
+        chatArea.style.display = 'flex';
+      {% else %}
+        // If no active conversation, show conversation list
+        conversationList.style.display = 'block';
+        if (chatArea) chatArea.style.display = 'none';
+      {% endif %}
+    } else if (!isMobile() && conversationList && chatArea) {
+      // Desktop: show both
+      conversationList.style.display = 'block';
+      chatArea.style.display = 'flex';
+    }
+  }
+  
+  // Initialize on load
+  initMobileView();
+  
+  // Back to conversation list
+  if (backToListBtn) {
+    backToListBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      if (isMobile() && conversationList && chatArea) {
+        conversationList.style.display = 'block';
+        chatArea.style.display = 'none';
+        // Navigate to inbox without conversation
+        window.location.href = '{% url "inbox" %}';
+      }
+    });
+  }
+  
+  // Handle window resize
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      initMobileView();
+    }, 250);
+  });
+
   // Scroll chat to bottom
   let chatHistory = document.getElementById("chatHistory");
   if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;

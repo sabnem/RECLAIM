@@ -179,6 +179,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@lostandfound.com'
 
+# Authentication redirects
+LOGOUT_REDIRECT_URL = '/'
+
 # Site URL for email links
 
 # Django Channels Configuration

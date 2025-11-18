@@ -188,7 +188,7 @@ def user_login(request):
 
 def user_logout(request):
     logout(request)
-    return redirect('login')
+    return redirect('home')
 
 def home(request):
     return render(request, 'FindIt/home.html')

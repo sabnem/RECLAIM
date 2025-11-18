@@ -89,8 +89,28 @@
                         </li>
                         
                     {% else %}
-                        <li class="nav-item"><a class="btn btn-outline-primary px-3 rounded-pill" href="{% url 'login' %}">Login</a></li>
-                        <li class="nav-item ms-2"><a class="btn btn-primary px-3 rounded-pill" href="{% url 'register' %}">Register</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'item_list' %}">Items</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdownGuest" 
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Categories
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% for category in categories %}
+                                    <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
+                                {% empty %}
+                                    <li><span class="dropdown-item text-muted">No categories</span></li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}?next={% url 'report_item' %}">Report</a></li>
+                        <!-- Dark mode toggle -->
+                        <li class="nav-item ms-2 d-flex align-items-center">
+                            <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary" title="Toggle dark mode">
+                                <i id="darkModeIcon" class="bi bi-moon-fill"></i>
+                            </button>
+                        </li>
                     {% endif %}
                 </ul>
             </div>
