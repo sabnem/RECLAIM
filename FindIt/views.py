@@ -279,6 +279,27 @@ def inbox(request):
     item_id = request.GET.get('item_id')
     recipient_id = request.GET.get('recipient_id')
 
+    # If item_id and recipient_id are provided, check if conversation already exists
+    if item_id and recipient_id:
+        try:
+            item = get_object_or_404(Item, id=item_id)
+            recipient = get_object_or_404(User, id=recipient_id)
+            
+            # Check for existing conversation between these two users about this item
+            existing_messages = Message.objects.filter(
+                item=item,
+                sender__in=[request.user, recipient],
+                recipient__in=[request.user, recipient]
+            ).filter(
+                Q(sender=request.user, deleted_by_sender=False) | 
+                Q(recipient=request.user, deleted_by_recipient=False)
+            ).exists()
+            
+            # If conversation exists, we'll use it (no redirect needed, just continue)
+            # If it doesn't exist, that's fine too - we'll create a new one when they send a message
+        except:
+            pass
+
     # Handle sending a message (fallback for image uploads or non-WebSocket)
     if request.method == 'POST':
         item_id = request.POST.get('item_id') or item_id
