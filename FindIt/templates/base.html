@@ -43,11 +43,13 @@
                                 Categories
                             </a>
                             <ul class="dropdown-menu">
-                                {% for category in categories %}
-                                    <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
-                                {% empty %}
-                                    <li><span class="dropdown-item text-muted">No categories</span></li>
-                                {% endfor %}
+                                <div style="max-height: 250px; overflow-y: auto;">
+                                    {% for category in categories %}
+                                        <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
+                                    {% empty %}
+                                        <li><span class="dropdown-item text-muted">No categories</span></li>
+                                    {% endfor %}
+                                </div>
                             </ul>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'report_item' %}">Report</a></li>
@@ -97,11 +99,13 @@
                                 Categories
                             </a>
                             <ul class="dropdown-menu">
-                                {% for category in categories %}
-                                    <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
-                                {% empty %}
-                                    <li><span class="dropdown-item text-muted">No categories</span></li>
-                                {% endfor %}
+                                <div style="max-height: 250px; overflow-y: auto;">
+                                    {% for category in categories %}
+                                        <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
+                                    {% empty %}
+                                        <li><span class="dropdown-item text-muted">No categories</span></li>
+                                    {% endfor %}
+                                </div>
                             </ul>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}?next={% url 'report_item' %}">Report</a></li>

@@ -94,7 +94,7 @@ WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 DATABASES = {
    'default': {
        'ENGINE': 'django.db.backends.postgresql',
-       'NAME': 'ReClaimDB',
+       'NAME': 'postgres',
        'USER': 'postgres',
        'PASSWORD': 'Joyce@2003',
        'HOST': 'localhost',
