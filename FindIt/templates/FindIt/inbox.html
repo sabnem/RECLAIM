@@ -4,6 +4,13 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/inbox.css' %}">
 
+<style>
+/* Hide navbar in inbox for full-screen messaging experience */
+.navbar {
+    display: none !important;
+}
+</style>
+
 {% if active_conversation %}
 <div class="messaging-container">
   <div class="container">
@@ -150,6 +157,11 @@
   </div>
 </div>
 
+<!-- Floating New Chat Button (Mobile) -->
+<button class="floating-new-chat d-md-none" onclick="window.location.href='{% url 'item_list' %}'" title="Start new conversation">
+  <i class="bi bi-plus-lg"></i>
+</button>
+
 {% else %}
 <!-- Empty State -->
 <div class="messaging-container">
@@ -221,20 +233,46 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Initialize mobile view
   function initMobileView() {
-    if (isMobile() && conversationList && chatArea) {
+    if (isMobile()) {
       {% if active_conversation %}
-        // If there's an active conversation, show chat area
-        conversationList.style.display = 'none';
-        chatArea.style.display = 'flex';
+        // If there's an active conversation, show chat area full screen
+        if (conversationList) conversationList.style.display = 'none';
+        if (chatArea) {
+          chatArea.style.display = 'flex';
+          chatArea.style.position = 'fixed';
+          chatArea.style.top = '0';
+          chatArea.style.left = '0';
+          chatArea.style.width = '100vw';
+          chatArea.style.height = '100vh';
+          chatArea.style.zIndex = '1';
+        }
       {% else %}
-        // If no active conversation, show conversation list
-        conversationList.style.display = 'block';
+        // If no active conversation, show conversation list full screen
+        if (conversationList) {
+          conversationList.style.display = 'block';
+          conversationList.style.position = 'fixed';
+          conversationList.style.top = '0';
+          conversationList.style.left = '0';
+          conversationList.style.width = '100vw';
+          conversationList.style.height = '100vh';
+          conversationList.style.zIndex = '2';
+        }
         if (chatArea) chatArea.style.display = 'none';
       {% endif %}
-    } else if (!isMobile() && conversationList && chatArea) {
-      // Desktop: show both
-      conversationList.style.display = 'block';
-      chatArea.style.display = 'flex';
+    } else {
+      // Desktop: reset to normal layout
+      if (conversationList) {
+        conversationList.style.display = 'block';
+        conversationList.style.position = 'relative';
+        conversationList.style.width = '340px';
+        conversationList.style.height = 'auto';
+      }
+      if (chatArea) {
+        chatArea.style.display = 'flex';
+        chatArea.style.position = 'relative';
+        chatArea.style.width = 'auto';
+        chatArea.style.height = '85vh';
+      }
     }
   }
   
@@ -245,9 +283,18 @@ document.addEventListener("DOMContentLoaded", function() {
   if (backToListBtn) {
     backToListBtn.addEventListener('click', function(e) {
       e.preventDefault();
-      if (isMobile() && conversationList && chatArea) {
-        conversationList.style.display = 'block';
-        chatArea.style.display = 'none';
+      if (isMobile()) {
+        // Hide chat area and show conversation list
+        if (chatArea) chatArea.style.display = 'none';
+        if (conversationList) {
+          conversationList.style.display = 'block';
+          conversationList.style.position = 'fixed';
+          conversationList.style.top = '0';
+          conversationList.style.left = '0';
+          conversationList.style.width = '100vw';
+          conversationList.style.height = '100vh';
+          conversationList.style.zIndex = '2';
+        }
         // Navigate to inbox without conversation
         window.location.href = '{% url "inbox" %}';
       }
