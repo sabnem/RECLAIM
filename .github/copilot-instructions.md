@@ -48,6 +48,17 @@ If the user asks to "continue," refer to the previous steps and proceed accordin
 - [x] Table format with item details, ratings, dates
 - [x] Downloadable as "recovered_items_report.pdf"
 
+### Conversation Management
+- [x] Archive conversation option (soft delete for current user)
+- [x] Unarchive conversation option (restore archived conversations)
+- [x] Archived conversations view with toggle button
+- [x] Delete conversation option (permanent removal)
+- [x] Both archive/unarchive and delete options in chat dropdown menu
+- [x] Archive hides messages but preserves for reference
+- [x] Unarchive restores messages to active inbox
+- [x] Delete permanently removes all messages from database
+- [x] Clear confirmation dialogs for all actions
+
 ### Database Migrations
 - [x] Migration 0005: RecoveredItem model
 - [x] Migration 0006: UserProfile reputation fields

@@ -60,6 +60,13 @@
     height: 85vh;
   }
 
+  /* Adjust height on desktop to account for navbar */
+  @media (min-width: 992px) {
+    .messaging-app {
+      height: 75vh;
+    }
+  }
+
   /* Sidebar Styles */
   .sidebar {
     background: var(--bg-secondary);
@@ -106,10 +113,10 @@
 
   /* Chat Area Styles */
   .chat-header {
-    background: #075e54;
+    background: linear-gradient(135deg, var(--primary, #D97706), var(--primary-2, #FB923C));
     color: white;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #128c7e;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     align-items: center;
     position: sticky;
@@ -119,8 +126,8 @@
   }
 
   .chat-header-avatar {
-    border: 2px solid #25d366;
-    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
     width: 48px;
     height: 48px;
     margin-right: 1rem;
@@ -177,19 +184,19 @@
   }
 
   .chat-bubble.sent {
-    background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+    background: linear-gradient(135deg, var(--primary, #D97706), var(--primary-2, #FB923C));
     color: white;
     border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.15);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
     align-self: flex-end;
   }
 
   .chat-bubble.received {
-    background: #f0f0f0;
-    color: #222;
+    background: var(--message-received-bg);
+    color: var(--message-received-text);
     border-radius: 18px 18px 18px 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    border: 1px solid #e0e0e0;
+    box-shadow: 0 2px 8px var(--message-received-border);
+    border: 1px solid var(--border-color);
     align-self: flex-start;
   }
 
@@ -207,8 +214,8 @@
 
   /* Chat Footer */
   .chat-footer {
-    background: #f7f7f7;
-    border-top: 1px solid #e0e0e0;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
     padding: 1rem 1.5rem;
     position: sticky;
     bottom: 0;
@@ -219,12 +226,12 @@
 
   .message-input {
     background: #fff;
-    border: 1.5px solid #25d366;
+    border: 1.5px solid var(--primary, #D97706);
     border-radius: 24px;
     padding: 0.875rem 1.25rem;
     color: #222;
     transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.08);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1);
   }
 
   .message-input:focus {
@@ -241,8 +248,8 @@
 
   .btn-attach {
     background: #e0e0e0;
-    border: 1.5px solid #25d366;
-    color: #128c7e;
+    border: 1.5px solid var(--primary, #D97706);
+    color: var(--primary, #D97706);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -255,13 +262,13 @@
   }
 
   .btn-attach:hover {
-    background: #25d366;
+    background: var(--primary, #D97706);
     color: white;
     transform: scale(1.1);
   }
 
   .btn-send {
-    background: #25d366;
+    background: var(--primary, #D97706);
     border: none;
     color: white;
     border-radius: 50%;
@@ -275,14 +282,14 @@
     padding: 0;
     cursor: pointer;
     margin-left: 0.5rem;
-    box-shadow: 0 2px 8px rgba(37, 211, 102, 0.15);
+    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
   }
 
   .btn-send:hover {
-    background: #128c7e;
+    background: var(--primary-2, #FB923C);
     color: white;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(18, 140, 126, 0.2);
+    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
   }
 
   /* Image Preview */
@@ -650,14 +657,14 @@
       right: 20px;
       width: 56px;
       height: 56px;
-      background: #25d366;
+      background: var(--primary, #D97706);
       color: white;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
-      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
       z-index: 20;
       cursor: pointer;
       transition: all 0.3s;
@@ -665,7 +672,7 @@
 
     .floating-new-chat:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.4);
+      box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
     }
 
     /* Hide floating button when in chat */

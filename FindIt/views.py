@@ -278,6 +278,8 @@ def contact_item_owner(request, item_id):
 def inbox(request):
     item_id = request.GET.get('item_id')
     recipient_id = request.GET.get('recipient_id')
+    view_mode = request.GET.get('view')
+    show_archived = request.GET.get('archived') == '1'
 
     # If item_id and recipient_id are provided, check if conversation already exists
     if item_id and recipient_id:
@@ -318,11 +320,19 @@ def inbox(request):
             )
             return redirect(f"{request.path}?item_id={item_id}&recipient_id={recipient_id}")
 
-    # Get all conversations for the sidebar (exclude archived messages)
-    conversations = Message.objects.filter(
-        Q(sender=request.user, deleted_by_sender=False) | 
-        Q(recipient=request.user, deleted_by_recipient=False)
-    ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
+    # Get all conversations for the sidebar
+    if show_archived:
+        # Show only archived messages (those deleted by current user)
+        conversations = Message.objects.filter(
+            Q(sender=request.user, deleted_by_sender=True) | 
+            Q(recipient=request.user, deleted_by_recipient=True)
+        ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
+    else:
+        # Show active conversations (exclude archived messages)
+        conversations = Message.objects.filter(
+            Q(sender=request.user, deleted_by_sender=False) | 
+            Q(recipient=request.user, deleted_by_recipient=False)
+        ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
 
     # Group conversations by (item, other_user)
     convo_dict = {}
@@ -339,15 +349,22 @@ def inbox(request):
     if item_id and recipient_id:
         item = get_object_or_404(Item, id=item_id)
         recipient = get_object_or_404(User, id=recipient_id)
-        # Filter out archived messages for the active conversation
-        active_messages = Message.objects.filter(
-            item=item,
-            sender__in=[request.user, recipient],
-            recipient__in=[request.user, recipient]
-        ).filter(
-            Q(sender=request.user, deleted_by_sender=False) | 
-            Q(recipient=request.user, deleted_by_recipient=False)
-        ).order_by('timestamp')
+        # Get messages for the active conversation (include archived if in archived view)
+        if show_archived:
+            active_messages = Message.objects.filter(
+                item=item,
+                sender__in=[request.user, recipient],
+                recipient__in=[request.user, recipient]
+            ).order_by('timestamp')
+        else:
+            active_messages = Message.objects.filter(
+                item=item,
+                sender__in=[request.user, recipient],
+                recipient__in=[request.user, recipient]
+            ).filter(
+                Q(sender=request.user, deleted_by_sender=False) | 
+                Q(recipient=request.user, deleted_by_recipient=False)
+            ).order_by('timestamp')
         # For sidebar highlighting
         for msg in convo_list:
             if msg.item.id == int(item_id) and (msg.sender.id == int(recipient_id) or msg.recipient.id == int(recipient_id)):
@@ -355,7 +372,7 @@ def inbox(request):
                 break
         if not active_conversation and active_messages:
             active_conversation = active_messages.last()
-    elif convo_list:
+    elif convo_list and view_mode != 'list':
         active_conversation = convo_list[0]
         active_messages = Message.objects.filter(
             item=active_conversation.item,
@@ -395,7 +412,15 @@ def inbox(request):
 
     active_convo_data = None
     if active_conversation:
-        other_user = active_conversation.recipient if active_conversation.sender == request.user else active_conversation.sender
+        # If we have item_id and recipient_id from URL, use the recipient as the other user
+        if item_id and recipient_id:
+            try:
+                recipient = User.objects.get(id=recipient_id)
+                other_user = recipient
+            except User.DoesNotExist:
+                other_user = active_conversation.recipient if active_conversation.sender == request.user else active_conversation.sender
+        else:
+            other_user = active_conversation.recipient if active_conversation.sender == request.user else active_conversation.sender
         avatar_url = ''
         if hasattr(other_user, 'userprofile') and other_user.userprofile.profile_picture:
             avatar_url = other_user.userprofile.profile_picture.url
@@ -865,12 +890,13 @@ def export_recovered_items_pdf(request):
 @login_required
 @require_POST
 def clear_conversation(request):
-    """Archive conversation - soft delete for current user while preserving for reference"""
+    """Handle conversation actions: delete or archive"""
     import json
     from django.http import JsonResponse
     
     try:
         data = json.loads(request.body)
+        action = data.get('action', 'delete')  # 'delete' or 'archive'
         item_id = data.get('item_id')
         recipient_id = data.get('recipient_id')
         
@@ -880,30 +906,77 @@ def clear_conversation(request):
         item = get_object_or_404(Item, id=item_id)
         recipient = get_object_or_404(User, id=recipient_id)
         
-        # Soft delete: Mark messages as deleted for current user only
-        # Messages sent by current user
-        sender_messages = Message.objects.filter(
-            item=item,
-            sender=request.user,
-            recipient=recipient
-        )
-        sender_count = sender_messages.update(deleted_by_sender=True)
+        if action == 'delete':
+            # Hard delete: Permanently remove all messages in this conversation
+            conversation_messages = Message.objects.filter(
+                item=item,
+                sender__in=[request.user, recipient],
+                recipient__in=[request.user, recipient]
+            )
+            
+            deleted_count = conversation_messages.count()
+            conversation_messages.delete()
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Conversation deleted permanently ({deleted_count} messages removed)',
+                'deleted_count': deleted_count
+            })
         
-        # Messages received by current user
-        recipient_messages = Message.objects.filter(
-            item=item,
-            sender=recipient,
-            recipient=request.user
-        )
-        recipient_count = recipient_messages.update(deleted_by_recipient=True)
+        elif action == 'archive':
+            # Soft delete: Mark messages as deleted for current user only
+            # Messages sent by current user
+            sender_messages = Message.objects.filter(
+                item=item,
+                sender=request.user,
+                recipient=recipient
+            )
+            sender_count = sender_messages.update(deleted_by_sender=True)
+            
+            # Messages received by current user
+            recipient_messages = Message.objects.filter(
+                item=item,
+                sender=recipient,
+                recipient=request.user
+            )
+            recipient_count = recipient_messages.update(deleted_by_recipient=True)
+            
+            total_archived = sender_count + recipient_count
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Conversation archived ({total_archived} messages hidden)',
+                'archived_count': total_archived
+            })
         
-        total_archived = sender_count + recipient_count
+        elif action == 'unarchive':
+            # Unarchive: Mark messages as not deleted for current user
+            # Messages sent by current user
+            sender_messages = Message.objects.filter(
+                item=item,
+                sender=request.user,
+                recipient=recipient
+            )
+            sender_count = sender_messages.update(deleted_by_sender=False)
+            
+            # Messages received by current user
+            recipient_messages = Message.objects.filter(
+                item=item,
+                sender=recipient,
+                recipient=request.user
+            )
+            recipient_count = recipient_messages.update(deleted_by_recipient=False)
+            
+            total_unarchived = sender_count + recipient_count
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Conversation unarchived ({total_unarchived} messages restored)',
+                'unarchived_count': total_unarchived
+            })
         
-        return JsonResponse({
-            'success': True, 
-            'message': f'Conversation archived ({total_archived} messages hidden)',
-            'archived_count': total_archived
-        })
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
