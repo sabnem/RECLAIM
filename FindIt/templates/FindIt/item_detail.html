@@ -108,7 +108,20 @@
                     }, 300);
                   });
                 }
+                // Ensure modal is not shown on page load
+                if (ownerModalEl) {
+                  ownerModalEl.classList.remove('show');
+                  ownerModalEl.style.display = 'none';
+                }
 
+                // Prevent default form submission
+                if (markReturnedForm) {
+                  markReturnedForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                  });
+                }
+
+                var shouldSubmitOwnerForm = false;
                 if (submitOwnerBtn && ownerModal) {
                   submitOwnerBtn.addEventListener('click', function() {
                     var username = ownerUsernameInput.value.trim();
@@ -124,12 +137,14 @@
                     input.name = 'owner_username';
                     input.value = username;
                     markReturnedForm.appendChild(input);
-                    // Submit only after modal finishes hiding
-                    ownerModalEl.addEventListener('hidden.bs.modal', function onHidden() {
-                      markReturnedForm.submit();
-                      ownerModalEl.removeEventListener('hidden.bs.modal', onHidden);
-                    });
+                    shouldSubmitOwnerForm = true;
                     ownerModal.hide();
+                  });
+                  ownerModalEl.addEventListener('hidden.bs.modal', function() {
+                    if (shouldSubmitOwnerForm) {
+                      markReturnedForm.submit();
+                      shouldSubmitOwnerForm = false;
+                    }
                   });
                 }
               });

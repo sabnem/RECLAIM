@@ -123,10 +123,11 @@
 
         <!-- Chat History -->
         <section class="chat-history flex-grow-1" id="chatHistory">
+          {% if active_conversation.date %}
           <div class="date-divider">
             <span>{{ active_conversation.date|date:'F d, Y' }}</span>
           </div>
-          
+          {% endif %}
           {% for msg in active_conversation.messages %}
           <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
             <div class="chat-bubble {% if msg.sender == user %}sent{% else %}received{% endif %}">
@@ -155,7 +156,6 @@
             {% csrf_token %}
             <input type="hidden" name="item_id" value="{{ item_id }}">
             <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
-            
             <!-- Image Preview -->
             <div id="imagePreviewContainer" style="display: none;" class="mb-3">
               <div class="image-preview-wrapper">
@@ -165,7 +165,6 @@
                 </button>
               </div>
             </div>
-
             <!-- Input Row -->
             <div class="d-flex align-items-center gap-2">
               <label for="chatImageUpload" class="btn-attach mb-0">
@@ -176,19 +175,31 @@
                      name="chat_image" 
                      accept="image/*" 
                      style="display:none;">
-              
               <input type="text" 
                      name="message" 
                      class="form-control message-input flex-grow-1" 
                      placeholder="Type your message..."
                      autocomplete="off">
-
               <button type="submit" class="btn btn-send" title="Send message">
                 <i class="bi bi-send-fill"></i>
               </button>
             </div>
           </form>
         </footer>
+      </main>
+      {% else %}
+      <!-- Creative Empty State for Desktop Conversation Area -->
+      <main class="chat-area flex-grow-1 d-flex flex-column justify-content-center align-items-center" id="chatArea">
+        <div class="empty-state text-center" style="max-width: 420px; margin: auto;">
+          <div class="empty-icon-wrapper mb-4">
+            <i class="bi bi-chat-dots-fill" style="font-size: 3rem;"></i>
+          </div>
+          <h3 class="fw-bold mb-3">Select a conversation to get started</h3>
+          <p class="mb-4 empty-description">Choose a message from the list on the left to view your conversation. You can also start a new chat by contacting an item owner or finder.</p>
+          <a href="{% url 'item_list' %}" class="btn-browse-items">
+            <i class="bi bi-search me-2"></i>Browse Items
+          </a>
+        </div>
       </main>
       {% endif %}
 
@@ -216,7 +227,8 @@ document.addEventListener("DOMContentLoaded", function() {
   // Initialize mobile view
   function initMobileView() {
     if (isMobile()) {
-      {% if active_conversation %}
+      var hasActiveConversation = "{{ active_conversation|yesno:'true,false' }}";
+      if (hasActiveConversation) {
         // If there's an active conversation, show chat area full screen
         if (conversationList) conversationList.style.display = 'none';
         if (chatArea) {
@@ -228,7 +240,7 @@ document.addEventListener("DOMContentLoaded", function() {
           chatArea.style.height = '100vh';
           chatArea.style.zIndex = '1';
         }
-      {% else %}
+      } else {
         // If no active conversation, show conversation list full screen
         if (conversationList) {
           conversationList.style.display = 'block';
@@ -240,7 +252,7 @@ document.addEventListener("DOMContentLoaded", function() {
           conversationList.style.zIndex = '2';
         }
         if (chatArea) chatArea.style.display = 'none';
-      {% endif %}
+      }
     } else {
       // Desktop: reset to normal layout
       if (conversationList) {
@@ -277,8 +289,8 @@ document.addEventListener("DOMContentLoaded", function() {
           conversationList.style.height = '100vh';
           conversationList.style.zIndex = '2';
         }
-        // Navigate to inbox list view
-        window.location.href = '{% url "inbox" %}?view=list';
+        // Exit inbox using browser history
+        window.history.back();
       }
     });
   }
@@ -298,112 +310,113 @@ document.addEventListener("DOMContentLoaded", function() {
 
   // WebSocket Setup for Real-Time Messaging
   {% if active_conversation %}
-  const conversationId = '{{ active_conversation.id }}';
-  const currentUserId = {{ user.id }};
-  const recipientId = {{ recipient_id|default:"null" }};
-  const itemId = {{ item_id|default:"null" }};
-  
-  console.log('WebSocket Debug Info:', {
-    conversationId: conversationId,
-    currentUserId: currentUserId,
-    recipientId: recipientId,
-    itemId: itemId
-  });
-  
-  // WebSocket connection
-  const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-  const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
-  console.log('Connecting to WebSocket:', wsUrl);
-  const chatSocket = new WebSocket(wsUrl);
+    // WebSocket setup for real-time messaging
+    const conversationId = '{{ active_conversation.id }}';
+    const currentUserId = "{{ user.id }}";
+    const recipientId = "{{ recipient_id|default:'null' }}";
+    const itemId = "{{ item_id|default:'null' }}";
 
-  chatSocket.onopen = function(e) {
-    console.log('✅ WebSocket connection established');
-  };
-
-  chatSocket.onmessage = function(e) {
-    console.log('📨 Received message:', e.data);
-    const data = JSON.parse(e.data);
-    
-    // Only add message if it's not from current user (to avoid duplicates)
-    if (data.sender_id != currentUserId) {
-      console.log('Adding message from other user');
-      appendMessage(data);
-    } else {
-      console.log('Skipping own message (already displayed)');
-    }
-  };
-
-  chatSocket.onclose = function(e) {
-    console.error('❌ WebSocket closed unexpectedly', e);
-  };
-
-  chatSocket.onerror = function(e) {
-    console.error('❌ WebSocket error:', e);
-  };
-
-  // Function to append message to chat
-  function appendMessage(data) {
-    const chatHistory = document.getElementById('chatHistory');
-    const isCurrentUser = data.sender_id == currentUserId;
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `d-flex mb-3 ${isCurrentUser ? 'justify-content-end' : 'justify-content-start'}`;
-    
-    const bubbleDiv = document.createElement('div');
-    bubbleDiv.className = `chat-bubble ${isCurrentUser ? 'sent' : 'received'}`;
-    
-    const contentDiv = document.createElement('div');
-    contentDiv.className = 'mb-1';
-    contentDiv.textContent = data.message;
-    
-    const timeDiv = document.createElement('div');
-    timeDiv.className = 'small opacity-75 text-end mt-1';
-    const now = new Date();
-    timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    
-    bubbleDiv.appendChild(contentDiv);
-    bubbleDiv.appendChild(timeDiv);
-    messageDiv.appendChild(bubbleDiv);
-    chatHistory.appendChild(messageDiv);
-    
-    // Scroll to bottom
-    chatHistory.scrollTop = chatHistory.scrollHeight;
-  }
-
-  // Handle form submission
-  const chatForm = document.getElementById('chatForm');
-  const messageInput = chatForm.querySelector('input[name="message"]');
-  
-  chatForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const message = messageInput.value.trim();
-    if (!message) return;
-    
-    console.log('📤 Sending message via WebSocket:', message);
-    
-    // Send message via WebSocket
-    const messageData = {
-      'message': message,
-      'sender_id': currentUserId,
-      'recipient_id': recipientId,
-      'item_id': itemId,
-      'image': null
-    };
-    
-    console.log('Message data:', messageData);
-    chatSocket.send(JSON.stringify(messageData));
-    
-    // Add message to chat immediately for current user
-    appendMessage({
-      'message': message,
-      'sender_id': currentUserId,
-      'timestamp': new Date().toISOString()
+    console.log('WebSocket Debug Info:', {
+      conversationId: conversationId,
+      currentUserId: currentUserId,
+      recipientId: recipientId,
+      itemId: itemId
     });
-    
-    // Clear input
-    messageInput.value = '';
-  });
+
+    // WebSocket connection
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
+    console.log('Connecting to WebSocket:', wsUrl);
+    const chatSocket = new WebSocket(wsUrl);
+
+    chatSocket.onopen = function(e) {
+      console.log('✅ WebSocket connection established');
+    };
+
+    chatSocket.onmessage = function(e) {
+      console.log('📨 Received message:', e.data);
+      const data = JSON.parse(e.data);
+
+      // Only add message if it's not from current user (to avoid duplicates)
+      if (data.sender_id != currentUserId) {
+        console.log('Adding message from other user');
+        appendMessage(data);
+      } else {
+        console.log('Skipping own message (already displayed)');
+      }
+    };
+
+    chatSocket.onclose = function(e) {
+      console.error('❌ WebSocket closed unexpectedly', e);
+    };
+
+    chatSocket.onerror = function(e) {
+      console.error('❌ WebSocket error:', e);
+    };
+
+    // Function to append message to chat
+    function appendMessage(data) {
+      const chatHistory = document.getElementById('chatHistory');
+      const isCurrentUser = data.sender_id == currentUserId;
+
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'd-flex mb-3 ' + (isCurrentUser ? 'justify-content-end' : 'justify-content-start');
+
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'chat-bubble ' + (isCurrentUser ? 'sent' : 'received');
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'mb-1';
+      contentDiv.textContent = data.message;
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'small opacity-75 text-end mt-1';
+      const now = new Date();
+      timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+      bubbleDiv.appendChild(contentDiv);
+      bubbleDiv.appendChild(timeDiv);
+      messageDiv.appendChild(bubbleDiv);
+      chatHistory.appendChild(messageDiv);
+
+      // Scroll to bottom
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    // Handle form submission
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = chatForm.querySelector('input[name="message"]');
+
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      console.log('📤 Sending message via WebSocket:', message);
+
+      // Send message via WebSocket
+      const messageData = {
+        'message': message,
+        'sender_id': currentUserId,
+        'recipient_id': recipientId,
+        'item_id': itemId,
+        'image': null
+      };
+
+      console.log('Message data:', messageData);
+      chatSocket.send(JSON.stringify(messageData));
+
+      // Add message to chat immediately for current user
+      appendMessage({
+        'message': message,
+        'sender_id': currentUserId,
+        'timestamp': new Date().toISOString()
+      });
+
+      // Clear input
+      messageInput.value = '';
+    });
   {% endif %}
 
   // Image upload preview
@@ -449,8 +462,8 @@ document.addEventListener("DOMContentLoaded", function() {
           },
           body: JSON.stringify({
             action: 'archive',
-            item_id: {{ item_id|default:"null" }},
-            recipient_id: {{ recipient_id|default:"null" }}
+            item_id: "{{ item_id|default:'null' }}",
+            recipient_id: "{{ recipient_id|default:'null' }}"
           })
         })
         .then(response => response.json())
@@ -489,8 +502,8 @@ document.addEventListener("DOMContentLoaded", function() {
           },
           body: JSON.stringify({
             action: 'unarchive',
-            item_id: {{ item_id|default:"null" }},
-            recipient_id: {{ recipient_id|default:"null" }}
+            item_id: "{{ item_id|default:'null' }}",
+            recipient_id: "{{ recipient_id|default:'null' }}"
           })
         })
         .then(response => response.json())
@@ -529,8 +542,8 @@ document.addEventListener("DOMContentLoaded", function() {
           },
           body: JSON.stringify({
             action: 'delete',
-            item_id: {{ item_id|default:"null" }},
-            recipient_id: {{ recipient_id|default:"null" }}
+            item_id: "{{ item_id|default:'null' }}",
+            recipient_id: "{{ recipient_id|default:'null' }}"
           })
         })
         .then(response => response.json())

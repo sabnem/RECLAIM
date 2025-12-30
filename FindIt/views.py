@@ -43,7 +43,6 @@ def mark_item_returned(request, item_id):
                 original_report_date=item.date_reported,
                 location=item.location
             )
-            
             # Ensure item is marked as returned
             item.is_returned = True
             item.save()
@@ -275,6 +274,7 @@ def contact_item_owner(request, item_id):
         form = MessageForm()
     return render(request, 'FindIt/contact_owner.html', {'form': form, 'item': item})
 
+@login_required
 def inbox(request):
     item_id = request.GET.get('item_id')
     recipient_id = request.GET.get('recipient_id')

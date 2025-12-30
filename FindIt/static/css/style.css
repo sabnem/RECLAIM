@@ -1,3 +1,37 @@
+.modal.show .modal-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    z-index: 1050 !important;
+    max-width: 95vw;
+    width: 100%;
+    min-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+/* Universal modal/dialog centering */
+.modal-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    z-index: 1050 !important;
+    max-width: 90vw;
+    width: 100%;
+}
+/* Disable all modal animation and transform */
+.modal,
+.modal-content,
+.modal-dialog {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+}
 :root{
     /* Core palette */
     /* Enhanced background and surface colors */
