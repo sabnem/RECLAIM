@@ -38,7 +38,7 @@ SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx
 # ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
 
 DEBUG = False
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['www.nemlostandfound.com', 'nemlostandfound.com']
 
 
 
