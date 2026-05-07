@@ -70,7 +70,7 @@
         </div>
       </aside>
 
-      {% if active_conversation %}
+      {% if active_conversation %}{# template-only #}
       <!-- Chat Area -->
       <main class="chat-area flex-grow-1 d-flex flex-column" id="chatArea">
         <!-- Chat Header -->
@@ -308,117 +308,6 @@ document.addEventListener("DOMContentLoaded", function() {
   let chatHistory = document.getElementById("chatHistory");
   if (chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
 
-  // WebSocket Setup for Real-Time Messaging
-  {% if active_conversation %}
-    // WebSocket setup for real-time messaging
-    const conversationId = '{{ active_conversation.id }}';
-    const currentUserId = "{{ user.id }}";
-    const recipientId = "{{ recipient_id|default:'null' }}";
-    const itemId = "{{ item_id|default:'null' }}";
-
-    console.log('WebSocket Debug Info:', {
-      conversationId: conversationId,
-      currentUserId: currentUserId,
-      recipientId: recipientId,
-      itemId: itemId
-    });
-
-    // WebSocket connection
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
-    console.log('Connecting to WebSocket:', wsUrl);
-    const chatSocket = new WebSocket(wsUrl);
-
-    chatSocket.onopen = function(e) {
-      console.log('✅ WebSocket connection established');
-    };
-
-    chatSocket.onmessage = function(e) {
-      console.log('📨 Received message:', e.data);
-      const data = JSON.parse(e.data);
-
-      // Only add message if it's not from current user (to avoid duplicates)
-      if (data.sender_id != currentUserId) {
-        console.log('Adding message from other user');
-        appendMessage(data);
-      } else {
-        console.log('Skipping own message (already displayed)');
-      }
-    };
-
-    chatSocket.onclose = function(e) {
-      console.error('❌ WebSocket closed unexpectedly', e);
-    };
-
-    chatSocket.onerror = function(e) {
-      console.error('❌ WebSocket error:', e);
-    };
-
-    // Function to append message to chat
-    function appendMessage(data) {
-      const chatHistory = document.getElementById('chatHistory');
-      const isCurrentUser = data.sender_id == currentUserId;
-
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'd-flex mb-3 ' + (isCurrentUser ? 'justify-content-end' : 'justify-content-start');
-
-      const bubbleDiv = document.createElement('div');
-      bubbleDiv.className = 'chat-bubble ' + (isCurrentUser ? 'sent' : 'received');
-
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'mb-1';
-      contentDiv.textContent = data.message;
-
-      const timeDiv = document.createElement('div');
-      timeDiv.className = 'small opacity-75 text-end mt-1';
-      const now = new Date();
-      timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-      bubbleDiv.appendChild(contentDiv);
-      bubbleDiv.appendChild(timeDiv);
-      messageDiv.appendChild(bubbleDiv);
-      chatHistory.appendChild(messageDiv);
-
-      // Scroll to bottom
-      chatHistory.scrollTop = chatHistory.scrollHeight;
-    }
-
-    // Handle form submission
-    const chatForm = document.getElementById('chatForm');
-    const messageInput = chatForm.querySelector('input[name="message"]');
-
-    chatForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      const message = messageInput.value.trim();
-      if (!message) return;
-
-      console.log('📤 Sending message via WebSocket:', message);
-
-      // Send message via WebSocket
-      const messageData = {
-        'message': message,
-        'sender_id': currentUserId,
-        'recipient_id': recipientId,
-        'item_id': itemId,
-        'image': null
-      };
-
-      console.log('Message data:', messageData);
-      chatSocket.send(JSON.stringify(messageData));
-
-      // Add message to chat immediately for current user
-      appendMessage({
-        'message': message,
-        'sender_id': currentUserId,
-        'timestamp': new Date().toISOString()
-      });
-
-      // Clear input
-      messageInput.value = '';
-    });
-  {% endif %}
-
   // Image upload preview
   const fileInput = document.getElementById("chatImageUpload");
   const previewContainer = document.getElementById("imagePreviewContainer");
@@ -607,5 +496,118 @@ function closeLightbox() {
   lightboxImg.src = '';
 }
 </script>
+
+{% if active_conversation %}
+<script>
+  // WebSocket Setup for Real-Time Messaging
+  // WebSocket setup for real-time messaging
+  const conversationId = '{{ active_conversation.id }}';
+  const currentUserId = "{{ user.id }}";
+  const recipientId = "{{ recipient_id|default:'null' }}";
+  const itemId = "{{ item_id|default:'null' }}";
+
+  console.log('WebSocket Debug Info:', {
+    conversationId: conversationId,
+    currentUserId: currentUserId,
+    recipientId: recipientId,
+    itemId: itemId
+  });
+
+  // WebSocket connection
+  const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+  const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
+  console.log('Connecting to WebSocket:', wsUrl);
+  const chatSocket = new WebSocket(wsUrl);
+
+  chatSocket.onopen = function(e) {
+    console.log('✅ WebSocket connection established');
+  };
+
+  chatSocket.onmessage = function(e) {
+    console.log('📨 Received message:', e.data);
+    const data = JSON.parse(e.data);
+
+    // Only add message if it's not from current user (to avoid duplicates)
+    if (data.sender_id != currentUserId) {
+      console.log('Adding message from other user');
+      appendMessage(data);
+    } else {
+      console.log('Skipping own message (already displayed)');
+    }
+  };
+
+  chatSocket.onclose = function(e) {
+    console.error('❌ WebSocket closed unexpectedly', e);
+  };
+
+  chatSocket.onerror = function(e) {
+    console.error('❌ WebSocket error:', e);
+  };
+
+  // Function to append message to chat
+  function appendMessage(data) {
+    const chatHistory = document.getElementById('chatHistory');
+    const isCurrentUser = data.sender_id == currentUserId;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'd-flex mb-3 ' + (isCurrentUser ? 'justify-content-end' : 'justify-content-start');
+
+    const bubbleDiv = document.createElement('div');
+    bubbleDiv.className = 'chat-bubble ' + (isCurrentUser ? 'sent' : 'received');
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'mb-1';
+    contentDiv.textContent = data.message;
+
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'small opacity-75 text-end mt-1';
+    const now = new Date();
+    timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    bubbleDiv.appendChild(contentDiv);
+    bubbleDiv.appendChild(timeDiv);
+    messageDiv.appendChild(bubbleDiv);
+    chatHistory.appendChild(messageDiv);
+
+    // Scroll to bottom
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+  }
+
+  // Handle form submission
+  const chatForm = document.getElementById('chatForm');
+  const messageInput = chatForm.querySelector('input[name="message"]');
+
+  chatForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    console.log('📤 Sending message via WebSocket:', message);
+
+    // Send message via WebSocket
+    const messageData = {
+      'message': message,
+      'sender_id': currentUserId,
+      'recipient_id': recipientId,
+      'item_id': itemId,
+      'image': null
+    };
+
+    console.log('Message data:', messageData);
+    chatSocket.send(JSON.stringify(messageData));
+
+    // Add message to chat immediately for current user
+    appendMessage({
+      'message': message,
+      'sender_id': currentUserId,
+      'timestamp': new Date().toISOString()
+    });
+
+    // Clear input
+    messageInput.value = '';
+  });
+</script>
+{% endif %}
 
 {% endblock %}

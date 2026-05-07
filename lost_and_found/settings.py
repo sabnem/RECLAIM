@@ -15,6 +15,14 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import environ
+
+
+env = environ.Env()
+
+environ.Env.read_env()
+
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -29,7 +37,7 @@ SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx
 # DEBUG = False
 # ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
 
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 
@@ -91,16 +99,23 @@ WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # POSTGRES
+
+import dj_database_url
+
 DATABASES = {
-   'default': {
-       'ENGINE': 'django.db.backends.postgresql',
-       'NAME': 'postgres',
-       'USER': 'postgres',
-       'PASSWORD': 'Joyce@2003',
-       'HOST': 'localhost',
-       'PORT': '5432',
-    }
-}
+    'default': dj_database_url.parse(env('DATABASE_URL'))
+ }
+
+# DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'postgres',
+#        'USER': 'postgres',
+#        'PASSWORD': 'Joyce@2003',
+#        'HOST': 'localhost',
+#        'PORT': '5432',
+#     }
+# }
 
 
 # DATABASES = {
