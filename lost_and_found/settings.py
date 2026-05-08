@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'FindIt',
-    'storages',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -96,28 +95,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 
-AWS_ACCESS_KEY_ID = 'AKIARXPVZ5464BZ3X34P'
-AWS_SECRET_ACCESS_KEY = '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'
-
-AWS_STORAGE_BUCKET_NAME = 'lostandfound-bkt'
-AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
-AWS_S3_FILE_OVERWRITE = False
-
-
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-
-STORAGES = {
-    "default": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-    },
-
-    "staticfiles": {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-    },
-}
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # POSTGRES
@@ -128,28 +105,6 @@ DATABASES = {
     'default': dj_database_url.parse(env('DATABASE_URL'))
  }
 
-# DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'postgres',
-#        'USER': 'postgres',
-#        'PASSWORD': 'Joyce@2003',
-#        'HOST': 'localhost',
-#        'PORT': '5432',
-#     }
-# }
-
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'JsNEM$ReclaimDB',
-#         'USER': 'JsNEM',
-#         'PASSWORD': 'Joyce@2010',
-#         'HOST': 'JsNEM.mysql.pythonanywhere-services.com',
-#         'PORT': '3306',
-#     }
-# }
 
 
 # Password validation
