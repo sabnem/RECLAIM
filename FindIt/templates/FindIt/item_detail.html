@@ -24,7 +24,7 @@
                 <button type="button" class="btn btn-info text-white" id="editItemBtn" style="display:inline; margin-top: 12px;">
                   <i class="bi bi-pencil-square"></i> Edit Item
                 </button>
-                <form method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3 p-3 rounded-4 mt-3" style="display:none; background: var(--primary-subtle);">
+                <form id="editItemForm" method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3 p-3 rounded-4 mt-3" style="display:none; background: var(--primary-subtle);">
                   {% csrf_token %}
                   <div class="mb-2">
                     <label for="itemPhoto" class="form-label">Change Image</label>
