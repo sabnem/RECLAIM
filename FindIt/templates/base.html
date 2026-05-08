@@ -14,6 +14,159 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
+    <!-- Hamburger Menu Styles -->
+    <style>
+        /* Hamburger Menu */
+        .hamburger-btn {
+            display: none;
+            flex-direction: column;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            z-index: 1001;
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(10px, 10px);
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-btn.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(8px, -8px);
+        }
+
+        .hamburger-line {
+            width: 28px;
+            height: 3px;
+            background-color: var(--primary, #D97706);
+            margin: 5px 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+        }
+
+        /* Slide-in Menu */
+        .side-menu {
+            position: fixed;
+            left: -320px;
+            top: var(--navbar-offset, 0px);
+            width: 320px;
+            height: calc(100vh - var(--navbar-offset, 0px));
+            background: var(--surface, rgba(255, 255, 255, 0.98));
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto; /* keep scroll functionality */
+            border-right: 1px solid rgba(217, 119, 6, 0.1);
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        .side-menu::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        .side-menu.active {
+            left: 0;
+        }
+
+        .side-menu-header {
+            padding: 2rem 1.5rem;
+            background: linear-gradient(135deg, var(--primary, #D97706), var(--primary-2, #FB923C));
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .side-menu-header i {
+            font-size: 1.8rem;
+        }
+
+        .side-menu-content {
+            padding: 1.5rem 0;
+        }
+
+        .side-menu-item {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: var(--text, #0f1724);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            font-weight: 500;
+        }
+
+        .side-menu-item:hover {
+            background-color: rgba(217, 119, 6, 0.08);
+            border-left-color: var(--primary, #D97706);
+            padding-left: 1.8rem;
+        }
+
+        .side-menu-divider {
+            border-top: 1px solid rgba(217, 119, 6, 0.1);
+            margin: 1rem 0;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: var(--navbar-offset, 0px);
+            left: 0;
+            width: 100%;
+            height: calc(100vh - var(--navbar-offset, 0px));
+            background: rgba(0, 0, 0, 0);
+            z-index: 999;
+            transition: background 0.3s ease;
+            pointer-events: none;
+        }
+
+        .menu-overlay.active {
+            background: rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        /* Show hamburger on mobile */
+        @media (max-width: 991px) {
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .navbar-collapse {
+                display: none !important;
+            }
+        }
+
+        /* Dark mode adjustments */
+        body.dark-mode .side-menu {
+            background: var(--surface, #1a1a1a);
+        }
+
+        body.dark-mode .side-menu-item {
+            color: var(--text-primary, #e5e5e5);
+        }
+
+        body.dark-mode .side-menu-item:hover {
+            background-color: rgba(217, 119, 6, 0.15);
+        }
+
+        /* Category dropdown scrollbox - hide scrollbar but keep scrolling */
+        .category-scrollbox {
+            max-height: 250px;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+
+        .category-scrollbox::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -26,10 +179,11 @@
                     <span class="brand-text">Lost & Found</span>
                 </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-                    data-bs-target="#navbarNav" aria-controls="navbarNav" 
-                    aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+            <!-- Hamburger Menu Button -->
+            <button class="hamburger-btn" id="hamburgerBtn" type="button" title="Toggle menu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
             </button>
             
             <div class="collapse navbar-collapse fade-in" id="navbarNav">
@@ -43,7 +197,7 @@
                                 Categories
                             </a>
                             <ul class="dropdown-menu">
-                                <div style="max-height: 250px; overflow-y: auto;">
+                                <div class="category-scrollbox">
                                     {% for category in categories %}
                                         <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
                                     {% empty %}
@@ -99,7 +253,7 @@
                                 Categories
                             </a>
                             <ul class="dropdown-menu">
-                                <div style="max-height: 250px; overflow-y: auto;">
+                                <div class="category-scrollbox">
                                     {% for category in categories %}
                                         <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
                                     {% empty %}
@@ -120,6 +274,42 @@
             </div>
         </div>
     </nav>
+    
+    <!-- Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    
+    <!-- Slide-in Side Menu -->
+    <div class="side-menu" id="sideMenu">
+        <div class="side-menu-header">
+            <i class="bi bi-search"></i>
+            <span>Menu</span>
+        </div>
+        <div class="side-menu-content">
+            {% if user.is_authenticated %}
+                <a href="{% url 'home' %}" class="side-menu-item"><i class="bi bi-house me-2"></i> Home</a>
+                <a href="{% url 'item_list' %}" class="side-menu-item"><i class="bi bi-list me-2"></i> Items</a>
+                <a href="{% url 'report_item' %}" class="side-menu-item"><i class="bi bi-exclamation-circle me-2"></i> Report</a>
+                <a href="{% url 'inbox' %}?view=list" class="side-menu-item"><i class="bi bi-envelope me-2"></i> Inbox</a>
+                {% if user.is_superuser %}
+                    <a href="{% url 'admin_dashboard' %}" class="side-menu-item"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                {% endif %}
+                <div class="side-menu-divider"></div>
+                <a href="{% url 'profile' %}" class="side-menu-item"><i class="bi bi-person-circle me-2"></i> Profile</a>
+                <a href="{% url 'my_recovered_items' %}" class="side-menu-item"><i class="bi bi-check-circle me-2"></i> My Recovered Items</a>
+                <a href="{% url 'my_returned_items' %}" class="side-menu-item"><i class="bi bi-hand-thumbs-up me-2"></i> My Returned Items</a>
+                <a href="{% url 'returns_statistics' %}" class="side-menu-item"><i class="bi bi-graph-up me-2"></i> Statistics</a>
+                <div class="side-menu-divider"></div>
+                <a href="{% url 'logout' %}" class="side-menu-item text-danger"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
+            {% else %}
+                <a href="{% url 'home' %}" class="side-menu-item"><i class="bi bi-house me-2"></i> Home</a>
+                <a href="{% url 'item_list' %}" class="side-menu-item"><i class="bi bi-list me-2"></i> Items</a>
+                <a href="{% url 'login' %}?next={% url 'report_item' %}" class="side-menu-item"><i class="bi bi-exclamation-circle me-2"></i> Report</a>
+                <div class="side-menu-divider"></div>
+                <a href="{% url 'login' %}" class="side-menu-item"><i class="bi bi-box-arrow-in-right me-2"></i> Login</a>
+                <a href="{% url 'register' %}" class="side-menu-item"><i class="bi bi-person-plus me-2"></i> Register</a>
+            {% endif %}
+        </div>
+    </div>
     
     <!-- Main Content -->
     <main class="container mt-4 flex-grow-1 fade-in">
@@ -216,6 +406,59 @@
         window.addEventListener('scroll', updateNavbar);
         updateNavbar(); // Initial check
 
+        // Hamburger Menu Functionality
+        (function() {
+            const hamburgerBtn = document.getElementById('hamburgerBtn');
+            const sideMenu = document.getElementById('sideMenu');
+            const menuOverlay = document.getElementById('menuOverlay');
+            const navbarEl = document.querySelector('.navbar');
+            
+            if (!hamburgerBtn || !sideMenu) return;
+
+            function syncMenuOffset() {
+                const navHeight = navbarEl && getComputedStyle(navbarEl).display !== 'none'
+                    ? Math.round(navbarEl.getBoundingClientRect().height)
+                    : 0;
+                document.documentElement.style.setProperty('--navbar-offset', `${navHeight}px`);
+            }
+
+            syncMenuOffset();
+            window.addEventListener('resize', syncMenuOffset);
+            
+            function toggleMenu() {
+                syncMenuOffset();
+                hamburgerBtn.classList.toggle('active');
+                sideMenu.classList.toggle('active');
+                menuOverlay.classList.toggle('active');
+                document.body.style.overflow = sideMenu.classList.contains('active') ? 'hidden' : 'auto';
+            }
+            
+            function closeMenu() {
+                hamburgerBtn.classList.remove('active');
+                sideMenu.classList.remove('active');
+                menuOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+            
+            // Toggle on button click
+            hamburgerBtn.addEventListener('click', toggleMenu);
+            
+            // Close on overlay click
+            menuOverlay.addEventListener('click', closeMenu);
+            
+            // Close on menu item click
+            document.querySelectorAll('.side-menu-item').forEach(item => {
+                item.addEventListener('click', closeMenu);
+            });
+            
+            // Close on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sideMenu.classList.contains('active')) {
+                    closeMenu();
+                }
+            });
+        })();
+
         // Theme init: respect saved preference, then system, then default light
         (function(){
             const toggle = document.getElementById('darkModeToggle');
@@ -231,7 +474,7 @@
             }
 
             // initialize
-            if(saved === 'dark' || (saved === null && prefersDark)) setDark(true, false); else setDark(false, false);
+            if(saved === 'dark') setDark(true, false); else setDark(false, false);
 
             // click handler
             toggle && toggle.addEventListener('click', function(){ setDark(!document.body.classList.contains('dark-mode')); });

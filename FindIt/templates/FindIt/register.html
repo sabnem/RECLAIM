@@ -26,4 +26,79 @@
         </div>
     </div>
 </div>
+
+<style>
+    .password-toggle-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-toggle-btn {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--primary);
+        font-size: 1.1rem;
+        padding: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .password-toggle-btn:hover {
+        transform: scale(1.2);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordField = document.getElementById('id_password_register');
+        
+        if (passwordField) {
+            // Wrap password field with container for toggle button
+            const wrapper = document.createElement('div');
+            wrapper.className = 'password-toggle-container';
+            wrapper.style.position = 'relative';
+            
+            // Insert wrapper before password field
+            passwordField.parentNode.insertBefore(wrapper, passwordField);
+            
+            // Move password field into wrapper
+            wrapper.appendChild(passwordField);
+            
+            // Create toggle button
+            const toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button';
+            toggleBtn.className = 'password-toggle-btn';
+            toggleBtn.innerHTML = '<i class="bi bi-eye"></i>';
+            toggleBtn.title = 'Show/hide password';
+            toggleBtn.style.position = 'absolute';
+            toggleBtn.style.right = '12px';
+            toggleBtn.style.top = '50%';
+            toggleBtn.style.transform = 'translateY(-50%)';
+            toggleBtn.style.paddingRight = '0';
+            
+            // Add to wrapper
+            wrapper.appendChild(toggleBtn);
+            
+            // Add padding to password field for the button
+            passwordField.style.paddingRight = '40px';
+            
+            // Toggle functionality
+            toggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordField.setAttribute('type', type);
+                
+                // Update icon
+                if (type === 'text') {
+                    toggleBtn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    toggleBtn.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+        }
+    });
+</script>
 {% endblock %}

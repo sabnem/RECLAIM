@@ -11,6 +11,25 @@
         display: none !important;
     }
 }
+
+/* Force-hide message panel scrollbars across browsers */
+.messaging-app .sidebar,
+.messaging-app .chat-history {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge legacy */
+}
+
+.messaging-app .sidebar::-webkit-scrollbar,
+.messaging-app .chat-history::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important; /* Chrome/Safari/Opera */
+}
+
+/* Remove the right edge strip that can look like a scrollbar */
+.messaging-app .sidebar {
+  border-right: none !important;
+}
 </style>
 
 <div class="messaging-container">
@@ -227,7 +246,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Initialize mobile view
   function initMobileView() {
     if (isMobile()) {
-      var hasActiveConversation = "{{ active_conversation|yesno:'true,false' }}";
+      var hasActiveConversation = "{{ active_conversation|yesno:'true,false' }}" === 'true';
       if (hasActiveConversation) {
         // If there's an active conversation, show chat area full screen
         if (conversationList) conversationList.style.display = 'none';

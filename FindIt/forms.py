@@ -26,7 +26,7 @@ class UserRegistrationForm(forms.ModelForm):
         max_length=30,
         widget=forms.TextInput(attrs={'placeholder': 'Last Name'})
     )
-    password = forms.CharField(label='', widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
+    password = forms.CharField(label='', widget=forms.PasswordInput(attrs={'placeholder': 'Password', 'id': 'id_password_register'}))
     contact_number = forms.CharField(label='', max_length=20, widget=forms.TextInput(attrs={'placeholder': 'Contact Number'}))
 
     class Meta:
@@ -38,9 +38,16 @@ class UserRegistrationForm(forms.ModelForm):
         }
     # help_texts removed to avoid duplicate username help text
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('This email is already in use. Please use a different email.')
+        return email
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
+        user.email = self.cleaned_data['email']
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         if commit:
