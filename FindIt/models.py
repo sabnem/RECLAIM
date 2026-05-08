@@ -6,11 +6,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from cloudinary.models import CloudinaryField
-
-class library(models.Model):
-	title = models.CharField(max_length=100)
-	description = models.CharField(max_length=255)
-	image = CloudinaryField('image')
 	
 class AccountDeletionFeedback(models.Model):
 	username = models.CharField(max_length=150)

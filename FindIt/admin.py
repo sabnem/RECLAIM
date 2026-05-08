@@ -1,10 +1,5 @@
 from django.contrib import admin
 from .models import UserProfile, Item, ItemCategory, Message, RecoveredItem
-from . models import library
-admin.site.register(library)
-
-class LibraryAdmin(admin.ModelAdmin):
-	list_display = ('title', 'description')
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
