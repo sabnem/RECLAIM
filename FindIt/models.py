@@ -5,6 +5,13 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from cloudinary.models import CloudinaryField
+
+class library(models.Model):
+	title = models.CharField(max_length=100)
+	description = models.CharField(max_length=255)
+	image = CloudinaryField('image')
+	
 class AccountDeletionFeedback(models.Model):
 	username = models.CharField(max_length=150)
 	email = models.EmailField()
@@ -20,7 +27,7 @@ class UserProfile(models.Model):
 	social_links = models.URLField(blank=True, null=True)
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	contact_number = models.CharField(max_length=20)
-	profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+	profile_picture = CloudinaryField('image', blank=True, null=True)
 	notify_email = models.BooleanField(default=True)
 	notify_sms = models.BooleanField(default=False)
 	PROFILE_VISIBILITY_CHOICES = [
@@ -110,7 +117,7 @@ class Item(models.Model):
 	description = models.TextField()
 	category = models.ForeignKey(ItemCategory, on_delete=models.SET_NULL, null=True)
 	location = models.CharField(max_length=100)
-	photo = models.ImageField(upload_to='item_photos/', blank=True, null=True)
+	photo = CloudinaryField('image', blank=True, null=True)
 	status = models.CharField(max_length=5, choices=STATUS_CHOICES)
 	date_reported = models.DateTimeField(auto_now_add=True)
 	reported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='items_reported')
@@ -127,7 +134,7 @@ class Message(models.Model):
 	recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
 	item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='messages')
 	content = models.TextField(blank=True)
-	image = models.ImageField(upload_to='chat_images/', blank=True, null=True)
+	image = CloudinaryField('image', blank=True, null=True)
 	timestamp = models.DateTimeField(auto_now_add=True)
 	is_read = models.BooleanField(default=False)
 	deleted_by_sender = models.BooleanField(default=False)
@@ -141,8 +148,8 @@ class ReturnConfirmation(models.Model):
 	item = models.OneToOneField('Item', on_delete=models.CASCADE, related_name='return_confirmation')
 	finder_confirmed = models.BooleanField(default=False)
 	owner_confirmed = models.BooleanField(default=False)
-	finder_photo = models.ImageField(upload_to='return_evidence/', blank=True, null=True)
-	owner_photo = models.ImageField(upload_to='return_evidence/', blank=True, null=True)
+	finder_photo = CloudinaryField('image', blank=True, null=True)
+	owner_photo = CloudinaryField('image', blank=True, null=True)
 	finder_signature = models.TextField(blank=True, null=True)  # Store base64 or SVG data
 	owner_signature = models.TextField(blank=True, null=True)
 	confirmed_at = models.DateTimeField(blank=True, null=True)

@@ -15,6 +15,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
 import environ
 
 
@@ -58,6 +62,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'FindIt',
+    'cloudinary_storage',
+    'cloudinary',
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -142,23 +148,13 @@ USE_TZ = True
 
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 # Static files (CSS, JavaScript, Images)
+
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise configuration for serving static files
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
-
-# Media files (user uploads)
+# Media files (user uploads) - handled by Cloudinary
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 
 
@@ -190,3 +186,20 @@ CHANNEL_LAYERS = {
     },
 }
 SITE_URL = 'http://127.0.0.1:8000'
+
+# Cloudinary Configuration
+cloudinary.config(
+    cloud_name=env('CLOUDINARY_CLOUD_NAME', default='dqv8znzsj'),
+    api_key=env('CLOUDINARY_API_KEY', default='989933919878537'),
+    api_secret=env('CLOUDINARY_API_SECRET', default='9e1xUANz_Z32KToucCsLyEZ4xyo'),
+)
+
+# Set Cloudinary as the default storage backend
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
