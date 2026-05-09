@@ -218,7 +218,7 @@
                             </a>
                         </li>
                         {% if user.is_superuser %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2 me-1"></i>Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Dashboard</a></li>
                         {% endif %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" 
@@ -348,11 +348,11 @@
                 <div class="col-6 col-md-4">
                     <h6 class="mb-3">Quick Links</h6>
                     <ul class="list-unstyled">
-                        <li><a href="{% url 'home' %}" class="d-block py-1 footer-link">Home</a></li>
+                        <!-- <li><a href="{% url 'home' %}" class="d-block py-1 footer-link">Home</a></li>
                         <li><a href="{% url 'item_list' %}" class="d-block py-1 footer-link">Browse Items</a></li>
-                        <li><a href="{% url 'report_item' %}" class="d-block py-1 footer-link">Report Lost/Found</a></li>
+                        <li><a href="{% url 'report_item' %}" class="d-block py-1 footer-link">Report Lost/Found</a></li> -->
                         <li><a href="{% url 'terms_and_conditions' %}" class="d-block py-1 footer-link">Terms & Conditions</a></li>
-                        <li><a href="#" class="d-block py-1 footer-link">Privacy Policy</a></li>
+                        <li><a href="{% url 'privacy_policy' %}" class="d-block py-1 footer-link">Privacy Policy</a></li>
                     </ul>
                 </div>
 

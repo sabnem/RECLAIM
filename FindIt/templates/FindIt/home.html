@@ -25,7 +25,7 @@
     <h2 class="text-center fw-bold mb-4">
         <span class="section-title position-relative">Our Features</span>
     </h2>
-    <div class="swiper featureSwiper">
+    <div class="swiper featureSwiper showcase-swiper">
         <div class="swiper-wrapper">
             <div class="swiper-slide">
                 <div class="p-4 rounded-4 shadow-sm h-100 text-center tips-card">
@@ -117,7 +117,7 @@
     <h2 class="text-center fw-bold mb-4">
         <span class="section-title position-relative">Stay Safe & Informed</span>
     </h2>
-    <div class="swiper featureSwiper">
+    <div class="swiper tipsSwiper showcase-swiper">
         <div class="swiper-wrapper">
             <div class="swiper-slide">
                 <div class="p-4 rounded-4 shadow-sm h-100 text-center tips-card">
@@ -169,9 +169,9 @@
                             <span>Follow community guidelines always</span>
                         </li>
                     </ul>
-                    <a href="{% url 'terms_and_conditions' %}" target="_blank" class="btn btn-outline-primary mt-4 rounded-pill px-4">
+                    <!-- <a href="{% url 'terms_and_conditions' %}" target="_blank" class="btn btn-outline-primary mt-4 rounded-pill px-4">
                         <i class="bi bi-arrow-right-circle me-2"></i>Read Full Terms
-                    </a>
+                    </a> -->
                 </div>
             </div>
             <div class="swiper-slide">
@@ -198,9 +198,9 @@
                         <span>Data deletion on request</span>
                     </li>
                 </ul>
-                <a href="{% url 'privacy_policy' %}" target="_blank" class="btn btn-outline-primary mt-4 rounded-pill px-4">
+                <!-- <a href="{% url 'privacy_policy' %}" target="_blank" class="btn btn-outline-primary mt-4 rounded-pill px-4">
                     <i class="bi bi-arrow-right-circle me-2"></i>Read Full Policy
-                </a>
+                </a> -->
               </div>
             </div>
         </div>
@@ -219,32 +219,59 @@
     effect: "coverflow",
     grabCursor: true,
     centeredSlides: true,
-    slidesPerView: "auto",
-    spaceBetween: 30,
-    coverflowEffect: { rotate: 25, stretch: 0, depth: 250, modifier: 1.5, slideShadows: true },
     loop: true,
-    speed: 1000,
+    speed: 1800,
     observer: true,
     observeParents: true,
+    watchSlidesProgress: true,
+    allowTouchMove: true,
+    spaceBetween: 18,
+    slidesPerView: 'auto',
+    coverflowEffect: {
+      rotate: 18,
+      stretch: 0,
+      depth: 180,
+      modifier: 1.25,
+      slideShadows: false
+    },
+    breakpoints: {
+      0: { slidesPerView: 'auto', spaceBetween: 12 },
+      576: { slidesPerView: 'auto', spaceBetween: 14 },
+      768: { slidesPerView: 'auto', spaceBetween: 16 },
+      992: { slidesPerView: 'auto', spaceBetween: 20 },
+      1200: { slidesPerView: 'auto', spaceBetween: 24 }
+    }
   };
 
-  // Features Swiper (5s autoplay)
+  // Features swiper: elegant slow auto-swipe
   new Swiper(".featureSwiper", {
     ...commonSwiperConfig,
-    autoplay: { delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true },
-    pagination: { el: ".feature-pagination", clickable: true },
-    navigation: { nextEl: ".feature-next", prevEl: ".feature-prev" }
+    autoplay: {
+      delay: 6500,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+      stopOnLastSlide: false
+    },
+    pagination: { el: ".feature-pagination", clickable: true }
   });
 
-  // Tips Swiper (faster autoplay 3s)
+  // Safety/tips swiper: slightly slower to improve readability
   new Swiper(".tipsSwiper", {
     ...commonSwiperConfig,
-    autoplay: { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true },
-    spaceBetween: 25,
-    coverflowEffect: { rotate: 20, depth: 220, modifier: 1.4 },
-    pagination: { el: ".tips-pagination", clickable: true },
-    navigation: { nextEl: ".tips-next", prevEl: ".tips-prev" }
+    autoplay: {
+      delay: 7200,
+      disableOnInteraction: false,
+      pauseOnMouseEnter: true,
+      stopOnLastSlide: false
+    },
+    coverflowEffect: {
+      rotate: 16,
+      stretch: 0,
+      depth: 170,
+      modifier: 1.2,
+      slideShadows: false
+    },
+    pagination: { el: ".tips-pagination", clickable: true }
   });
-
 </script>
 {% endblock %}

@@ -453,6 +453,26 @@ footer .social-icons a:hover{transform:scale(1.15); color:#fff}
 /* Dark-mode friendly form controls */
 body.dark-mode input, body.dark-mode select, body.dark-mode textarea{background: rgba(255,255,255,0.02); color:var(--text); border-color: rgba(255,255,255,0.06)}
 
+/* Theme-aware headers and list items for admin and policy pages */
+.theme-header{
+    background: transparent;
+    border-bottom: 1px solid var(--primary-subtle);
+    color: var(--text);
+}
+.theme-list-item{
+    background: transparent;
+    color: var(--text);
+    border-color: transparent;
+}
+body.dark-mode .theme-list-item{
+    border-color: rgba(255,255,255,0.03);
+}
+
+/* Slightly stronger card background for policy/admin on dark-mode */
+body.dark-mode .card.theme-strong, .card.theme-strong{
+    background: rgba(255,255,255,0.03);
+}
+
 /* Responsive tweaks for hero and cards */
 /* Hero section with warm gradient overlay */
 .hero-section {
@@ -642,6 +662,12 @@ body.dark-mode input, body.dark-mode select, body.dark-mode textarea{background:
 
 .swiper-pagination-bullet-active {
     background: var(--primary) !important;
+}
+
+/* Hide Swiper navigation arrows across the site (remove next/prev buttons) */
+.swiper-button-next,
+.swiper-button-prev {
+    display: none !important;
 }
 
 /* Social Icons Static Style */

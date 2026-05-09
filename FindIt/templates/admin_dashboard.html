@@ -2,9 +2,15 @@
 {% block content %}
 <div class="dashboard-container">
     <div class="card shadow-sm p-4 mb-4">
-        <h2 class="mb-4 d-flex align-items-center">
-            <i class="bi bi-speedometer2 me-2 text-primary"></i> Admin Dashboard
-        </h2>
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width:56px;height:56px;background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;flex:0 0 auto;">
+                <i class="bi bi-shield-lock-fill fs-4"></i>
+            </div>
+            <div>
+                <h2 class="mb-0">Admin Dashboard</h2>
+                <p class="mb-0 text-muted">Overview of users, items, and site activity</p>
+            </div>
+        </div>
         <p class="lead">Welcome, <strong>{{ user.username }}</strong> 👋 Here you can manage users, items, and site settings.</p>
         
         <!-- Stats Section -->
@@ -47,7 +53,7 @@
             <div class="col-md-2 col-6">
                 <div class="stats-card">
                     <i class="bi bi-gear-fill text-secondary"></i>
-                    <h6><a href="{% url 'admin:index' %}" class="stretched-link text-decoration-none">Django Admin</a></h6>
+                    <h6><a href="{% url 'admin:index' %}" class="stretched-link text-decoration-none">Admin</a></h6>
                 </div>
             </div>
         </div>
@@ -56,11 +62,11 @@
         <div class="row g-4">
             <div class="col-md-6">
                 <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-light fw-bold">📦 Recent Items</div>
+                    <div class="card-header theme-header fw-bold">📦 Recent Items</div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
                             {% for item in recent_items %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <li class="list-group-item theme-list-item d-flex justify-content-between align-items-center">
                                     {{ item.title }} 
                                     <span class="badge {% if item.status == 'found' %}bg-success{% else %}bg-danger{% endif %}">
                                         {{ item.status|title }}
@@ -76,11 +82,11 @@
             
             <div class="col-md-6">
                 <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-light fw-bold">👤 Recent Users</div>
+                    <div class="card-header theme-header fw-bold">👤 Recent Users</div>
                     <div class="card-body">
                         <ul class="list-group list-group-flush">
                             {% for user in recent_users %}
-                                <li class="list-group-item">
+                                <li class="list-group-item theme-list-item">
                                     <i class="bi bi-person-circle text-primary me-2"></i>
                                     {{ user.first_name }} {{ user.last_name }} ({{ user.username }})
                                 </li>
