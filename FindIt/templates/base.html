@@ -14,321 +14,624 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     
-    <!-- Hamburger Menu Styles -->
+    <!-- Sidebar Styles -->
     <style>
-        /* Hamburger Menu */
-        .hamburger-btn {
-            display: none;
-            flex-direction: column;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            z-index: 1001;
+        body.app-layout {
+            padding-top: 0;
         }
 
-        .hamburger-btn.active .hamburger-line:nth-child(1) {
-            transform: rotate(45deg) translate(10px, 10px);
+        .app-shell {
+            min-height: 100vh;
         }
 
-        .hamburger-btn.active .hamburger-line:nth-child(2) {
-            opacity: 0;
-        }
-
-        .hamburger-btn.active .hamburger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(8px, -8px);
-        }
-
-        .hamburger-line {
-            width: 28px;
-            height: 3px;
-            background-color: var(--primary, #D97706);
-            margin: 5px 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 2px;
-        }
-
-        /* Slide-in Menu */
-        .side-menu {
+        .app-sidebar {
             position: fixed;
-            left: -320px;
-            top: var(--navbar-offset, 0px);
-            width: 320px;
-            height: calc(100vh - var(--navbar-offset, 0px));
-            height: calc(100dvh - var(--navbar-offset, 0px));
-            background: var(--surface, rgba(255, 255, 255, 0.98));
-            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-            transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow-y: auto; /* keep scroll functionality */
-            border-right: 1px solid rgba(217, 119, 6, 0.1);
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
+            inset: 1rem auto 1rem 1rem;
+            width: 292px;
+            z-index: 1035;
+            transition: width 0.35s ease, transform 0.35s ease;
         }
 
-        .side-menu::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+        .app-sidebar-shell {
+            height: 100%;
+            border-radius: 30px;
+            background: linear-gradient(180deg, rgba(6, 17, 47, 0.96) 0%, rgba(10, 33, 74, 0.92) 48%, rgba(4, 11, 28, 0.97) 100%);
+            border: 1px solid rgba(157, 190, 255, 0.14);
+            box-shadow: 0 24px 60px rgba(2, 8, 22, 0.38);
+            backdrop-filter: blur(24px) saturate(170%);
+            -webkit-backdrop-filter: blur(24px) saturate(170%);
+            color: #eaf2ff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .side-menu.active {
-            left: 0;
-        }
-
-        .side-menu-header {
-            padding: 2rem 1.5rem;
-            background: linear-gradient(135deg, var(--primary, #D97706), var(--primary-2, #FB923C));
-            color: white;
+        .app-sidebar-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 1.3rem;
-            font-weight: 700;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.2rem 1.15rem 1rem;
+            border-bottom: 1px solid rgba(157, 190, 255, 0.12);
         }
 
-        .side-menu-header i {
-            font-size: 1.8rem;
-        }
-
-        .side-menu-content {
-            padding: 1.5rem 0 calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
-        }
-
-        .side-menu-item {
-            display: block;
-            padding: 1rem 1.5rem;
-            color: var(--text, #0f1724);
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: #fff;
             text-decoration: none;
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-            font-weight: 500;
+            min-width: 0;
         }
 
-        .side-menu-item:hover {
-            background-color: rgba(217, 119, 6, 0.08);
-            border-left-color: var(--primary, #D97706);
-            padding-left: 1.8rem;
+        .sidebar-brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #7cc1ff 0%, #2f7dff 52%, #1b4fcc 100%);
+            box-shadow: 0 12px 28px rgba(29, 83, 204, 0.35);
+            flex: 0 0 auto;
         }
 
-        .side-menu-divider {
-            border-top: 1px solid rgba(217, 119, 6, 0.1);
-            margin: 1rem 0;
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
 
-        .menu-overlay {
-            position: fixed;
-            top: var(--navbar-offset, 0px);
-            left: 0;
+        .sidebar-brand-text strong {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            line-height: 1.1;
+            letter-spacing: 0.01em;
+        }
+
+        .sidebar-brand-text span {
+            font-size: 0.78rem;
+            color: rgba(234, 242, 255, 0.72);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-toggle,
+        .sidebar-mobile-close,
+        .sidebar-mobile-open {
+            border: 0;
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .sidebar-toggle:hover,
+        .sidebar-mobile-close:hover,
+        .sidebar-mobile-open:hover {
+            background: rgba(255, 255, 255, 0.14);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0.85rem 0.8rem;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1 1 auto;
+        }
+
+        .sidebar-nav::-webkit-scrollbar,
+        .sidebar-submenu::-webkit-scrollbar {
+            display: none;
+        }
+
+        .sidebar-group {
+            position: relative;
+        }
+
+        .sidebar-link,
+        .sidebar-group-toggle {
             width: 100%;
-            height: calc(100vh - var(--navbar-offset, 0px));
-            height: calc(100dvh - var(--navbar-offset, 0px));
-            background: rgba(0, 0, 0, 0);
-            z-index: 999;
-            transition: background 0.3s ease;
-            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            border: 0;
+            border-radius: 18px;
+            padding: 0.92rem 1rem;
+            color: rgba(234, 242, 255, 0.95);
+            background: transparent;
+            text-decoration: none;
+            text-align: left;
+            position: relative;
+            transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
         }
 
-        .menu-overlay.active {
-            background: rgba(0, 0, 0, 0.5);
+        .sidebar-link:hover,
+        .sidebar-group-toggle:hover,
+        .sidebar-link:focus-visible,
+        .sidebar-group-toggle:focus-visible {
+            background: rgba(120, 166, 255, 0.16);
+            color: #fff;
+            transform: translateX(2px);
+            box-shadow: inset 0 0 0 1px rgba(158, 194, 255, 0.14);
+        }
+
+        .sidebar-link.active,
+        .sidebar-group-toggle.active,
+        .sidebar-submenu-link.active-link {
+            background: linear-gradient(135deg, rgba(91, 141, 255, 0.26), rgba(29, 92, 231, 0.22));
+            color: #fff;
+            box-shadow: inset 0 0 0 1px rgba(174, 207, 255, 0.18), 0 12px 26px rgba(1, 8, 26, 0.22);
+        }
+
+        .sidebar-link i,
+        .sidebar-group-toggle i,
+        .sidebar-footer .sidebar-action i {
+            font-size: 1.1rem;
+            width: 1.3rem;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+
+        .sidebar-label,
+        .sidebar-footer-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: opacity 0.2s ease, transform 0.2s ease, max-width 0.2s ease;
+        }
+
+        .sidebar-caret {
+            margin-left: auto;
+            transition: transform 0.25s ease, opacity 0.2s ease;
+        }
+
+        .sidebar-group-toggle[aria-expanded="true"] .sidebar-caret {
+            transform: rotate(180deg);
+        }
+
+        .sidebar-section-title {
+            padding: 0.75rem 1rem 0.45rem;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: rgba(234, 242, 255, 0.52);
+        }
+
+        .sidebar-submenu {
+            margin: 0.45rem 0 0.1rem 0.85rem;
+            padding: 0 0 0 0.9rem;
+            border-left: 1px solid rgba(158, 194, 255, 0.16);
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease;
+        }
+
+        .sidebar-submenu.open {
+            max-height: 640px;
+            opacity: 1;
+        }
+
+        .sidebar-submenu-link {
+            padding: 0.78rem 0.95rem;
+            border-radius: 14px;
+            color: rgba(234, 242, 255, 0.78);
+            text-decoration: none;
+            font-size: 0.96rem;
+            transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+        }
+
+        .sidebar-submenu-link:hover,
+        .sidebar-submenu-link:focus-visible {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            margin: 0.85rem 1rem;
+            background: linear-gradient(90deg, transparent, rgba(157, 190, 255, 0.2), transparent);
+        }
+
+        .sidebar-footer {
+            padding: 0 0.85rem 1rem;
+            margin-top: auto;
+        }
+
+        .sidebar-footer-group {
+            display: grid;
+            gap: 0.35rem;
+        }
+
+        .sidebar-action {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            border: 0;
+            border-radius: 18px;
+            padding: 0.92rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            color: #eaf2ff;
+            text-decoration: none;
+            transition: background 0.25s ease, transform 0.25s ease;
+        }
+
+        .sidebar-action:hover,
+        .sidebar-action:focus-visible {
+            background: rgba(120, 166, 255, 0.16);
+            color: #fff;
+            transform: translateX(2px);
+        }
+
+        .sidebar-action.theme-action {
+            justify-content: space-between;
+        }
+
+        .sidebar-action.theme-action .sidebar-action-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 0;
+        }
+
+        .sidebar-action.theme-action .badge {
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 8, 20, 0.55);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            z-index: 1030;
+        }
+
+        .sidebar-backdrop.active {
+            opacity: 1;
             pointer-events: auto;
         }
 
-        /* Show hamburger on mobile */
-        @media (max-width: 991px) {
-            .hamburger-btn {
+        .mobile-topbar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 1025;
+            margin: 0.75rem 0.75rem 0;
+            padding: 0.85rem 1rem;
+            border-radius: 20px;
+            background: rgba(6, 17, 47, 0.82);
+            border: 1px solid rgba(157, 190, 255, 0.12);
+            box-shadow: 0 16px 32px rgba(2, 8, 22, 0.22);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .mobile-topbar .sidebar-brand-text span {
+            color: rgba(234, 242, 255, 0.68);
+        }
+
+        .app-main {
+            margin-left: 308px;
+            padding: 1.5rem 1.5rem 1.5rem 0;
+            transition: margin-left 0.35s ease;
+        }
+
+        body.sidebar-collapsed .app-sidebar {
+            width: 96px;
+        }
+
+        body.sidebar-collapsed .app-main {
+            margin-left: 112px;
+        }
+
+        body.sidebar-collapsed .sidebar-brand-text,
+        body.sidebar-collapsed .sidebar-label,
+        body.sidebar-collapsed .sidebar-footer-label,
+        body.sidebar-collapsed .sidebar-caret,
+        body.sidebar-collapsed .sidebar-section-title,
+        body.sidebar-collapsed .sidebar-action .badge {
+            opacity: 0;
+            max-width: 0;
+            overflow: hidden;
+            transform: translateX(-6px);
+            pointer-events: none;
+        }
+
+        body.sidebar-collapsed .sidebar-brand-text {
+            display: none;
+        }
+
+        body.sidebar-collapsed .sidebar-link,
+        body.sidebar-collapsed .sidebar-group-toggle,
+        body.sidebar-collapsed .sidebar-action {
+            justify-content: center;
+            padding-inline: 0.75rem;
+        }
+
+        body.sidebar-collapsed .sidebar-link[data-tooltip]::after,
+        body.sidebar-collapsed .sidebar-group-toggle[data-tooltip]::after,
+        body.sidebar-collapsed .sidebar-action[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: calc(100% + 14px);
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(4, 11, 28, 0.98);
+            border: 1px solid rgba(157, 190, 255, 0.16);
+            color: #fff;
+            white-space: nowrap;
+            font-size: 0.82rem;
+            letter-spacing: 0.01em;
+            box-shadow: 0 14px 30px rgba(2, 8, 22, 0.36);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            z-index: 1040;
+        }
+
+        body.sidebar-collapsed .sidebar-link:hover::after,
+        body.sidebar-collapsed .sidebar-group-toggle:hover::after,
+        body.sidebar-collapsed .sidebar-action:hover::after,
+        body.sidebar-collapsed .sidebar-link:focus-visible::after,
+        body.sidebar-collapsed .sidebar-group-toggle:focus-visible::after,
+        body.sidebar-collapsed .sidebar-action:focus-visible::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        body.sidebar-collapsed .sidebar-group:hover > .sidebar-submenu,
+        body.sidebar-collapsed .sidebar-group:focus-within > .sidebar-submenu,
+        body.sidebar-collapsed .sidebar-group.open > .sidebar-submenu {
+            position: absolute;
+            top: 0;
+            left: calc(100% + 0.75rem);
+            width: 260px;
+            margin: 0;
+            padding: 0.75rem;
+            border-left: 0;
+            border-radius: 22px;
+            background: rgba(6, 17, 47, 0.96);
+            border: 1px solid rgba(157, 190, 255, 0.16);
+            box-shadow: 0 22px 44px rgba(2, 8, 22, 0.38);
+            opacity: 1;
+            visibility: visible;
+            max-height: 640px;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        @media (max-width: 991.98px) {
+            .mobile-topbar {
                 display: flex;
             }
 
-            .navbar-collapse {
-                display: none !important;
+            .app-sidebar {
+                inset: 0 auto 0 0;
+                width: min(86vw, 320px);
+                transform: translateX(-110%);
             }
-        }
 
-        /* Dark mode adjustments */
-        body.dark-mode .side-menu {
-            background: var(--surface, #1a1a1a);
-        }
+            .app-sidebar.is-open {
+                transform: translateX(0);
+            }
 
-        body.dark-mode .side-menu-item {
-            color: var(--text-primary, #e5e5e5);
-        }
+            .app-main,
+            body.sidebar-collapsed .app-main {
+                margin-left: 0;
+                padding: 1rem 0.85rem 1.5rem;
+            }
 
-        body.dark-mode .side-menu-item:hover {
-            background-color: rgba(217, 119, 6, 0.15);
-        }
+            body.sidebar-collapsed .sidebar-brand-text,
+            body.sidebar-collapsed .sidebar-label,
+            body.sidebar-collapsed .sidebar-footer-label,
+            body.sidebar-collapsed .sidebar-caret,
+            body.sidebar-collapsed .sidebar-action .badge {
+                opacity: 1;
+                max-width: none;
+                overflow: visible;
+                transform: none;
+            }
 
-        /* Category dropdown scrollbox - hide scrollbar but keep scrolling */
-        .category-scrollbox {
-            max-height: 250px;
-            overflow-y: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE and Edge */
-        }
+            body.sidebar-collapsed .sidebar-link,
+            body.sidebar-collapsed .sidebar-group-toggle,
+            body.sidebar-collapsed .sidebar-action {
+                justify-content: flex-start;
+                padding-inline: 1rem;
+            }
 
-        .category-scrollbox::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+            body.sidebar-collapsed .sidebar-link[data-tooltip]::after,
+            body.sidebar-collapsed .sidebar-group-toggle[data-tooltip]::after,
+            body.sidebar-collapsed .sidebar-action[data-tooltip]::after {
+                display: none;
+            }
+
+            body.sidebar-collapsed .sidebar-group:hover > .sidebar-submenu,
+            body.sidebar-collapsed .sidebar-group:focus-within > .sidebar-submenu,
+            body.sidebar-collapsed .sidebar-group.open > .sidebar-submenu {
+                position: static;
+                width: auto;
+                margin: 0.45rem 0 0 0.85rem;
+                padding: 0 0 0 0.9rem;
+                border-left: 1px solid rgba(158, 194, 255, 0.16);
+                border-radius: 0;
+                background: transparent;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
-<body class="d-flex flex-column min-vh-100">
-
-    <!-- Enhanced Floating Navbar -->
-    <div class="container-fluid px-0">
-        <nav class="navbar navbar-expand-lg sticky-top navbar-glass">
-            <div class="container py-2">
-                <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-                        <i class="bi bi-search brand-icon " style="font-size:1.8rem;"></i>
-                    <span class="brand-text">Lost & Found</span>
-                </a>
-            
-            <!-- Hamburger Menu Button -->
-            <button class="hamburger-btn" id="hamburgerBtn" type="button" title="Toggle menu">
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
-                <span class="hamburger-line"></span>
+<body class="d-flex flex-column min-vh-100 app-layout">
+    <div class="app-shell">
+        <div class="mobile-topbar d-lg-none">
+            <a class="sidebar-brand" href="{% url 'home' %}">
+                <span class="sidebar-brand-mark"><i class="bi bi-search fs-5"></i></span>
+                <span class="sidebar-brand-text">
+                    <strong>Lost &amp; Found</strong>
+                    <span>Find items faster</span>
+                </span>
+            </a>
+            <button class="sidebar-mobile-open" id="sidebarMobileOpen" type="button" aria-label="Open sidebar">
+                <i class="bi bi-list fs-4"></i>
             </button>
-            
-            <div class="collapse navbar-collapse fade-in" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'item_list' %}">Items</a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdown" 
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Categories
-                            </a>
-                            <ul class="dropdown-menu">
-                                <div class="category-scrollbox">
-                                    {% for category in categories %}
-                                        <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
-                                    {% empty %}
-                                        <li><span class="dropdown-item text-muted">No categories</span></li>
-                                    {% endfor %}
-                                </div>
-                            </ul>
-                        </li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'report_item' %}">Report</a></li>
-                        <li class="nav-item position-relative">
-                            <a class="nav-link" href="{% url 'inbox' %}?view=list">
-                                <i class="bi bi-envelope me-1"></i> Inbox
-                                {% if unread_inbox_count > 0 %}
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {{ unread_inbox_count }}
-                                    </span>
-                                {% endif %}
-                            </a>
-                        </li>
+        </div>
+
+        <aside class="app-sidebar" id="appSidebar" aria-label="Primary sidebar">
+            <div class="app-sidebar-shell">
+                <div class="app-sidebar-header">
+                    <a class="sidebar-brand" href="{% url 'home' %}">
+                        <span class="sidebar-brand-mark"><i class="bi bi-search fs-5"></i></span>
+                        <span class="sidebar-brand-text">
+                            <strong>Lost &amp; Found</strong>
+                            <span>Community recovery hub</span>
+                        </span>
+                    </a>
+                    <button class="sidebar-toggle d-none d-lg-inline-flex" id="sidebarCollapseToggle" type="button" aria-label="Collapse sidebar">
+                        <i class="bi bi-chevron-left fs-5"></i>
+                    </button>
+                    <button class="sidebar-mobile-close d-inline-flex d-lg-none" id="sidebarMobileClose" type="button" aria-label="Close sidebar">
+                        <i class="bi bi-x-lg fs-5"></i>
+                    </button>
+                </div>
+
+                <nav class="sidebar-nav">
+                    {% with current_url=request.resolver_match.url_name %}
+                        <a href="{% url 'home' %}" class="sidebar-link {% if current_url == 'home' %}active{% endif %}" data-tooltip="Home" aria-label="Home">
+                            <i class="bi bi-house-door"></i>
+                            <span class="sidebar-label">Home</span>
+                        </a>
+
+                        <div class="sidebar-group {% if current_url == 'item_list' %}open{% endif %}" data-group="workspace">
+                            <button class="sidebar-group-toggle {% if current_url == 'item_list' %}active{% endif %}" type="button" data-submenu-target="workspaceSubmenu" aria-expanded="{% if current_url == 'item_list' %}true{% else %}false{% endif %}" data-tooltip="Workspace" aria-label="Workspace section">
+                                <i class="bi bi-grid-1x2"></i>
+                                <span class="sidebar-label">Workspace</span>
+                                <i class="bi bi-chevron-down sidebar-caret"></i>
+                            </button>
+                            <div class="sidebar-submenu {% if current_url == 'item_list' %}open{% endif %}" id="workspaceSubmenu">
+                                <a href="{% url 'item_list' %}" class="sidebar-submenu-link {% if current_url == 'item_list' %}active-link{% endif %}">All Items</a>
+                                {% for category in categories %}
+                                    <a href="{% url 'item_list' %}?category={{ category.id }}" class="sidebar-submenu-link" title="{{ category.name }}">{{ category.name }}</a>
+                                {% empty %}
+                                    <span class="sidebar-submenu-link text-muted">No categories</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <a href="{% url 'report_item' %}" class="sidebar-link {% if current_url == 'report_item' %}active{% endif %}" data-tooltip="Report" aria-label="Report item">
+                            <i class="bi bi-exclamation-circle"></i>
+                            <span class="sidebar-label">Report</span>
+                        </a>
+
+                        <a href="{% url 'inbox' %}?view=list" class="sidebar-link {% if current_url == 'inbox' %}active{% endif %}" data-tooltip="Inbox" aria-label="Inbox">
+                            <i class="bi bi-envelope"></i>
+                            <span class="sidebar-label">Inbox</span>
+                            {% if unread_inbox_count > 0 %}
+                                <span class="badge rounded-pill text-bg-danger ms-auto">{{ unread_inbox_count }}</span>
+                            {% endif %}
+                        </a>
+
                         {% if user.is_superuser %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                            <a href="{% url 'admin_dashboard' %}" class="sidebar-link {% if current_url == 'admin_dashboard' %}active{% endif %}" data-tooltip="Dashboard" aria-label="Dashboard">
+                                <i class="bi bi-speedometer2"></i>
+                                <span class="sidebar-label">Dashboard</span>
+                            </a>
                         {% endif %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" 
-                               id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <img src="{% if user.userprofile.profile_picture %}{{ user.userprofile.profile_picture.url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=1565c0&color=fff&size=32{% endif %}" 
-                                     class="rounded-circle me-2 shadow-sm" width="32" height="32" alt="Profile Picture">
-                                <span>{{ user.username }}</span>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person-circle me-2"></i>Profile</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'my_recovered_items' %}"><i class="bi bi-check-circle me-2"></i>My Recovered Items</a></li>
-                                <li><a class="dropdown-item" href="{% url 'my_returned_items' %}"><i class="bi bi-hand-thumbs-up me-2"></i>My Returned Items</a></li>
-                                <li><a class="dropdown-item" href="{% url 'returns_statistics' %}"><i class="bi bi-graph-up me-2"></i>Statistics Dashboard</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                            </ul>
-                        </li>
-                        <!-- Dark mode toggle -->
-                        <li class="nav-item ms-2 d-flex align-items-center">
-                            <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary" title="Toggle dark mode">
-                                <i id="darkModeIcon" class="bi bi-moon-fill"></i>
+
+                        <div class="sidebar-divider"></div>
+
+                        <div class="sidebar-group {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}open{% endif %}" data-group="account">
+                            <button class="sidebar-group-toggle {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}active{% endif %}" type="button" data-submenu-target="accountSubmenu" aria-expanded="{% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}true{% else %}false{% endif %}" data-tooltip="My Account" aria-label="My Account">
+                                <i class="bi bi-person-circle"></i>
+                                <span class="sidebar-label">My Account</span>
+                                <i class="bi bi-chevron-down sidebar-caret"></i>
                             </button>
-                        </li>
-                        
-                    {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'item_list' %}">Items</a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="categoriesDropdownGuest" 
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Categories
-                            </a>
-                            <ul class="dropdown-menu">
-                                <div class="category-scrollbox">
-                                    {% for category in categories %}
-                                        <li><a class="dropdown-item" href="{% url 'item_list' %}?category={{ category.id }}">{{ category.name }}</a></li>
-                                    {% empty %}
-                                        <li><span class="dropdown-item text-muted">No categories</span></li>
-                                    {% endfor %}
-                                </div>
-                            </ul>
-                        </li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'login' %}?next={% url 'report_item' %}">Report</a></li>
-                        <!-- Dark mode toggle -->
-                        <li class="nav-item ms-2 d-flex align-items-center">
-                            <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary" title="Toggle dark mode">
+                            <div class="sidebar-submenu {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}open{% endif %}" id="accountSubmenu">
+                                <a href="{% url 'profile' %}" class="sidebar-submenu-link {% if current_url == 'profile' %}active-link{% endif %}">Profile</a>
+                                <a href="{% url 'my_recovered_items' %}" class="sidebar-submenu-link {% if current_url == 'my_recovered_items' %}active-link{% endif %}">My Recovered Items</a>
+                                <a href="{% url 'my_returned_items' %}" class="sidebar-submenu-link {% if current_url == 'my_returned_items' %}active-link{% endif %}">My Returned Items</a>
+                                <a href="{% url 'returns_statistics' %}" class="sidebar-submenu-link {% if current_url == 'returns_statistics' %}active-link{% endif %}">Statistics Dashboard</a>
+                            </div>
+                        </div>
+                    {% endwith %}
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="sidebar-footer-group">
+                        <button id="darkModeToggle" class="sidebar-action theme-action" type="button" data-tooltip="Light mode toggle" aria-label="Toggle light mode">
+                            <span class="sidebar-action-meta">
                                 <i id="darkModeIcon" class="bi bi-moon-fill"></i>
-                            </button>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
-    
-    <!-- Menu Overlay -->
-    <div class="menu-overlay" id="menuOverlay"></div>
-    
-    <!-- Slide-in Side Menu -->
-    <div class="side-menu" id="sideMenu">
-        <div class="side-menu-header">
-            <i class="bi bi-search"></i>
-            <span>Menu</span>
-        </div>
-        <div class="side-menu-content">
-            {% if user.is_authenticated %}
-                <a href="{% url 'home' %}" class="side-menu-item"><i class="bi bi-house me-2"></i> Home</a>
-                <a href="{% url 'item_list' %}" class="side-menu-item"><i class="bi bi-list me-2"></i> Items</a>
-                <a href="{% url 'report_item' %}" class="side-menu-item"><i class="bi bi-exclamation-circle me-2"></i> Report</a>
-                <a href="{% url 'inbox' %}?view=list" class="side-menu-item"><i class="bi bi-envelope me-2"></i> Inbox</a>
-                {% if user.is_superuser %}
-                    <a href="{% url 'admin_dashboard' %}" class="side-menu-item"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-                {% endif %}
-                <div class="side-menu-divider"></div>
-                <a href="{% url 'profile' %}" class="side-menu-item"><i class="bi bi-person-circle me-2"></i> Profile</a>
-                <a href="{% url 'my_recovered_items' %}" class="side-menu-item"><i class="bi bi-check-circle me-2"></i> My Recovered Items</a>
-                <a href="{% url 'my_returned_items' %}" class="side-menu-item"><i class="bi bi-hand-thumbs-up me-2"></i> My Returned Items</a>
-                <a href="{% url 'returns_statistics' %}" class="side-menu-item"><i class="bi bi-graph-up me-2"></i> Statistics</a>
-                <div class="side-menu-divider"></div>
-                <a href="{% url 'logout' %}" class="side-menu-item text-danger"><i class="bi bi-box-arrow-right me-2"></i> Logout</a>
-            {% else %}
-                <a href="{% url 'home' %}" class="side-menu-item"><i class="bi bi-house me-2"></i> Home</a>
-                <a href="{% url 'item_list' %}" class="side-menu-item"><i class="bi bi-list me-2"></i> Items</a>
-                <a href="{% url 'login' %}?next={% url 'report_item' %}" class="side-menu-item"><i class="bi bi-exclamation-circle me-2"></i> Report</a>
-                <div class="side-menu-divider"></div>
-                <a href="{% url 'login' %}" class="side-menu-item"><i class="bi bi-box-arrow-in-right me-2"></i> Login</a>
-                <a href="{% url 'register' %}" class="side-menu-item"><i class="bi bi-person-plus me-2"></i> Register</a>
-            {% endif %}
-        </div>
-    </div>
-    
-    <!-- Main Content -->
-    <main class="container mt-4 flex-grow-1 fade-in">
-        {% if messages %}
-            <div id="alert-messages">
-                {% for message in messages %}
-                    <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                <span class="sidebar-footer-label">Light Mode</span>
+                            </span>
+                            <span class="badge">Theme</span>
+                        </button>
+
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'profile' %}" class="sidebar-action" data-tooltip="My Account" aria-label="My account">
+                                <i class="bi bi-person"></i>
+                                <span class="sidebar-footer-label">My Account</span>
+                            </a>
+                            <a href="{% url 'logout' %}" class="sidebar-action text-danger" data-tooltip="Logout" aria-label="Logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span class="sidebar-footer-label">Logout</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="sidebar-action" data-tooltip="Login" aria-label="Login">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span class="sidebar-footer-label">Login</span>
+                            </a>
+                            <a href="{% url 'register' %}" class="sidebar-action" data-tooltip="Register" aria-label="Register">
+                                <i class="bi bi-person-plus"></i>
+                                <span class="sidebar-footer-label">Register</span>
+                            </a>
+                        {% endif %}
                     </div>
-                {% endfor %}
+                </div>
             </div>
-        {% endif %}
-        
-        {% block content %}{% endblock %}
-    </main>
+        </aside>
+
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+        <main class="app-main flex-grow-1 fade-in">
+            <div class="container py-4">
+                {% if messages %}
+                    <div id="alert-messages">
+                        {% for message in messages %}
+                            <div class="alert alert-info alert-dismissible fade show shadow-sm" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
     
     <!-- Modern Footer -->
     <footer class="footer mt-5">
@@ -391,75 +694,123 @@
             </div>
         </div>
     </footer>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Navbar scroll effect
-        const navbar = document.querySelector('.navbar');
-        const scrollThreshold = 10;
-
-        function updateNavbar() {
-            if (window.scrollY > scrollThreshold) {
-                navbar.classList.add('shadow-scroll');
-            } else {
-                navbar.classList.remove('shadow-scroll');
-            }
-        }
-
-        window.addEventListener('scroll', updateNavbar);
-        updateNavbar(); // Initial check
-
-        // Hamburger Menu Functionality
         (function() {
-            const hamburgerBtn = document.getElementById('hamburgerBtn');
-            const sideMenu = document.getElementById('sideMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const navbarEl = document.querySelector('.navbar');
-            
-            if (!hamburgerBtn || !sideMenu) return;
+            const sidebar = document.getElementById('appSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const collapseToggle = document.getElementById('sidebarCollapseToggle');
+            const mobileOpen = document.getElementById('sidebarMobileOpen');
+            const mobileClose = document.getElementById('sidebarMobileClose');
+            const submenuButtons = document.querySelectorAll('[data-submenu-target]');
+            const mobileQuery = window.matchMedia('(max-width: 991.98px)');
+            const stateKey = 'sidebar-state';
 
-            function syncMenuOffset() {
-                const navHeight = navbarEl && getComputedStyle(navbarEl).display !== 'none'
-                    ? Math.round(navbarEl.getBoundingClientRect().height)
-                    : 0;
-                document.documentElement.style.setProperty('--navbar-offset', `${navHeight}px`);
+            function savedCollapsed() {
+                return localStorage.getItem(stateKey) === 'collapsed';
             }
 
-            syncMenuOffset();
-            window.addEventListener('resize', syncMenuOffset);
-            
-            function toggleMenu() {
-                syncMenuOffset();
-                hamburgerBtn.classList.toggle('active');
-                sideMenu.classList.toggle('active');
-                menuOverlay.classList.toggle('active');
-                document.body.style.overflow = sideMenu.classList.contains('active') ? 'hidden' : 'auto';
+            function updateCollapseIcon() {
+                if (!collapseToggle) {
+                    return;
+                }
+                const icon = collapseToggle.querySelector('i');
+                if (!icon) {
+                    return;
+                }
+
+                if (document.body.classList.contains('sidebar-collapsed')) {
+                    icon.className = 'bi bi-chevron-right fs-5';
+                    collapseToggle.setAttribute('aria-label', 'Expand sidebar');
+                } else {
+                    icon.className = 'bi bi-chevron-left fs-5';
+                    collapseToggle.setAttribute('aria-label', 'Collapse sidebar');
+                }
             }
-            
-            function closeMenu() {
-                hamburgerBtn.classList.remove('active');
-                sideMenu.classList.remove('active');
-                menuOverlay.classList.remove('active');
-                document.body.style.overflow = 'auto';
+
+            function setCollapsed(collapsed, persist = true) {
+                if (mobileQuery.matches) {
+                    document.body.classList.remove('sidebar-collapsed');
+                    sidebar && sidebar.classList.remove('is-collapsed');
+                    updateCollapseIcon();
+                    return;
+                }
+
+                document.body.classList.toggle('sidebar-collapsed', collapsed);
+                sidebar && sidebar.classList.toggle('is-collapsed', collapsed);
+                if (persist) {
+                    localStorage.setItem(stateKey, collapsed ? 'collapsed' : 'expanded');
+                }
+                updateCollapseIcon();
             }
-            
-            // Toggle on button click
-            hamburgerBtn.addEventListener('click', toggleMenu);
-            
-            // Close on overlay click
-            menuOverlay.addEventListener('click', closeMenu);
-            
-            // Close on menu item click
-            document.querySelectorAll('.side-menu-item').forEach(item => {
-                item.addEventListener('click', closeMenu);
+
+            function openDrawer() {
+                if (!sidebar) {
+                    return;
+                }
+                sidebar.classList.add('is-open');
+                backdrop && backdrop.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDrawer() {
+                if (!sidebar) {
+                    return;
+                }
+                sidebar.classList.remove('is-open');
+                backdrop && backdrop.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+
+            function syncLayout() {
+                if (mobileQuery.matches) {
+                    document.body.classList.remove('sidebar-collapsed');
+                    sidebar && sidebar.classList.remove('is-collapsed');
+                    closeDrawer();
+                } else {
+                    setCollapsed(savedCollapsed(), false);
+                    closeDrawer();
+                }
+            }
+
+            collapseToggle && collapseToggle.addEventListener('click', function() {
+                setCollapsed(!document.body.classList.contains('sidebar-collapsed'));
             });
-            
-            // Close on escape key
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && sideMenu.classList.contains('active')) {
-                    closeMenu();
+
+            mobileOpen && mobileOpen.addEventListener('click', openDrawer);
+            mobileClose && mobileClose.addEventListener('click', closeDrawer);
+            backdrop && backdrop.addEventListener('click', closeDrawer);
+
+            submenuButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const targetId = button.getAttribute('data-submenu-target');
+                    const target = targetId ? document.getElementById(targetId) : null;
+                    const group = button.closest('.sidebar-group');
+                    const expanded = button.getAttribute('aria-expanded') === 'true';
+
+                    if (target) {
+                        target.classList.toggle('open');
+                    }
+
+                    if (group) {
+                        group.classList.toggle('open');
+                    }
+
+                    button.setAttribute('aria-expanded', String(!expanded));
+                });
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeDrawer();
                 }
             });
+
+            mobileQuery.addEventListener('change', syncLayout);
+            syncLayout();
+            updateCollapseIcon();
         })();
 
         // Theme init: respect saved preference, then system, then default light
