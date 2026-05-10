@@ -5,13 +5,6 @@
 <link rel="stylesheet" href="{% static 'css/inbox.css' %}">
 
 <style>
-/* Hide navbar in inbox on mobile for full-screen messaging experience */
-@media (max-width: 991px) {
-    .navbar {
-        display: none !important;
-    }
-}
-
 /* Force-hide message panel scrollbars across browsers */
 .messaging-app .sidebar,
 .messaging-app .chat-history {
@@ -194,11 +187,12 @@
                      name="chat_image" 
                      accept="image/*" 
                      style="display:none;">
-              <input type="text" 
+              <textarea
                      name="message" 
                      class="form-control message-input flex-grow-1" 
                      placeholder="Type your message..."
-                     autocomplete="off">
+                autocomplete="off"
+                rows="1"></textarea>
               <button type="submit" class="btn btn-send" title="Send message">
                 <i class="bi bi-send-fill"></i>
               </button>
@@ -291,6 +285,8 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // Initialize on load
   initMobileView();
+  // If mobile, hide the global mobile topbar for a fullscreen chat experience
+  if (isMobile()) { document.body.classList.add('hide-mobile-topbar'); }
   
   // Back to conversation list
   if (backToListBtn) {
@@ -320,6 +316,8 @@ document.addEventListener("DOMContentLoaded", function() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() {
       initMobileView();
+      // Keep mobile topbar hidden when switching to mobile, restore when switching to desktop
+      if (isMobile()) document.body.classList.add('hide-mobile-topbar'); else document.body.classList.remove('hide-mobile-topbar');
     }, 250);
   });
 
@@ -594,7 +592,7 @@ function closeLightbox() {
 
   // Handle form submission
   const chatForm = document.getElementById('chatForm');
-  const messageInput = chatForm.querySelector('input[name="message"]');
+  const messageInput = chatForm.querySelector('[name="message"]');
 
   chatForm.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -626,6 +624,15 @@ function closeLightbox() {
     // Clear input
     messageInput.value = '';
   });
+
+  if (messageInput) {
+    messageInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.requestSubmit();
+      }
+    });
+  }
 </script>
 {% endif %}
 

@@ -1,55 +1,81 @@
   /* CSS Variables for Light/Dark Mode */
   :root {
-    --bg-primary: white;
-    --bg-secondary: #f8f8f8;
-    --bg-chat: #f5f5f5;
-    --bg-conversation: white;
-    --text-primary: #333;
-    --text-secondary: rgba(51, 51, 51, 0.7);
-    --text-muted: rgba(51, 51, 51, 0.5);
+    --bg-primary: #fefaf7;
+    --bg-secondary: #fff5eb;
+    --bg-chat: #fffaf5;
+    --bg-conversation: rgba(255, 255, 255, 0.92);
+    --text-primary: #0f1724;
+    --text-secondary: rgba(15, 23, 36, 0.7);
+    --text-muted: rgba(15, 23, 36, 0.5);
     --border-color: rgba(217, 119, 6, 0.2);
     --message-received-bg: white;
-    --message-received-text: #333;
+    --message-received-text: #0f1724;
     --message-received-border: rgba(0, 0, 0, 0.1);
+    /* layout heights for mobile safe offsets */
+    --mobile-topbar-height: 64px;
+    --chat-header-height: 64px;
   }
 
   /* Dark mode via system preference */
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg-primary: #1a1a1a;
-      --bg-secondary: #2d2d2d;
-      --bg-chat: #1a1a1a;
+      --bg-primary: #06112f;
+      --bg-secondary: rgba(10, 33, 74, 0.8);
+      --bg-chat: #040b1c;
       --bg-conversation: rgba(255, 255, 255, 0.05);
-      --text-primary: #e5e5e5;
-      --text-secondary: rgba(229, 229, 229, 0.7);
-      --text-muted: rgba(229, 229, 229, 0.5);
-      --border-color: rgba(217, 119, 6, 0.3);
+      --text-primary: #eaf2ff;
+      --text-secondary: rgba(234, 242, 255, 0.72);
+      --text-muted: rgba(234, 242, 255, 0.5);
+      --border-color: rgba(157, 190, 255, 0.18);
       --message-received-bg: rgba(255, 255, 255, 0.08);
-      --message-received-text: #e5e5e5;
-      --message-received-border: rgba(255, 255, 255, 0.1);
+      --message-received-text: #eaf2ff;
+      --message-received-border: rgba(157, 190, 255, 0.14);
     }
   }
 
   /* Dark mode via toggle button - takes priority */
   body.dark-mode {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --bg-chat: #1a1a1a;
+    --bg-primary: #06112f;
+    --bg-secondary: rgba(10, 33, 74, 0.8);
+    --bg-chat: #040b1c;
     --bg-conversation: rgba(255, 255, 255, 0.05);
-    --text-primary: #e5e5e5;
-    --text-secondary: rgba(229, 229, 229, 0.7);
-    --text-muted: rgba(229, 229, 229, 0.5);
-    --border-color: rgba(217, 119, 6, 0.3);
+    --text-primary: #eaf2ff;
+    --text-secondary: rgba(234, 242, 255, 0.72);
+    --text-muted: rgba(234, 242, 255, 0.5);
+    --border-color: rgba(157, 190, 255, 0.18);
     --message-received-bg: rgba(255, 255, 255, 0.08);
-    --message-received-text: #e5e5e5;
-    --message-received-border: rgba(255, 255, 255, 0.1);
+    --message-received-text: #eaf2ff;
+    --message-received-border: rgba(157, 190, 255, 0.14);
   }
 
   /* Modern Chat Interface Styles */
+  /* Make the chat fill the viewport and use flex so header/footer don't add extra top spacing */
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Remove the page container's top padding for the messaging page so chat sits at the top */
+  .messaging-container > .container {
+    padding: 0 !important;
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* When JS requests hiding the global mobile topbar, hide it so chat can occupy full screen */
+  body.hide-mobile-topbar .mobile-topbar {
+    display: none !important;
+  }
+
   .messaging-container {
     background: transparent;
-    min-height: 90vh;
-    padding: 2rem 1rem;
+    padding: 0; /* remove large top padding that pushed content down on mobile */
+    min-height: 100vh;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
   }
 
   .messaging-app {
@@ -57,7 +83,11 @@
     border-radius: 2px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    height: 85vh;
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: row;
+    height: 100vh; /* full viewport — chat will manage internal scrolling */
   }
 
   /* Adjust height on desktop to account for navbar */
@@ -72,7 +102,19 @@
     background: var(--bg-secondary);
     border-right: 1px solid var(--border-color);
     width: 340px;
+    min-width: 340px;
+    max-width: 340px;
+    flex: 0 0 340px;
     overflow-y: auto;
+  }
+
+  .chat-area {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
   }
 
   .sidebar-header {
@@ -101,20 +143,20 @@
   }
 
   .conversation:hover {
-    background: rgba(217, 119, 6, 0.1);
+    background: rgba(var(--primary-rgb), 0.1);
     border-color: var(--primary, #D97706);
     transform: translateX(8px);
   }
 
   .active-convo {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(251, 146, 60, 0.2)) !important;
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--primary-rgb), 0.1)) !important;
     border-color: var(--primary, #D97706) !important;
     transform: translateX(8px);
   }
 
   .conversation-avatar {
     border: 3px solid var(--primary, #D97706);
-    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
   }
 
   /* Chat Area Styles */
@@ -136,7 +178,7 @@
 
   .chat-header-avatar {
     border: 2px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
     width: 48px;
     height: 48px;
     margin-right: 1rem;
@@ -144,11 +186,14 @@
 
   .chat-history {
     background: var(--bg-chat);
-    padding: 2rem;
+    padding: 1rem 1rem 2rem 1rem; /* reduce top padding so messages start closer to header */
     overflow-y: auto;
     scroll-behavior: smooth;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE and Edge */
+    flex: 1 1 auto; /* allow chat history to grow/shrink and fill available space */
+    display: flex;
+    flex-direction: column;
   }
 
   .sidebar {
@@ -186,7 +231,7 @@
     background: linear-gradient(135deg, var(--primary, #D97706), var(--primary-2, #FB923C));
     color: white;
     border-radius: 18px 18px 4px 18px;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
     align-self: flex-end;
   }
 
@@ -216,27 +261,26 @@
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
     padding: 1rem 1.5rem;
-    position: sticky;
-    bottom: 0;
     z-index: 10;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
     border-radius: 0;
+    flex-shrink: 0; /* keep footer visible and not collapse */
   }
 
   .message-input {
-    background: #fff;
-    border: 1.5px solid var(--primary, #D97706);
+    background: var(--surface);
+    border: 1.5px solid var(--primary-subtle, #ffe7c2);
     border-radius: 24px;
     padding: 0.875rem 1.25rem;
     color: #222;
     transition: all 0.3s;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
   }
 
   .message-input:focus {
     background: var(--bg-conversation);
     border-color: var(--primary, #D97706);
-    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1);
     color: var(--text-primary);
     outline: none;
   }
@@ -246,7 +290,7 @@
   }
 
   .btn-attach {
-    background: #e0e0e0;
+    background: var(--bg-conversation);
     border: 1.5px solid var(--primary, #D97706);
     color: var(--primary, #D97706);
     border-radius: 50%;
@@ -281,14 +325,14 @@
     padding: 0;
     cursor: pointer;
     margin-left: 0.5rem;
-    box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+    box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
   }
 
   .btn-send:hover {
     background: var(--primary-2, #FB923C);
     color: white;
     transform: scale(1.1);
-    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
   }
 
   /* Image Preview */
@@ -302,7 +346,7 @@
     max-height: 120px;
     border-radius: 12px;
     border: 2px solid var(--primary, #D97706);
-    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
   }
 
   .remove-image-btn {
@@ -348,7 +392,7 @@
     max-width: 90%;
     max-height: 90%;
     border-radius: 12px;
-    box-shadow: 0 0 60px rgba(217, 119, 6, 0.5);
+    box-shadow: 0 0 60px rgba(var(--primary-rgb), 0.5);
   }
 
   /* Date Divider */
@@ -358,18 +402,18 @@
   }
 
   .date-divider span {
-    background: rgba(217, 119, 6, 0.2);
+    background: rgba(var(--primary-rgb), 0.2);
     color: var(--text-primary);
     padding: 0.5rem 1.5rem;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 600;
-    border: 1px solid rgba(217, 119, 6, 0.3);
+    border: 1px solid rgba(var(--primary-rgb), 0.3);
   }
 
   /* Empty State */
   .empty-state {
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.1), rgba(251, 146, 60, 0.1));
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--primary-rgb), 0.05));
     border-radius: 24px;
     padding: 4rem 3rem;
     border: 2px dashed var(--primary, #D97706);
@@ -384,7 +428,7 @@
     width: 120px;
     height: 120px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(217, 119, 6, 0.2), rgba(251, 146, 60, 0.2));
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.2), rgba(var(--primary-rgb), 0.1));
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -399,11 +443,11 @@
   @keyframes pulse {
     0%, 100% {
       transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.4);
+      box-shadow: 0 0 0 0 rgba(var(--primary-rgb), 0.4);
     }
     50% {
       transform: scale(1.05);
-      box-shadow: 0 0 0 15px rgba(217, 119, 6, 0);
+      box-shadow: 0 0 0 15px rgba(var(--primary-rgb), 0);
     }
   }
 
@@ -428,13 +472,13 @@
     text-decoration: none;
     font-weight: 600;
     font-size: 1rem;
-    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.4);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
     transition: all 0.3s ease;
   }
 
   .btn-browse-items:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(217, 119, 6, 0.6);
+    box-shadow: 0 6px 20px rgba(var(--primary-rgb), 0.6);
     color: white;
   }
 
@@ -477,7 +521,7 @@
       position: sticky;
       top: 0;
       z-index: 3;
-      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.12);
+      box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.12);
     }
 
     .conversation {
@@ -485,7 +529,7 @@
       margin: 0.45rem 0.6rem;
       font-size: 1rem;
       border-radius: 10px;
-      background: white;
+      background: var(--bg-conversation, white);
       box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
@@ -502,7 +546,9 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
+      /* reserve space for mobile topbar (search / nav) so header isn't covered */
       padding: 0;
+      padding-top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
       border-radius: 0;
       z-index: 1;
       position: fixed;
@@ -519,8 +565,9 @@
       padding: 0.8rem 0.9rem;
       font-size: 1rem;
       position: sticky;
-      top: 0;
-      z-index: 10;
+      /* stick below the mobile topbar */
+      top: calc(var(--mobile-topbar-height) + env(safe-area-inset-top));
+      z-index: 60;
       min-height: 60px;
       flex-shrink: 0;
     }
@@ -557,12 +604,22 @@
         flex-grow: 0;
       }
 
+    /* Keep the message composer above Android/iPhone navigation bars */
+    .chat-footer,
+    body.hide-mobile-topbar .chat-footer {
+      padding-bottom: calc(0.75rem + env(safe-area-inset-bottom) + 28px);
+    }
+
+    body.hide-mobile-topbar .chat-area {
+      padding-bottom: calc(env(safe-area-inset-bottom) + 28px);
+    }
+
     .d-flex.align-items-center.gap-2 {
       gap: 0.5rem !important;
       background: var(--bg-secondary, #fffaf3);
       border-radius: 14px;
       padding: 0.4rem 0.5rem;
-      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.06);
+      box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.06);
       align-items: center;
     }
 
@@ -573,12 +630,17 @@
       border-radius: 24px;
       padding: 0.7rem 1rem;
       font-size: 1rem;
-      box-shadow: 0 1px 6px rgba(217, 119, 6, 0.07);
+      box-shadow: 0 1px 6px rgba(var(--primary-rgb), 0.07);
       transition: border 0.2s, box-shadow 0.2s;
+      resize: none;
+      overflow-y: auto;
+      line-height: 1.35;
+      min-height: 44px;
+      max-height: 110px;
     }
     .message-input:focus {
       border: 1.5px solid var(--primary, #D97706);
-      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.08);
+      box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.08);
       background: var(--bg-conversation, #fffaf3);
     }
 
@@ -588,7 +650,7 @@
       font-size: 1.05rem;
       border-radius: 50%;
       margin: 0;
-      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.10);
+      box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.10);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -610,7 +672,7 @@
       color: white;
       border: none;
       margin-left: 0.2rem;
-      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+      box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
     }
 
     .btn-attach:active, .btn-send:active {
@@ -631,7 +693,7 @@
       margin-left: auto;
       margin-right: 0.5rem;
       border-radius: 18px 18px 4px 18px;
-      box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+      box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
     }
 
     .chat-bubble.received {
@@ -697,7 +759,7 @@
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
-      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+      box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
       z-index: 20;
       cursor: pointer;
       transition: all 0.3s;
@@ -705,11 +767,35 @@
 
     .floating-new-chat:hover {
       transform: scale(1.1);
-      box-shadow: 0 6px 16px rgba(217, 119, 6, 0.4);
+      box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.4);
     }
 
     /* Hide floating button when in chat */
     .chat-area .floating-new-chat {
       display: none;
+    }
+
+    /* When the inbox requests a full-screen messaging view, hide the global mobile topbar */
+    body.hide-mobile-topbar .mobile-topbar,
+    body.hide-mobile-topbar .navbar {
+      display: none !important;
+    }
+
+    /* Reduce the chat-area top padding when topbar is hidden so chat uses full height */
+    body.hide-mobile-topbar .chat-area {
+      padding-top: env(safe-area-inset-top);
+      top: 0;
+    }
+
+    /* Pull the whole inbox stack up on mobile when the shared topbar is hidden */
+    body.hide-mobile-topbar .messaging-container,
+    body.hide-mobile-topbar .messaging-container > .container,
+    body.hide-mobile-topbar .app-main {
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+
+    body.hide-mobile-topbar .chat-header {
+      top: env(safe-area-inset-top) !important;
     }
   }

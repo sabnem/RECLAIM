@@ -10,7 +10,7 @@
 
   /* Dark mode heading visibility */
   body.dark-mode .report-card h2 {
-    color: #e5e5e5 !important;
+    color: var(--text) !important;
   }
 
   .report-icon {
@@ -19,7 +19,8 @@
 
   /* Dark mode card background */
   body.dark-mode .report-card {
-    background: #2d2d2d !important;
+    background: var(--surface) !important;
+    border: 1px solid rgba(var(--primary-rgb), 0.14);
   }
 
   /* Ensure ALL form elements are visible in dark mode */
@@ -32,7 +33,7 @@
   body.dark-mode .report-card p,
   body.dark-mode .report-card .invalid-feedback,
   body.dark-mode .report-card .valid-feedback {
-    color: #e5e5e5 !important;
+    color: var(--text) !important;
   }
 
   body.dark-mode .report-card .form-control,
@@ -44,41 +45,41 @@
   body.dark-mode .report-card input[type="date"],
   body.dark-mode .report-card input[type="time"],
   body.dark-mode .report-card input[type="file"] {
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    border-color: rgba(217, 119, 6, 0.3) !important;
-    color: #e5e5e5 !important;
+    background-color: rgba(var(--primary-rgb), 0.08) !important;
+    border-color: rgba(var(--primary-rgb), 0.24) !important;
+    color: var(--text) !important;
   }
 
   body.dark-mode .report-card .form-control::placeholder,
   body.dark-mode .report-card textarea::placeholder {
-    color: rgba(229, 229, 229, 0.5) !important;
+    color: var(--text-muted) !important;
   }
 
   body.dark-mode .report-card .form-control:focus,
   body.dark-mode .report-card .form-select:focus,
   body.dark-mode .report-card textarea:focus,
   body.dark-mode .report-card input:focus {
-    background-color: rgba(255, 255, 255, 0.12) !important;
-    border-color: #D97706 !important;
-    color: #e5e5e5 !important;
-    box-shadow: 0 0 0 0.2rem rgba(217, 119, 6, 0.25) !important;
+    background-color: rgba(var(--primary-rgb), 0.12) !important;
+    border-color: var(--primary) !important;
+    color: var(--text) !important;
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-rgb), 0.22) !important;
   }
 
   /* Radio buttons and checkboxes */
   body.dark-mode .report-card .form-check-input {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(217, 119, 6, 0.3);
+    background-color: rgba(var(--primary-rgb), 0.08);
+    border-color: rgba(var(--primary-rgb), 0.24);
   }
 
   body.dark-mode .report-card .form-check-input:checked {
-    background-color: #D97706;
-    border-color: #D97706;
+    background-color: var(--primary);
+    border-color: var(--primary);
   }
 
   /* Select dropdown arrow */
   body.dark-mode .report-card select option {
-    background-color: #2d2d2d;
-    color: #e5e5e5;
+    background-color: var(--bg);
+    color: var(--text);
   }
 
   /* Asterisk for required fields */
