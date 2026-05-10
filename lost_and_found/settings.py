@@ -168,6 +168,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@lostandfound.com'
 
 # Authentication redirects
+LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = '/'
 
 # Site URL for email links
