@@ -114,6 +114,11 @@ from .models import UserReview
 # Submit review for reputation system
 from django.contrib.auth.decorators import login_required
 
+
+def conversation_room_id(item_id, user_one_id, user_two_id):
+    first_user_id, second_user_id = sorted([int(user_one_id), int(user_two_id)])
+    return f"{item_id}-{first_user_id}-{second_user_id}"
+
 # Return confirmation view
 @login_required
 def return_confirmation(request, item_id):
@@ -398,7 +403,7 @@ def inbox(request):
         if hasattr(other_user, 'userprofile') and other_user.userprofile.profile_picture:
             avatar_url = other_user.userprofile.profile_picture.url
         sidebar_conversations.append({
-            'id': f"{msg.item.id}-{other_user.id}",
+            'id': conversation_room_id(msg.item.id, request.user.id, other_user.id),
             'avatar_url': avatar_url,
             'name': other_user.get_full_name() or other_user.username,
             'last_message': msg.content,
@@ -425,7 +430,9 @@ def inbox(request):
         if hasattr(other_user, 'userprofile') and other_user.userprofile.profile_picture:
             avatar_url = other_user.userprofile.profile_picture.url
         active_convo_data = {
-            'id': f"{active_conversation.item.id}-{other_user.id}",
+            'id': conversation_room_id(active_conversation.item.id, request.user.id, other_user.id),
+            'item_id': active_conversation.item.id,
+            'recipient_id': other_user.id,
             'avatar_url': avatar_url,
             'name': other_user.get_full_name() or other_user.username,
             'item_title': active_conversation.item.title,
@@ -442,7 +449,9 @@ def inbox(request):
         if hasattr(recipient, 'userprofile') and recipient.userprofile.profile_picture:
             avatar_url = recipient.userprofile.profile_picture.url
         active_convo_data = {
-            'id': f"{item.id}-{recipient.id}",
+            'id': conversation_room_id(item.id, request.user.id, recipient.id),
+            'item_id': item.id,
+            'recipient_id': recipient.id,
             'avatar_url': avatar_url,
             'name': recipient.get_full_name() or recipient.username,
             'item_title': item.title,
@@ -454,8 +463,8 @@ def inbox(request):
 
     # Ensure item_id and recipient_id are set for the form
     if (not item_id or not recipient_id) and active_convo_data:
-        item_id = active_convo_data['id'].split('-')[0]
-        recipient_id = active_convo_data['id'].split('-')[1]
+        item_id = active_convo_data.get('item_id', item_id)
+        recipient_id = active_convo_data.get('recipient_id', recipient_id)
 
     return render(request, 'FindIt/inbox.html', {
         'conversations': sidebar_conversations,
