@@ -134,6 +134,12 @@ class Message(models.Model):
 	is_read = models.BooleanField(default=False)
 	deleted_by_sender = models.BooleanField(default=False)
 	deleted_by_recipient = models.BooleanField(default=False)
+	# New fields for edit/delete features
+	edited = models.BooleanField(default=False)
+	edited_at = models.DateTimeField(blank=True, null=True)
+	deleted_for_everyone = models.BooleanField(default=False)
+	deleted_at = models.DateTimeField(blank=True, null=True)
+	deleted_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='deleted_messages')
 
 	def __str__(self):
 		return f"From {self.sender.username} to {self.recipient.username} about {self.item.title}"

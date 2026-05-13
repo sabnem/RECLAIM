@@ -107,6 +107,9 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.core.mail import send_mail
 from django.conf import settings
+from django.http import JsonResponse
+import json
+from django.views.decorators.http import require_POST
 
 from .forms import UserReviewForm
 from .models import UserReview
@@ -626,6 +629,67 @@ def terms_and_conditions(request):
 
 def privacy_policy(request):
     return render(request, 'FindIt/privacy_policy.html')
+
+
+@login_required
+@require_POST
+def edit_message(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    message_id = payload.get('message_id')
+    new_content = payload.get('new_content', '').strip()
+    if not message_id or new_content is None:
+        return JsonResponse({'success': False, 'error': 'Missing parameters'}, status=400)
+    try:
+        msg = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Message not found'}, status=404)
+    # Only sender can edit
+    if msg.sender != request.user:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    msg.content = new_content
+    msg.edited = True
+    msg.edited_at = timezone.now()
+    msg.save()
+    return JsonResponse({'success': True, 'message_id': msg.id, 'new_content': msg.content, 'edited_at': msg.edited_at.strftime('%b. %d, %Y, %I:%M %p')})
+
+
+@login_required
+@require_POST
+def delete_message(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    message_id = payload.get('message_id')
+    for_everyone = bool(payload.get('for_everyone', False))
+    if not message_id:
+        return JsonResponse({'success': False, 'error': 'Missing message_id'}, status=400)
+    try:
+        msg = Message.objects.get(id=message_id)
+    except Message.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Message not found'}, status=404)
+    # Delete for everyone: only sender allowed
+    if for_everyone:
+        if msg.sender != request.user:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        msg.deleted_for_everyone = True
+        msg.deleted_at = timezone.now()
+        msg.deleted_by = request.user
+        msg.save()
+        return JsonResponse({'success': True, 'message_id': msg.id, 'for_everyone': True, 'deleted_at': msg.deleted_at.strftime('%b. %d, %Y, %I:%M %p')})
+    else:
+        # Delete for me: mark deleted flag for appropriate side
+        if msg.sender == request.user:
+            msg.deleted_by_sender = True
+        elif msg.recipient == request.user:
+            msg.deleted_by_recipient = True
+        else:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        msg.save()
+        return JsonResponse({'success': True, 'message_id': msg.id, 'for_everyone': False})
 
 
 # My Recovered Items - items that owner got back

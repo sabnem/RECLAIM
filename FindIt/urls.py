@@ -31,4 +31,6 @@ urlpatterns = [
     path('statistics/returns/', views.returns_statistics, name='returns_statistics'),
     path('export/recovered-items/pdf/', views.export_recovered_items_pdf, name='export_recovered_items_pdf'),
     path('clear-conversation/', views.clear_conversation, name='clear_conversation'),
+    path('message/edit/', views.edit_message, name='edit_message'),
+    path('message/delete/', views.delete_message, name='delete_message'),
 ]
