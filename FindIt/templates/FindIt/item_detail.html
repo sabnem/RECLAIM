@@ -13,6 +13,9 @@
         <h2 class="card-title fw-bold mb-3">{{ item.title }}</h2>
         <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-2 rounded-pill">{{ item.get_status_display }}</span>
         <span class="badge rounded-pill" style="background: var(--primary-subtle); color: var(--primary);">{{ item.category }}</span>
+        <span class="badge rounded-pill ms-1 {% if item.verification_status == 'RETURNED' %}bg-success{% elif item.verification_status == 'VERIFIED' %}bg-primary{% elif item.verification_status == 'CLAIMED' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+          {{ item.get_verification_status_display }}
+        </span>
         {% if item.is_returned %}
           <span class="badge bg-info text-dark me-1"><i class="bi bi-check-circle"></i> Returned</span>
         {% endif %}
@@ -52,104 +55,271 @@
                   });
                 </script>
           {% endif %}
-        <div class="d-flex flex-wrap gap-3 mt-4">
+        <div class="d-flex flex-wrap gap-3 mt-4 align-items-center">
             <!-- Safety Tips Modal Trigger -->
             <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info" target="_blank">
               <i class="bi bi-shield-check"></i> Safety & Terms
             </a>
-          {% if user.is_authenticated and user != item.reported_by %}
-            <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-warning"><i class="bi bi-chat-dots"></i> Send In-site Message</a>
+          {% if user.is_authenticated and user != item.reported_by and not item.is_returned %}
+            <button type="button" class="btn btn-warning" id="claimItemBtn"><i class="bi bi-patch-check"></i> Claim Ownership</button>
+            <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-outline-warning"><i class="bi bi-chat-dots"></i> Message Finder</a>
           {% endif %}
-          {% if user.is_authenticated and user == item.reported_by %}
-            <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;" id="markReturnedForm">
-              {% csrf_token %}
-              {% if item.is_returned %}
-                <button type="submit" class="btn btn-outline-info"><i class="bi bi-x-circle"></i> Mark as Not Returned</button>
-              {% else %}
-                <button type="button" class="btn btn-info text-white" id="markReturnedBtn"><i class="bi bi-check-circle"></i> Mark as Returned</button>
-              {% endif %}
-            </form>
+          {% if can_review_claims and pending_claims %}
+            <button type="button" class="btn btn-outline-primary" id="reviewClaimsBtn">
+              <i class="bi bi-funnel"></i> Review Claims ({{ pending_claims|length }})
+            </button>
+          {% endif %}
+          {% if can_confirm_return %}
+            <button type="button" class="btn btn-info text-white" id="confirmReturnBtn">
+              <i class="bi bi-shield-lock"></i> Confirm Return With OTP
+            </button>
+          {% endif %}
 
-            <!-- Modal for entering owner's username -->
-            <div class="modal fade" id="ownerModal" tabindex="-1" aria-labelledby="ownerModalLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="ownerModalLabel">Enter Owner's Username</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
-                    <input type="text" class="form-control" id="ownerUsername" name="owner_username" placeholder="Owner's Username" required autocomplete="off">
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitOwnerBtn">Submit</button>
-                  </div>
+          {% if can_review_claims and pending_claims %}
+            <div class="w-100 mt-3 claim-review-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                  <h5 class="mb-1">Pending Claims</h5>
+                  <p class="mb-0 text-muted">Approve one verified owner before generating the return code.</p>
                 </div>
+                {% if approved_claims.exists %}
+                  <span class="badge bg-success">Approved claimant: {{ approved_claims.first.claimant.username }}</span>
+                {% endif %}
+              </div>
+              <div class="row g-3">
+                {% for claim in pending_claims %}
+                  <div class="col-12">
+                    <div class="card claim-review-card border-0 rounded-4 shadow-sm">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                          <div>
+                            <h6 class="mb-1">{{ claim.claimant.username }}</h6>
+                            <small class="text-muted">Submitted {{ claim.created_at|date:'Y-m-d H:i' }}</small>
+                          </div>
+                          <span class="badge bg-warning text-dark">Pending</span>
+                        </div>
+                        <p class="mb-3">{{ claim.proof_text }}</p>
+                        {% if claim.proof_image %}
+                          <a href="{{ claim.proof_image.url }}" target="_blank" class="btn btn-sm btn-outline-info mb-3">View Proof Image</a>
+                        {% endif %}
+                        <div class="d-flex gap-2 flex-wrap">
+                          <form method="post" action="{% url 'review_claim' claim.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success btn-sm">
+                              <i class="bi bi-check2-circle"></i> Approve
+                            </button>
+                          </form>
+                          <form method="post" action="{% url 'review_claim' claim.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                              <i class="bi bi-x-circle"></i> Reject
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
               </div>
             </div>
+          {% endif %}
 
-            <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                var markReturnedBtn = document.getElementById('markReturnedBtn');
-                var ownerModalEl = document.getElementById('ownerModal');
-                var ownerModal = ownerModalEl ? new bootstrap.Modal(ownerModalEl) : null;
-                var markReturnedForm = document.getElementById('markReturnedForm');
-                var ownerUsernameInput = document.getElementById('ownerUsername');
-                var submitOwnerBtn = document.getElementById('submitOwnerBtn');
+          <!-- Claim Ownership Modal -->
+          <div class="modal fade" id="claimModal" tabindex="-1" aria-labelledby="claimModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content claim-modal-content">
+                <div class="modal-header claim-modal-header">
+                  <div>
+                    <h5 class="modal-title" id="claimModalLabel">Submit Ownership Claim</h5>
+                    <small class="text-muted">Provide a short proof message and optional image.</small>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'submit_claim' item.id %}" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <div class="modal-body claim-modal-body">
+                    <div class="mb-3">
+                      <label class="form-label">Proof message</label>
+                      {{ claim_form.proof_text }}
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Optional proof image</label>
+                      {{ claim_form.proof_image }}
+                    </div>
+                  </div>
+                  <div class="modal-footer claim-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning text-dark">Submit Claim</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
 
-                if (markReturnedBtn && ownerModal) {
-                  markReturnedBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    ownerUsernameInput.value = '';
-                    ownerModal.show();
-                    setTimeout(function() {
-                      ownerUsernameInput.focus();
-                    }, 300);
-                  });
-                }
-                // Ensure modal is not shown on page load
-                if (ownerModalEl) {
-                  ownerModalEl.classList.remove('show');
-                  ownerModalEl.style.display = 'none';
-                }
+          <!-- OTP Return Confirmation Modal -->
+          <div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+              <div class="modal-content return-modal-content">
+                <div class="modal-header return-modal-header">
+                  <div>
+                    <h5 class="modal-title" id="returnModalLabel">Confirm Return With OTP</h5>
+                    <small class="text-muted">Select the verified claimant and enter the 6-digit code.</small>
+                  </div>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'mark_item_returned' item.id %}">
+                  {% csrf_token %}
+                  <div class="modal-body return-modal-body">
+                    <div class="mb-3">
+                      <label class="form-label">Claimant username</label>
+                      <input type="text" class="form-control form-control-lg return-input" name="claimant_username" id="claimantUsername" list="approvedClaimants" placeholder="Type the approved claimant username" autocomplete="off" required>
+                      <datalist id="approvedClaimants">
+                        {% for username in claimant_usernames %}
+                          <option value="{{ username }}"></option>
+                        {% endfor %}
+                      </datalist>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Verification code</label>
+                      <input type="text" class="form-control form-control-lg return-input" name="verification_code" id="verificationCode" placeholder="Enter the 6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+                    </div>
+                    <div class="alert alert-info mb-0">
+                      The code expires after 24 hours and can only be used once.
+                    </div>
+                  </div>
+                  <div class="modal-footer return-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white">Confirm Return</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
 
-                // Prevent default form submission
-                if (markReturnedForm) {
-                  markReturnedForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                  });
-                }
+          <style>
+            .feature-card,
+            .feature-card:hover,
+            .feature-card::before,
+            .feature-card::after {
+              transition: none !important;
+            }
 
-                var shouldSubmitOwnerForm = false;
-                if (submitOwnerBtn && ownerModal) {
-                  submitOwnerBtn.addEventListener('click', function() {
-                    var username = ownerUsernameInput.value.trim();
-                    if (!username) {
-                      ownerUsernameInput.focus();
-                      return;
-                    }
-                    // Remove any previous hidden input to avoid duplicates
-                    var oldInput = markReturnedForm.querySelector('input[name="owner_username"]');
-                    if (oldInput) oldInput.remove();
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'owner_username';
-                    input.value = username;
-                    markReturnedForm.appendChild(input);
-                    shouldSubmitOwnerForm = true;
-                    ownerModal.hide();
-                  });
-                  ownerModalEl.addEventListener('hidden.bs.modal', function() {
-                    if (shouldSubmitOwnerForm) {
-                      markReturnedForm.submit();
-                      shouldSubmitOwnerForm = false;
-                    }
-                  });
-                }
-              });
-            </script>
-          {% elif user.is_authenticated and item.owner and user == item.owner and item.is_returned %}
+            .feature-card:hover {
+              transform: none !important;
+              box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08) !important;
+            }
+
+            .feature-card:hover::before,
+            .feature-card:hover::after {
+              opacity: 0 !important;
+              transform: none !important;
+            }
+
+            .claim-review-panel,
+            .claim-modal-content,
+            .return-modal-content {
+              background: linear-gradient(135deg, var(--bg-primary, #06112f) 0%, var(--bg-secondary, rgba(10, 33, 74, 0.95)) 100%);
+              border: 1px solid rgba(157, 190, 255, 0.18);
+              color: #eaf2ff;
+            }
+
+            .claim-review-panel {
+              padding: 1.25rem;
+              border-radius: 1rem;
+            }
+
+            .claim-review-card {
+              background: rgba(255, 255, 255, 0.06);
+              border: 1px solid rgba(157, 190, 255, 0.14);
+            }
+
+            .claim-modal-header,
+            .return-modal-header {
+              border-bottom: 1px solid rgba(157, 190, 255, 0.15);
+            }
+
+            .claim-modal-body,
+            .return-modal-body {
+              padding: 1.5rem;
+            }
+
+            .claim-modal-footer,
+            .return-modal-footer {
+              border-top: 1px solid rgba(157, 190, 255, 0.15);
+            }
+
+            .claim-modal-content textarea,
+            .return-input {
+              background: rgba(255, 255, 255, 0.08);
+              color: #eaf2ff;
+              border: 1.5px solid rgba(157, 190, 255, 0.3);
+            }
+
+            .claim-modal-content textarea:focus,
+            .return-input:focus {
+              background: rgba(255, 255, 255, 0.12);
+              color: #eaf2ff;
+              border-color: rgba(217, 119, 6, 0.6);
+              box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
+            }
+
+            .claim-modal-content input::file-selector-button {
+              background: #D97706;
+              color: white;
+              border: none;
+              padding: 0.5rem 0.9rem;
+              margin-right: 0.75rem;
+              border-radius: 0.4rem;
+            }
+
+            body.dark-mode .claim-review-panel,
+            body.dark-mode .claim-modal-content,
+            body.dark-mode .return-modal-content {
+              background: linear-gradient(135deg, #06112f 0%, rgba(10, 33, 74, 0.95) 100%);
+            }
+          </style>
+
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              var claimModalEl = document.getElementById('claimModal');
+              var returnModalEl = document.getElementById('returnModal');
+              var claimBtn = document.getElementById('claimItemBtn');
+              var reviewBtn = document.getElementById('reviewClaimsBtn');
+              var returnBtn = document.getElementById('confirmReturnBtn');
+              var claimModal = claimModalEl ? new bootstrap.Modal(claimModalEl, { backdrop: 'static', keyboard: false }) : null;
+              var returnModal = returnModalEl ? new bootstrap.Modal(returnModalEl, { backdrop: 'static', keyboard: false }) : null;
+
+              if (claimBtn && claimModal) {
+                claimBtn.addEventListener('click', function() {
+                  claimModal.show();
+                  setTimeout(function() {
+                    var field = document.getElementById('id_proof_text');
+                    if (field) field.focus();
+                  }, 250);
+                });
+              }
+
+              if (reviewBtn) {
+                reviewBtn.addEventListener('click', function() {
+                  var panel = document.querySelector('.claim-review-panel');
+                  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+              }
+
+              if (returnBtn && returnModal) {
+                returnBtn.addEventListener('click', function() {
+                  returnModal.show();
+                  setTimeout(function() {
+                    var claimantField = document.getElementById('claimantUsername');
+                    if (claimantField) claimantField.focus();
+                  }, 250);
+                });
+              }
+            });
+          </script>
+          {% if user.is_authenticated and item.owner and user == item.owner and item.is_returned %}
             {% if not has_recovered %}
               <form method="post" action="{% url 'mark_item_returned' item.id %}" style="display:inline;">
                 {% csrf_token %}

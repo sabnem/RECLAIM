@@ -1,67 +1,201 @@
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 
-# Mark item as returned (reporter, owner, or superuser only)
-@login_required
-def mark_item_returned(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
-    
-    # Check if user has permission: reporter, owner, or superuser
-    is_reporter = (request.user == item.reported_by)
-    is_owner = (item.owner == request.user) if item.owner else False
-    is_superuser = request.user.is_superuser
-    
-    if is_reporter or is_owner or is_superuser:
-        owner_username = request.POST.get('owner_username')
-        
-        # Only reporter can set the owner initially
-        if owner_username and not item.is_returned and is_reporter:
-            try:
-                owner_user = User.objects.get(username=owner_username)
-                item.owner = owner_user
-                item.is_returned = True
-                item.save()
-                messages.success(request, f'Item marked as returned. Waiting for {owner_user.username} to confirm.')
-                return redirect('item_detail', item_id=item.id)
-            except User.DoesNotExist:
-                messages.error(request, f"User '{owner_username}' does not exist.")
-                return redirect('item_detail', item_id=item.id)
-        
-        # If owner is confirming, create recovered record
-        if is_owner and not is_reporter and not is_superuser:
-            # Check if already recovered
-            from .models import RecoveredItem
-            if RecoveredItem.objects.filter(item=item, owner=request.user).exists():
-                messages.info(request, 'You have already confirmed this return.')
-                return redirect('my_recovered_items')
-            
-            # Create RecoveredItem record
-            RecoveredItem.objects.create(
-                item=item,
-                owner=item.owner,
-                finder=item.reported_by,
-                original_report_date=item.date_reported,
-                location=item.location
+def _send_claim_otp_notification(request, claim, verification_code):
+    subject = f"Verification code for {claim.item.title}"
+    body = (
+        f"Hello {claim.claimant.username},\n\n"
+        f"Your claim for '{claim.item.title}' was approved.\n"
+        f"Use this 6-digit verification code to confirm the return: {verification_code}\n\n"
+        f"The code expires in 24 hours and can only be used once."
+    )
+    try:
+        if claim.claimant.email:
+            send_mail(
+                subject=subject,
+                message=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[claim.claimant.email],
+                fail_silently=False,
             )
-            # Ensure item is marked as returned
-            item.is_returned = True
-            item.save()
-            
-            messages.success(request, 'Return confirmed! The item has been moved to your recovered items. Please rate the finder.')
-            return redirect('rate_finder', item_id=item.id)
+            messages.success(request, f'Claim approved. Verification code sent to {claim.claimant.username}.')
         else:
-            # Reporter or superuser can toggle the status
-            item.is_returned = not item.is_returned
-            item.save()
-            
-            if item.is_returned:
-                messages.success(request, 'Item marked as returned.')
-            else:
-                messages.success(request, 'Item marked as not returned.')
-    else:
-        messages.error(request, 'You do not have permission to perform this action.')
-    
+            raise ValueError('Claimant email is missing.')
+    except Exception:
+        messages.info(
+            request,
+            f'Email delivery is unavailable. Simulated verification code for {claim.claimant.username}: {verification_code}'
+        )
+
+
+@login_required
+@require_POST
+def submit_claim(request, item_id):
+    from .forms import ClaimForm
+    from .models import Claim, Item
+
+    item = get_object_or_404(Item, id=item_id)
+
+    if item.reported_by == request.user:
+        messages.error(request, 'You cannot claim an item that you reported yourself.')
+        return redirect('item_detail', item_id=item.id)
+
+    if item.is_returned or item.verification_status == 'RETURNED':
+        messages.error(request, 'This item has already been returned.')
+        return redirect('item_detail', item_id=item.id)
+
+    existing_approved = Claim.objects.filter(item=item, claimant=request.user, status=Claim.STATUS_APPROVED, is_returned=False).exists()
+    if existing_approved:
+        messages.info(request, 'You already have an approved claim for this item.')
+        return redirect('item_detail', item_id=item.id)
+
+    form = ClaimForm(request.POST, request.FILES)
+    if not form.is_valid():
+        messages.error(request, 'Please provide a valid proof message before submitting your claim.')
+        return redirect('item_detail', item_id=item.id)
+
+    claim, created = Claim.objects.get_or_create(item=item, claimant=request.user, defaults={
+        'proof_text': form.cleaned_data['proof_text'],
+        'proof_image': form.cleaned_data.get('proof_image'),
+    })
+    claim.proof_text = form.cleaned_data['proof_text']
+    if form.cleaned_data.get('proof_image'):
+        claim.proof_image = form.cleaned_data['proof_image']
+    if claim.status != Claim.STATUS_APPROVED:
+        claim.status = Claim.STATUS_PENDING
+        claim.reviewed_by = None
+        claim.reviewed_at = None
+        claim.verification_code_hash = ''
+        claim.verification_code_sent_at = None
+        claim.verification_code_expires_at = None
+        claim.verification_code_used_at = None
+        claim.returned_at = None
+        claim.is_returned = False
+    claim.full_clean()
+    claim.save()
+
+    if item.verification_status == 'FOUND':
+        item.verification_status = 'CLAIMED'
+        item.save(update_fields=['verification_status'])
+
+    messages.success(request, 'Your ownership claim has been submitted for review.')
     return redirect('item_detail', item_id=item.id)
+
+
+@login_required
+@require_POST
+def review_claim(request, claim_id):
+    from .models import Claim
+
+    claim = get_object_or_404(Claim, id=claim_id)
+    item = claim.item
+    if request.user != item.reported_by and not request.user.is_superuser:
+        messages.error(request, 'Only the finder or an administrator can review this claim.')
+        return redirect('item_detail', item_id=item.id)
+
+    action = request.POST.get('action')
+    if action not in {'approve', 'reject'}:
+        messages.error(request, 'Invalid claim action.')
+        return redirect('item_detail', item_id=item.id)
+
+    if action == 'approve' and item.claims.filter(status=Claim.STATUS_APPROVED).exclude(id=claim.id).exists():
+        messages.error(request, 'This item already has an approved claimant.')
+        return redirect('item_detail', item_id=item.id)
+
+    claim.reviewed_by = request.user
+    claim.reviewed_at = timezone.now()
+
+    if action == 'reject':
+        claim.status = Claim.STATUS_REJECTED
+        claim.verification_code_hash = ''
+        claim.verification_code_sent_at = None
+        claim.verification_code_expires_at = None
+        claim.verification_code_used_at = None
+        claim.is_returned = False
+        claim.returned_at = None
+        claim.save()
+        if not item.claims.filter(status=Claim.STATUS_APPROVED).exists():
+            item.verification_status = 'FOUND'
+            item.save(update_fields=['verification_status'])
+        messages.success(request, 'Claim rejected.')
+        return redirect('item_detail', item_id=item.id)
+
+    claim.status = Claim.STATUS_APPROVED
+    claim.is_returned = False
+    claim.returned_at = None
+    verification_code = claim.generate_verification_code()
+    claim.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'is_returned', 'returned_at', 'updated_at'])
+    item.verification_status = 'VERIFIED'
+    item.save(update_fields=['verification_status'])
+    _send_claim_otp_notification(request, claim, verification_code)
+    return redirect('item_detail', item_id=item.id)
+
+
+@login_required
+@require_POST
+def mark_item_returned(request, item_id):
+    from .models import Claim, Item, RecoveredItem, ReturnConfirmation
+
+    item = get_object_or_404(Item, id=item_id)
+    if request.user != item.reported_by and not request.user.is_superuser:
+        messages.error(request, 'Only the finder or an administrator can confirm the return.')
+        return redirect('item_detail', item_id=item.id)
+
+    claimant_username = request.POST.get('claimant_username', '').strip()
+    verification_code = request.POST.get('verification_code', '').strip()
+
+    if not claimant_username or not verification_code:
+        messages.error(request, 'Please enter both the verified claimant username and the verification code.')
+        return redirect('item_detail', item_id=item.id)
+
+    claim = get_object_or_404(
+        Claim,
+        item=item,
+        claimant__username__iexact=claimant_username,
+        status=Claim.STATUS_APPROVED,
+    )
+
+    if item.is_returned or item.verification_status == 'RETURNED' or claim.is_returned:
+        messages.error(request, 'This item has already been marked as returned.')
+        return redirect('item_detail', item_id=item.id)
+
+    if not claim.verify_code(verification_code):
+        messages.error(request, 'The verification code is invalid, expired, or already used.')
+        return redirect('item_detail', item_id=item.id)
+
+    claim.mark_returned()
+    item.owner = claim.claimant
+    item.mark_as_returned(owner=claim.claimant)
+
+    ReturnConfirmation.objects.get_or_create(
+        claim=claim,
+        defaults={
+            'item': item,
+            'finder': item.reported_by,
+            'claimant': claim.claimant,
+            'entered_claimant_username': claimant_username,
+            'is_valid': True,
+            'confirmed_by': request.user,
+        }
+    )
+
+    RecoveredItem.objects.get_or_create(
+        item=item,
+        defaults={
+            'owner': claim.claimant,
+            'finder': item.reported_by,
+            'original_report_date': item.date_reported,
+            'location': item.location,
+        }
+    )
+
+    messages.success(request, f'Item returned successfully to {claim.claimant.username}.')
+    return redirect('rate_finder', item_id=item.id)
+
+
+@login_required
+def return_confirmation(request, item_id):
+    return redirect('item_detail', item_id=item_id)
 # Context processor to provide unread inbox count to all templates
 def unread_inbox_count(request):
     if request.user.is_authenticated:
@@ -70,7 +204,7 @@ def unread_inbox_count(request):
 # Context processor to provide categories to all templates
 from .models import ItemCategory
 from .models import ReturnConfirmation, Item
-from .forms import ReturnConfirmationForm
+from .forms import ClaimForm, ReturnVerificationForm
 def categories_context(request):
     return {'categories': ItemCategory.objects.all()}
 from django.contrib.auth.decorators import user_passes_test
@@ -122,35 +256,6 @@ def conversation_room_id(item_id, user_one_id, user_two_id):
     first_user_id, second_user_id = sorted([int(user_one_id), int(user_two_id)])
     return f"{item_id}-{first_user_id}-{second_user_id}"
 
-# Return confirmation view
-@login_required
-def return_confirmation(request, item_id):
-    item = get_object_or_404(Item, id=item_id)
-    confirmation, created = ReturnConfirmation.objects.get_or_create(item=item)
-    user = request.user
-    is_finder = (user == item.reported_by)
-    is_owner = (user == item.owner) if hasattr(item, 'owner') else False
-    if request.method == 'POST':
-        form = ReturnConfirmationForm(request.POST, request.FILES, instance=confirmation)
-        if form.is_valid():
-            conf = form.save(commit=False)
-            if is_finder:
-                conf.finder_confirmed = True
-            if is_owner:
-                conf.owner_confirmed = True
-            if conf.is_fully_confirmed():
-                conf.confirmed_at = timezone.now()
-            conf.save()
-            return redirect('item_detail', item_id=item.id)
-    else:
-        form = ReturnConfirmationForm(instance=confirmation)
-    return render(request, 'FindIt/return_confirmation.html', {
-        'form': form,
-        'item': item,
-        'confirmation': confirmation,
-        'is_finder': is_finder,
-        'is_owner': is_owner,
-    })
 @login_required
 def submit_review(request, user_id):
     reviewed_user = get_object_or_404(User, pk=user_id)
@@ -221,7 +326,7 @@ def item_list(request):
     
     # Exclude items that have been recovered (confirmed returns)
     recovered_item_ids = RecoveredItem.objects.values_list('item_id', flat=True)
-    items = Item.objects.exclude(id__in=recovered_item_ids).order_by('-date_reported')
+    items = Item.objects.exclude(Q(id__in=recovered_item_ids) | Q(is_returned=True)).order_by('-date_reported')
     
     if query:
         items = items.filter(Q(title__icontains=query) | Q(description__icontains=query) | Q(location__icontains=query))
@@ -239,20 +344,32 @@ def item_list(request):
     })
 
 def item_detail(request, item_id):
-    from .models import RecoveredItem
+    from .models import Claim, RecoveredItem
     item = get_object_or_404(Item, id=item_id)
-    confirmation = getattr(item, 'return_confirmation', None)
-    if not confirmation:
-        from .models import ReturnConfirmation
-        confirmation = ReturnConfirmation.objects.create(item=item)
-    
-    # Check if item has been recovered
+    claim_form = ClaimForm()
+    return_form = ReturnVerificationForm()
+    claims = item.claims.select_related('claimant', 'reviewed_by').order_by('-created_at')
+    pending_claims = claims.filter(status=Claim.STATUS_PENDING)
+    approved_claims = claims.filter(status=Claim.STATUS_APPROVED)
+    claimants = approved_claims.values_list('claimant__username', flat=True)
+    can_submit_claim = request.user.is_authenticated and request.user != item.reported_by and not item.is_returned
+    can_review_claims = request.user.is_authenticated and (request.user == item.reported_by or request.user.is_superuser)
+    can_confirm_return = request.user.is_authenticated and (request.user == item.reported_by or request.user.is_superuser) and approved_claims.exists() and not item.is_returned
+
     has_recovered = RecoveredItem.objects.filter(item=item).exists()
     
     return render(request, 'FindIt/item_detail.html', {
         'item': item,
-        'confirmation': confirmation,
         'has_recovered': has_recovered,
+        'claims': claims,
+        'pending_claims': pending_claims,
+        'approved_claims': approved_claims,
+        'claimant_usernames': claimants,
+        'claim_form': claim_form,
+        'return_form': return_form,
+        'can_submit_claim': can_submit_claim,
+        'can_review_claims': can_review_claims,
+        'can_confirm_return': can_confirm_return,
     })
 
 def contact_item_owner(request, item_id):

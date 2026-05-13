@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import UserProfile, Item
 from .models import UserReview
-from .models import ReturnConfirmation
+from .models import Claim
 class UserRegistrationForm(forms.ModelForm):
     email = forms.EmailField(
         label='',
@@ -90,23 +90,47 @@ class MessageForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Type your message...'}), label='Message')
 
 
+class ClaimForm(forms.ModelForm):
+    class Meta:
+        model = Claim
+        fields = ['proof_text', 'proof_image']
+        widgets = {
+            'proof_text': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Explain why this item belongs to you and add any matching details.',
+                'class': 'form-control',
+            }),
+            'proof_image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+
+class ReturnVerificationForm(forms.Form):
+    claimant_username = forms.CharField(
+        label='',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Claimant username',
+            'class': 'form-control form-control-lg',
+            'autocomplete': 'off',
+        })
+    )
+    verification_code = forms.CharField(
+        label='',
+        max_length=6,
+        min_length=6,
+        widget=forms.TextInput(attrs={
+            'placeholder': '6-digit verification code',
+            'class': 'form-control form-control-lg',
+            'inputmode': 'numeric',
+            'autocomplete': 'one-time-code',
+        })
+    )
+
 #USER PROFILE
 class UserReviewForm(forms.ModelForm):
     class Meta:
         model = UserReview
         fields = ['rating', 'comment']
-class ReturnConfirmationForm(forms.ModelForm):
-    class Meta:
-        model = ReturnConfirmation
-        fields = [
-            'finder_confirmed', 'owner_confirmed',
-            'finder_photo', 'owner_photo',
-            'finder_signature', 'owner_signature'
-        ]
-        widgets = {
-            'finder_signature': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Paste signature data here or sign below.'}),
-            'owner_signature': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Paste signature data here or sign below.'}),
-        }
 class UserProfileForm(forms.ModelForm):
     username = forms.CharField(
         label='',
