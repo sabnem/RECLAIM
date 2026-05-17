@@ -11,6 +11,7 @@ urlpatterns = [
     path('items/<int:item_id>/', views.item_detail, name='item_detail'),
     path('items/<int:item_id>/contact/', views.contact_item_owner, name='contact_item_owner'),
     path('items/<int:item_id>/claim/', views.submit_claim, name='submit_claim'),
+    path('items/<int:item_id>/claims/', views.manage_claims, name='manage_claims'),
     path('claims/<int:claim_id>/review/', views.review_claim, name='review_claim'),
     path('items/<int:item_id>/mark_returned/', views.mark_item_returned, name='mark_item_returned'),
     path('inbox/', views.inbox, name='inbox'),

@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-lg-11">
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden" style="background: var(--surface);">
+      <div class="card-body p-4 p-lg-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+          <div>
+            <span class="badge rounded-pill mb-3" style="background: var(--primary-subtle); color: var(--primary);">Claim Management</span>
+            <h2 class="fw-bold mb-2">{{ item.title }}</h2>
+            <p class="mb-0 text-muted">Review and decide which claimant should be approved for this item.</p>
+          </div>
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'item_detail' item.id %}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Back to Item
+            </a>
+            {% if can_confirm_return %}
+              <a href="{% url 'item_detail' item.id %}" class="btn btn-info text-white">
+                <i class="bi bi-shield-lock"></i> Confirm Return With OTP
+              </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4" style="background: var(--primary-subtle);">
+              <div class="card-body">
+                <div class="text-muted small mb-1">Item status</div>
+                <div class="fw-bold">{{ item.get_verification_status_display }}</div>
+                <hr>
+                <div class="text-muted small mb-1">Submitted claims</div>
+                <div class="fw-bold">{{ claims|length }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4" style="background: var(--surface);">
+              <div class="card-body">
+                <div class="text-muted small mb-1">Pending claims</div>
+                <div class="fw-bold">{{ pending_claims|length }}</div>
+                <hr>
+                <div class="text-muted small mb-1">Approved claimant</div>
+                <div class="fw-bold">
+                  {% if approved_claims.exists %}
+                    {{ approved_claims.first.claimant.username }}
+                  {% else %}
+                    None yet
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100 border-0 rounded-4" style="background: var(--surface);">
+              <div class="card-body">
+                <div class="text-muted small mb-1">Return readiness</div>
+                <div class="fw-bold">{% if can_confirm_return %}Ready for OTP confirmation{% else %}Waiting for approval{% endif %}</div>
+                <hr>
+                <div class="text-muted small mb-1">Recovered record</div>
+                <div class="fw-bold">{% if has_recovered %}Already created{% else %}Not yet created{% endif %}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {% if approved_claims.exists %}
+          <div class="alert alert-success border-0 rounded-4 mb-4">
+            <strong>Approved claimant:</strong> {{ approved_claims.first.claimant.username }}
+            <div class="small mt-1">Once the OTP is confirmed, the return can be finalized from the item page.</div>
+          </div>
+        {% endif %}
+
+        <ul class="nav nav-pills gap-2 mb-4" id="claimTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pending-pane" type="button" role="tab" aria-controls="pending-pane" aria-selected="true">
+              Pending <span class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="approved-tab" data-bs-toggle="pill" data-bs-target="#approved-pane" type="button" role="tab" aria-controls="approved-pane" aria-selected="false">
+              Approved <span class="badge bg-success ms-1">{{ approved_count }}</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="rejected-tab" data-bs-toggle="pill" data-bs-target="#rejected-pane" type="button" role="tab" aria-controls="rejected-pane" aria-selected="false">
+              Rejected <span class="badge bg-danger ms-1">{{ rejected_count }}</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content" id="claimTabsContent">
+          <div class="tab-pane fade show active" id="pending-pane" role="tabpanel" aria-labelledby="pending-tab" tabindex="0">
+            {% if pending_claims %}
+              <div class="row g-3">
+                {% for claim in pending_claims %}
+                  <div class="col-12">
+                    <div class="card border-0 rounded-4 shadow-sm border border-warning">
+                      <div class="card-body p-4">
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <h5 class="mb-1">{{ claim.claimant.username }}</h5>
+                            <div class="small text-muted">Submitted {{ claim.created_at|date:'Y-m-d H:i' }}</div>
+                          </div>
+                          <span class="badge bg-warning text-dark">Pending</span>
+                        </div>
+                        <p class="mb-3">{{ claim.proof_text }}</p>
+                        {% if claim.proof_image %}
+                          <div class="mb-3">
+                            <a href="{{ claim.proof_image.url }}" target="_blank" class="btn btn-sm btn-outline-info">View proof image</a>
+                          </div>
+                        {% endif %}
+                        <div class="d-flex gap-2 flex-wrap">
+                          <form method="post" action="{% url 'review_claim' claim.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn btn-success">
+                              <i class="bi bi-check2-circle"></i> Approve Claim
+                            </button>
+                          </form>
+                          <form method="post" action="{% url 'review_claim' claim.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-outline-danger">
+                              <i class="bi bi-x-circle"></i> Reject Claim
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty-state text-center py-5 rounded-4" style="background: var(--primary-subtle);">
+                <i class="bi bi-inbox display-4 d-block mb-3"></i>
+                <h5 class="fw-bold mb-2">No pending claims</h5>
+                <p class="text-muted mb-0">New claims waiting for review will appear here.</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="tab-pane fade" id="approved-pane" role="tabpanel" aria-labelledby="approved-tab" tabindex="0">
+            {% if approved_claims %}
+              <div class="row g-3">
+                {% for claim in approved_claims %}
+                  <div class="col-12">
+                    <div class="card border-0 rounded-4 shadow-sm border border-success">
+                      <div class="card-body p-4">
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <h5 class="mb-1">{{ claim.claimant.username }}</h5>
+                            <div class="small text-muted">Approved by {{ claim.reviewed_by.username|default:'an administrator' }}</div>
+                          </div>
+                          <span class="badge bg-success">Approved</span>
+                        </div>
+                        <p class="mb-3">{{ claim.proof_text }}</p>
+                        {% if claim.proof_image %}
+                          <a href="{{ claim.proof_image.url }}" target="_blank" class="btn btn-sm btn-outline-info">View proof image</a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty-state text-center py-5 rounded-4" style="background: var(--primary-subtle);">
+                <i class="bi bi-check2-circle display-4 d-block mb-3"></i>
+                <h5 class="fw-bold mb-2">No approved claims</h5>
+                <p class="text-muted mb-0">Approved claims will be listed here.</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="tab-pane fade" id="rejected-pane" role="tabpanel" aria-labelledby="rejected-tab" tabindex="0">
+            {% if rejected_claims %}
+              <div class="row g-3">
+                {% for claim in rejected_claims %}
+                  <div class="col-12">
+                    <div class="card border-0 rounded-4 shadow-sm border border-danger">
+                      <div class="card-body p-4">
+                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+                          <div>
+                            <h5 class="mb-1">{{ claim.claimant.username }}</h5>
+                            <div class="small text-muted">Rejected by {{ claim.reviewed_by.username|default:'an administrator' }}</div>
+                          </div>
+                          <span class="badge bg-danger">Rejected</span>
+                        </div>
+                        <p class="mb-3">{{ claim.proof_text }}</p>
+                        {% if claim.proof_image %}
+                          <a href="{{ claim.proof_image.url }}" target="_blank" class="btn btn-sm btn-outline-info">View proof image</a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="empty-state text-center py-5 rounded-4" style="background: var(--primary-subtle);">
+                <i class="bi bi-x-circle display-4 d-block mb-3"></i>
+                <h5 class="fw-bold mb-2">No rejected claims</h5>
+                <p class="text-muted mb-0">Rejected claims will appear here.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

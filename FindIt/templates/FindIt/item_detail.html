@@ -65,65 +65,14 @@
             <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-outline-warning"><i class="bi bi-chat-dots"></i> Message Finder</a>
           {% endif %}
           {% if can_review_claims and pending_claims %}
-            <button type="button" class="btn btn-outline-primary" id="reviewClaimsBtn">
-              <i class="bi bi-funnel"></i> Review Claims ({{ pending_claims|length }})
-            </button>
+            <a href="{% url 'manage_claims' item.id %}" class="btn btn-outline-primary">
+              <i class="bi bi-funnel"></i> Manage Claims{% if pending_claims %} ({{ pending_claims|length }}){% endif %}
+            </a>
           {% endif %}
           {% if can_confirm_return %}
             <button type="button" class="btn btn-info text-white" id="confirmReturnBtn">
               <i class="bi bi-shield-lock"></i> Confirm Return With OTP
             </button>
-          {% endif %}
-
-          {% if can_review_claims and pending_claims %}
-            <div class="w-100 mt-3 claim-review-panel">
-              <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <div>
-                  <h5 class="mb-1">Pending Claims</h5>
-                  <p class="mb-0 text-muted">Approve one verified owner before generating the return code.</p>
-                </div>
-                {% if approved_claims.exists %}
-                  <span class="badge bg-success">Approved claimant: {{ approved_claims.first.claimant.username }}</span>
-                {% endif %}
-              </div>
-              <div class="row g-3">
-                {% for claim in pending_claims %}
-                  <div class="col-12">
-                    <div class="card claim-review-card border-0 rounded-4 shadow-sm">
-                      <div class="card-body">
-                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
-                          <div>
-                            <h6 class="mb-1">{{ claim.claimant.username }}</h6>
-                            <small class="text-muted">Submitted {{ claim.created_at|date:'Y-m-d H:i' }}</small>
-                          </div>
-                          <span class="badge bg-warning text-dark">Pending</span>
-                        </div>
-                        <p class="mb-3">{{ claim.proof_text }}</p>
-                        {% if claim.proof_image %}
-                          <a href="{{ claim.proof_image.url }}" target="_blank" class="btn btn-sm btn-outline-info mb-3">View Proof Image</a>
-                        {% endif %}
-                        <div class="d-flex gap-2 flex-wrap">
-                          <form method="post" action="{% url 'review_claim' claim.id %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="approve">
-                            <button type="submit" class="btn btn-success btn-sm">
-                              <i class="bi bi-check2-circle"></i> Approve
-                            </button>
-                          </form>
-                          <form method="post" action="{% url 'review_claim' claim.id %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="reject">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">
-                              <i class="bi bi-x-circle"></i> Reject
-                            </button>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
           {% endif %}
 
           <!-- Claim Ownership Modal -->
@@ -286,7 +235,6 @@
               var claimModalEl = document.getElementById('claimModal');
               var returnModalEl = document.getElementById('returnModal');
               var claimBtn = document.getElementById('claimItemBtn');
-              var reviewBtn = document.getElementById('reviewClaimsBtn');
               var returnBtn = document.getElementById('confirmReturnBtn');
               var claimModal = claimModalEl ? new bootstrap.Modal(claimModalEl, { backdrop: 'static', keyboard: false }) : null;
               var returnModal = returnModalEl ? new bootstrap.Modal(returnModalEl, { backdrop: 'static', keyboard: false }) : null;
@@ -298,13 +246,6 @@
                     var field = document.getElementById('id_proof_text');
                     if (field) field.focus();
                   }, 250);
-                });
-              }
-
-              if (reviewBtn) {
-                reviewBtn.addEventListener('click', function() {
-                  var panel = document.querySelector('.claim-review-panel');
-                  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
               }
 

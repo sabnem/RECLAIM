@@ -1,5 +1,10 @@
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+
+
+logger = logging.getLogger(__name__)
 
 def _send_claim_otp_notification(request, claim, verification_code):
     subject = f"Verification code for {claim.item.title}"
@@ -11,20 +16,23 @@ def _send_claim_otp_notification(request, claim, verification_code):
     )
     try:
         if claim.claimant.email:
+            sender_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
             send_mail(
                 subject=subject,
                 message=body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=sender_email,
                 recipient_list=[claim.claimant.email],
                 fail_silently=False,
             )
             messages.success(request, f'Claim approved. Verification code sent to {claim.claimant.username}.')
         else:
             raise ValueError('Claimant email is missing.')
-    except Exception:
+    except Exception as exc:
+        logger.exception('OTP email delivery failed for claim %s', claim.id)
         messages.info(
             request,
-            f'Email delivery is unavailable. Simulated verification code for {claim.claimant.username}: {verification_code}'
+            f'Email delivery failed for {claim.claimant.username}. The OTP is {verification_code}. '
+            f'Check Render SMTP settings and the server logs for details.'
         )
 
 
@@ -306,6 +314,7 @@ def home(request):
     return render(request, 'FindIt/home.html')
 
 def report_item(request):
+    is_authenticated = request.user.is_authenticated
     if request.method == 'POST':
         form = ItemForm(request.POST, request.FILES)
         if form.is_valid():
@@ -315,8 +324,11 @@ def report_item(request):
             messages.success(request, 'Item reported successfully!')
             return redirect('home')
     else:
-        form = ItemForm()
-    return render(request, 'FindIt/report_item.html', {'form': form})
+        form = ItemForm() if is_authenticated else None
+    return render(request, 'FindIt/report_item.html', {
+        'form': form,
+        'is_authenticated': is_authenticated,
+    })
 
 def item_list(request):
     from .models import RecoveredItem
@@ -370,6 +382,36 @@ def item_detail(request, item_id):
         'can_submit_claim': can_submit_claim,
         'can_review_claims': can_review_claims,
         'can_confirm_return': can_confirm_return,
+    })
+
+
+@login_required
+def manage_claims(request, item_id):
+    from .models import Claim, RecoveredItem
+
+    item = get_object_or_404(Item, id=item_id)
+    if request.user != item.reported_by and not request.user.is_superuser:
+        messages.error(request, 'Only the finder or an administrator can review claims for this item.')
+        return redirect('item_detail', item_id=item.id)
+
+    claims = item.claims.select_related('claimant', 'reviewed_by').order_by('-created_at')
+    pending_claims = claims.filter(status=Claim.STATUS_PENDING)
+    approved_claims = claims.filter(status=Claim.STATUS_APPROVED)
+    rejected_claims = claims.filter(status=Claim.STATUS_REJECTED)
+    has_recovered = RecoveredItem.objects.filter(item=item).exists()
+
+    return render(request, 'FindIt/manage_claims.html', {
+        'item': item,
+        'claims': claims,
+        'pending_claims': pending_claims,
+        'approved_claims': approved_claims,
+        'rejected_claims': rejected_claims,
+        'has_recovered': has_recovered,
+        'claim_count': claims.count(),
+        'pending_count': pending_claims.count(),
+        'approved_count': approved_claims.count(),
+        'rejected_count': rejected_claims.count(),
+        'can_confirm_return': request.user.is_authenticated and (request.user == item.reported_by or request.user.is_superuser) and approved_claims.exists() and not item.is_returned,
     })
 
 def contact_item_owner(request, item_id):
