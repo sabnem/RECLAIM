@@ -259,9 +259,15 @@ document.addEventListener("DOMContentLoaded", function() {
   function isMobile() {
     return window.innerWidth <= 768;
   }
+
+  function updateViewportHeight() {
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-vh', viewportHeight + 'px');
+  }
   
   // Initialize mobile view
   function initMobileView() {
+    updateViewportHeight();
     if (isMobile()) {
       var hasActiveConversation = "{{ active_conversation|yesno:'true,false' }}" === 'true';
       if (hasActiveConversation) {
@@ -272,10 +278,12 @@ document.addEventListener("DOMContentLoaded", function() {
           chatArea.style.position = 'fixed';
           chatArea.style.top = '0';
           chatArea.style.left = '0';
+          chatArea.style.right = '0';
           chatArea.style.width = '100vw';
-          chatArea.style.height = '100vh';
+          chatArea.style.height = 'var(--app-vh, 100vh)';
           chatArea.style.zIndex = '1';
         }
+        document.body.style.overflow = 'hidden';
       } else {
         // If no active conversation, show conversation list full screen
         if (conversationList) {
@@ -283,11 +291,13 @@ document.addEventListener("DOMContentLoaded", function() {
           conversationList.style.position = 'fixed';
           conversationList.style.top = '0';
           conversationList.style.left = '0';
+          conversationList.style.right = '0';
           conversationList.style.width = '100vw';
-          conversationList.style.height = '100vh';
+          conversationList.style.height = 'var(--app-vh, 100vh)';
           conversationList.style.zIndex = '2';
         }
         if (chatArea) chatArea.style.display = 'none';
+        document.body.style.overflow = '';
       }
     } else {
       // Desktop: reset to normal layout
@@ -303,6 +313,7 @@ document.addEventListener("DOMContentLoaded", function() {
         chatArea.style.width = 'auto';
         chatArea.style.height = '75vh'; // Reduced from 85vh to account for navbar
       }
+      document.body.style.overflow = '';
     }
   }
   
@@ -323,8 +334,9 @@ document.addEventListener("DOMContentLoaded", function() {
           conversationList.style.position = 'fixed';
           conversationList.style.top = '0';
           conversationList.style.left = '0';
+          conversationList.style.right = '0';
           conversationList.style.width = '100vw';
-          conversationList.style.height = '100vh';
+          conversationList.style.height = 'var(--app-vh, 100vh)';
           conversationList.style.zIndex = '2';
         }
         // Exit inbox using browser history
@@ -343,6 +355,10 @@ document.addEventListener("DOMContentLoaded", function() {
       if (isMobile()) document.body.classList.add('hide-mobile-topbar'); else document.body.classList.remove('hide-mobile-topbar');
     }, 250);
   });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateViewportHeight);
+  }
 
   // Scroll chat to bottom
   let chatHistory = document.getElementById("chatHistory");
@@ -618,9 +634,22 @@ function closeLightbox() {
           newC.textContent = 'This message was deleted';
           el.insertBefore(newC, el.querySelector('.small'));
         }
-        // remove action buttons
+        // Replace action buttons with a "Remove from view" option so users can delete the placeholder for themselves
         const actions = el.querySelector('.message-actions');
-        if (actions) actions.remove();
+        if (actions) {
+          // Clear existing actions and provide a single "Delete for me" entry
+          actions.innerHTML = `\n            <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n            <ul class="dropdown-menu">\n              <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n            </ul>`;
+          // Attach handler
+          const delMe = actions.querySelector('.delete-for-me-btn');
+          if (delMe) {
+            delMe.addEventListener('click', function(ev) {
+              ev.preventDefault();
+              if (confirm('Remove this deleted message from your view?')) {
+                sendDelete(data.message_id, false);
+              }
+            });
+          }
+        }
       } else {
         // delete for me: only remove for requesting user
         if (parseInt(data.requesting_user_id) === parseInt(currentUserId)) {
@@ -700,14 +729,12 @@ function closeLightbox() {
     actionsWrapper.style.position = 'absolute';
     actionsWrapper.style.top = '6px';
     if (isCurrentUser) actionsWrapper.style.right = '6px'; else actionsWrapper.style.left = '6px';
-    actionsWrapper.innerHTML = `
-      <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-      <ul class="dropdown-menu ${isCurrentUser ? 'dropdown-menu-end' : ''}">
-        ${isCurrentUser ? '<li><a href="#" class="dropdown-item edit-message-btn">Edit</a></li>' : ''}
-        <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>
-        ${isCurrentUser ? '<li><a href="#" class="dropdown-item text-danger delete-for-everyone-btn">Delete for everyone</a></li>' : ''}
-      </ul>
-    `;
+    // If this message was deleted for everyone, only provide the "Delete for me" option
+    if (data.deleted_for_everyone) {
+      actionsWrapper.innerHTML = `\n        <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n        <ul class="dropdown-menu ${isCurrentUser ? 'dropdown-menu-end' : ''}">\n          <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n        </ul>\n      `;
+    } else {
+      actionsWrapper.innerHTML = `\n        <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n        <ul class="dropdown-menu ${isCurrentUser ? 'dropdown-menu-end' : ''}">\n          ${isCurrentUser ? '<li><a href="#" class="dropdown-item edit-message-btn">Edit</a></li>' : ''}\n          <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n          ${isCurrentUser ? '<li><a href="#" class="dropdown-item text-danger delete-for-everyone-btn">Delete for everyone</a></li>' : ''}\n        </ul>\n      `;
+    }
     bubbleDiv.appendChild(actionsWrapper);
 
     messageDiv.appendChild(bubbleDiv);
@@ -802,14 +829,75 @@ function closeLightbox() {
 
   // Send delete over WebSocket
   function sendDelete(messageId, forEveryone) {
-    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    // Debug logging so we can trace delete attempts in the browser console
+    console.log('🔁 sendDelete called', { messageId: messageId, forEveryone: forEveryone, currentUserId: currentUserId });
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket not open; attempting HTTP fallback to delete view');
+      // Fallback: POST to HTTP endpoint for delete
+      const csrfInput = document.querySelector('#chatForm input[name="csrfmiddlewaretoken"]');
+      const csrfToken = csrfInput ? csrfInput.value : null;
+      fetch('{% url "delete_message" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ message_id: messageId, for_everyone: forEveryone })
+      })
+      .then(r => r.json())
+      .then(data => {
+        console.log('HTTP delete response', data);
+        if (data.success) {
+          // If delete for me, remove the DOM for current user; if for everyone broadcast will handle others
+          if (!forEveryone) {
+            const el = document.querySelector('[data-message-id="' + messageId + '"]');
+            if (el) {
+              const wrapper = el.parentElement; if (wrapper) wrapper.remove();
+            }
+          } else {
+            // for everyone: emulate server broadcast for current user
+            const el = document.querySelector('[data-message-id="' + messageId + '"]');
+            if (el) {
+              const contentEl = el.querySelector('.message-content');
+              if (contentEl) contentEl.textContent = 'This message was deleted';
+            }
+          }
+        } else {
+          alert('Failed to delete message: ' + (data.error || 'unknown'));
+        }
+      })
+      .catch(err => {
+        console.error('HTTP delete fallback failed', err);
+        alert('Could not delete message. Try again.');
+      });
+      return;
+    }
     const payload = {
       type: 'delete',
       message_id: messageId,
       sender_id: currentUserId,
       for_everyone: forEveryone
     };
-    chatSocket.send(JSON.stringify(payload));
+    try {
+      chatSocket.send(JSON.stringify(payload));
+      console.log('📤 Delete payload sent via WebSocket', payload);
+    } catch (err) {
+      console.error('Failed to send delete via WebSocket', err, payload);
+      // Try HTTP fallback if WS send throws
+      const csrfInput = document.querySelector('#chatForm input[name="csrfmiddlewaretoken"]');
+      const csrfToken = csrfInput ? csrfInput.value : null;
+      fetch('{% url "delete_message" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ message_id: messageId, for_everyone: forEveryone })
+      })
+      .then(r => r.json())
+      .then(data => { console.log('HTTP delete fallback after WS error', data); })
+      .catch(err2 => console.error('HTTP fallback after WS error failed', err2));
+    }
   }
 
   // Inline edit UI

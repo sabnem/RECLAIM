@@ -798,6 +798,86 @@ body.dark-mode .footer .quick-links h6 {
 .footer .brand-icon {
     color: var(--primary);
     opacity: 0.9;
+
+/* Responsive tweaks for manage_claims and similar card lists on small screens */
+@media (max-width: 575.98px) {
+    .card-body.p-4, .card-body.p-4.p-lg-5 {
+        padding: 1rem !important;
+    }
+
+    /* Stack header actions under title */
+    .d-flex.flex-wrap.justify-content-between.align-items-start.gap-3.mb-4,
+    .d-flex.flex-wrap.justify-content-between.align-items-start.gap-3.mb-4 > div {
+        width: 100%;
+    }
+    .d-flex.flex-wrap.justify-content-between.align-items-start.gap-3.mb-4 {
+        flex-direction: column;
+        gap: .5rem;
+        align-items: stretch;
+    }
+
+    /* Make the stats cards stack and tighten spacing */
+    .row.g-3.mb-4 {
+        row-gap: .75rem !important;
+        column-gap: .75rem !important;
+    }
+
+    .col-md-4 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Ensure each claim card's header stacks vertically and buttons fill width */
+    .card .card-body .d-flex.justify-content-between.flex-wrap.gap-2.mb-3,
+    .card .card-body .d-flex.justify-content-between.flex-wrap.gap-2 {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: .5rem;
+    }
+
+    .card .card-body .d-flex.gap-2.flex-wrap form {
+        width: 100%;
+        margin: 0;
+    }
+
+    .card .card-body .d-flex.gap-2.flex-wrap .btn,
+    .card .card-body .d-flex.gap-2.flex-wrap .btn-outline-danger,
+    .card .card-body .d-flex.gap-2.flex-wrap .btn-success {
+        width: 100% !important;
+        display: inline-block;
+    }
+
+    /* Make proof image and small action buttons easier to tap */
+    .btn.btn-sm {
+        padding: .45rem .65rem;
+        font-size: .9rem;
+    }
+
+    /* Reduce card radius and shadows slightly for denser mobile layout */
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+    }
+
+    /* Make empty state icons and text scale down */
+    .empty-state .display-4 {
+        font-size: 2.4rem;
+    }
+
+    /* Allow nav pills to scroll horizontally on narrow screens */
+    .nav-pills {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: .4rem;
+    }
+    .nav-pills .nav-link { white-space: nowrap; }
+
+    /* Slightly smaller badges on mobile */
+    .badge {
+        font-size: .72rem;
+        padding: .28rem .45rem;
+    }
+}
 }
 
 /* Footer brand section */
