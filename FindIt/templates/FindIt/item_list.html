@@ -1,68 +1,19 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<header class="page-heading">
-  <div><span class="eyebrow">Community workspace</span><h1>Lost &amp; found items</h1><p>Search your community's reports and help an item find its way home.</p></div>
-  <a href="{% url 'report_item' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Report an item</a>
-</header>
-<div class="row mb-4">
-  <div class="col-md-12">
-    <form method="get" class="row g-3 p-4 rounded-4 shadow-sm search-form" style="background: var(--surface);">
-      <div class="col-md-4">
-        <div class="form-group mb-0">
-          <label for="item-search" class="form-label">Search items</label><input id="item-search" type="text" name="q" class="form-control form-control-lg" placeholder="🔍 Search by title, description, or location" value="{{ query }}">
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="form-group mb-0">
-          <label for="item-category" class="form-label">Category</label><select id="item-category" name="category" class="form-select form-select-lg category-select">
-            <option value=""><i class="bi bi-grid-3x3-gap-fill"></i> All Categories</option>
-            {% for cat in categories %}
-              <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %} data-icon="bi-tag-fill">{{ cat.name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="form-group mb-0">
-          <label for="item-status" class="form-label">Status</label><select id="item-status" name="status" class="form-select form-select-lg">
-            <option value="">All Status</option>
-            <option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Lost</option>
-            <option value="found" {% if selected_status == 'found' %}selected{% endif %}>Found</option>
-          </select>
-        </div>
-      </div>
-      <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-info btn-lg w-100 rounded-pill">
-          <i class="bi bi-search me-2"></i>Search
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-<div class="row">
-  {% for item in items %}
-    <div class="col-sm-6 col-xl-4 mb-4">
-      <div class="card h-100 border-0 rounded-4 item-card shadow-sm">
-        {% if item.photo %}
-        {% comment %} full item display regardless of aspect ratio {% endcomment %}
-            <div class="item-image-container" style="width:100%; max-width:400px; height:200px; margin:auto; background: var(--surface);">
-              <img src="{{ item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="Item photo">
-            </div>
-        {% endif %}
-        <div class="card-body">
-          <h5 class="card-title fw-bold">{{ item.title }}</h5>
-          <p class="card-text">{{ item.description|truncatewords:20 }}</p>
-          <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-2 rounded-pill">{{ item.get_status_display }}</span>
-          <span class="badge rounded-pill" style="background: var(--primary-subtle); color: var(--primary);">{{ item.category }}</span>
-          <div class="mt-2"><small class="text-muted"><i class="bi bi-geo-alt"></i> {{ item.location }}</small></div>
-          <div><small class="text-muted"><i class="bi bi-calendar-event"></i> {{ item.date_reported|date:'Y-m-d H:i' }}</small></div>
-          <a href="{% url 'item_detail' item.id %}" class="btn btn-sm btn-outline-info mt-3 rounded-pill px-3"><i class="bi bi-eye"></i> View Details</a>
-          <!--<a href="{% url 'contact_item_owner' item.id %}" class="btn btn-sm btn-outline-success mt-2"><i class="bi bi-envelope"></i> Contact Owner</a> -->
-        </div>
-      </div>
-    </div>
-  {% empty %}
-    <div class="col-12"><div class="empty-state"><i class="bi bi-search"></i><h2>No matching items yet</h2><p>Try another keyword or clear your filters. You can also report an item to let the community know.</p><a href="{% url 'item_list' %}" class="btn btn-outline-primary">Clear filters</a> <a href="{% url 'report_item' %}" class="btn btn-primary">Report an item</a></div></div>
-  {% endfor %}
-</div>
+<link rel="stylesheet" href="{% static 'css/items.css' %}">
+<section class="items-browser" aria-labelledby="items-heading">
+<header class="page-heading"><div><span class="eyebrow">Find it. Reclaim it.</span><h1 id="items-heading">Small things. Big reunions.</h1><p>Explore lost and found reports from your community.</p></div><a href="{% url 'report_item' %}" class="btn btn-primary"><i class="bi bi-plus-lg" aria-hidden="true"></i> Report an item</a></header>
+<form method="get" class="items-filters" role="search" aria-label="Search reported items">
+<div class="items-search"><label for="item-search">Search items</label><input id="item-search" type="search" name="q" class="form-control" placeholder="What are you looking for?" value="{{ query }}"></div>
+<div><label for="item-category">Category</label><select id="item-category" name="category" class="form-select"><option value="">All categories</option>{% for cat in categories %}<option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}</select></div>
+<div><label for="item-status">Report type</label><select id="item-status" name="status" class="form-select"><option value="">Lost &amp; found</option><option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Lost items</option><option value="found" {% if selected_status == 'found' %}selected{% endif %}>Found items</option></select></div>
+<button type="submit" class="btn btn-primary"><i class="bi bi-search" aria-hidden="true"></i> Search</button>
+</form>
+<div class="items-toolbar"><p><strong>{{ items|length }}</strong> report{{ items|length|pluralize }}{% if query or selected_category or selected_status %} matching your filters{% else %} to explore{% endif %}</p>{% if query or selected_category or selected_status %}<a href="{% url 'item_list' %}" class="items-reset">Clear filters</a>{% else %}<span class="items-hint"><i class="bi bi-heart" aria-hidden="true"></i> A little help goes a long way</span>{% endif %}</div>
+<div class="items-grid">
+{% for item in items %}{% include 'includes/browse_item_card.html' %}{% empty %}
+<div class="items-empty"><i class="bi bi-search" aria-hidden="true"></i><h2>No matching items yet</h2><p>Try a different keyword or category. Your next search could bring someone closer to a reunion.</p><div><a href="{% url 'item_list' %}" class="btn btn-outline-primary">Clear filters</a> <a href="{% url 'report_item' %}" class="btn btn-primary">Report an item</a></div></div>
+{% endfor %}
+</div></section>
 {% endblock %}

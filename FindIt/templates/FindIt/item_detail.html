@@ -1,30 +1,33 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8">
-    <div class="card border-0 rounded-4 feature-card shadow-sm" style="background: var(--surface);">
-      {% if item.photo %}
-      {% comment %} full item display regardless of aspect ratio {% endcomment %}
-          <div class="item-image-container" style="width:100%; max-width:400px; height:300px; margin:auto; background: var(--surface);">
-            <img src="{{ item.photo.url }}" style="max-width:100%; max-height:100%; object-fit:contain; display:block;" alt="Item photo">
-          </div>
-      {% endif %}
-      <div class="card-body p-5">
-        <h2 class="card-title fw-bold mb-3">{{ item.title }}</h2>
-        <span class="badge {% if item.status == 'lost' %}bg-danger{% else %}bg-success{% endif %} me-2 rounded-pill">{{ item.get_status_display }}</span>
-        <span class="badge rounded-pill" style="background: var(--primary-subtle); color: var(--primary);">{{ item.category }}</span>
-        <span class="badge rounded-pill ms-1 {% if item.verification_status == 'RETURNED' %}bg-success{% elif item.verification_status == 'VERIFIED' %}bg-primary{% elif item.verification_status == 'CLAIMED' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-          {{ item.get_verification_status_display }}
-        </span>
-        {% if item.is_returned %}
-          <span class="badge bg-info text-dark me-1"><i class="bi bi-check-circle"></i> Returned</span>
-        {% endif %}
-        <div class="mt-3"><strong>Description:</strong> {{ item.description }}</div>
-        <div><strong>Location:</strong> <i class="bi bi-geo-alt"></i> {{ item.location }}</div>
-        <div><strong>Reported by:</strong> <i class="bi bi-person"></i> {{ item.reported_by.username }}</div>
-        <div><strong>Date Reported:</strong> <i class="bi bi-calendar-event"></i> {{ item.date_reported|date:'Y-m-d H:i' }}</div>
+<link rel="stylesheet" href="{% static 'css/item-detail.css' %}">
+<section class="item-detail-page">
+  <nav class="detail-navigation" aria-label="Item navigation"><a href="{% url 'item_list' %}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to items</a><span>Report #{{ item.id }}</span></nav>
+  <article class="detail-layout">
+    <div class="detail-gallery">
+      <div class="detail-photo">
+        {% if item.photo %}
+        <a href="{{ item.photo.url }}" target="_blank" rel="noopener" aria-label="Open full-size photo of {{ item.title }} (new tab)"><img src="{{ item.photo.url }}" alt="{{ item.title }}" width="640" height="640"><span class="detail-expand"><i class="bi bi-arrows-angle-expand" aria-hidden="true"></i> View full photo</span></a>
+        {% else %}<div class="detail-no-photo"><i class="bi bi-box-seam" aria-hidden="true"></i><span>No photo provided</span></div>{% endif %}
+      </div>
+      <div class="detail-safety"><i class="bi bi-shield-check" aria-hidden="true"></i><div><strong>A safe return starts with care</strong><p>Verify ownership before handing over an item. Arrange to meet in a safe, public place.</p><a href="{% url 'terms_and_conditions' %}">Read safety &amp; terms <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div></div>
+    </div>
+    <div class="detail-information">
+      <div class="detail-heading">
+        <div class="detail-badges"><span class="detail-status detail-status--{{ item.status }}"><i class="bi {% if item.status == 'lost' %}bi-search{% else %}bi-check-circle{% endif %}" aria-hidden="true"></i> {{ item.get_status_display }}</span><span class="detail-category">{{ item.category|default:'Uncategorised' }}</span></div>
+        <h1>{{ item.title }}</h1>
+        {% if item.is_returned %}<p class="detail-progress"><i class="bi bi-check-circle" aria-hidden="true"></i> Successfully returned</p>{% elif item.verification_status != 'FOUND' %}<p class="detail-progress"><i class="bi bi-shield-check" aria-hidden="true"></i> {{ item.get_verification_status_display }}</p>{% endif %}
+      </div>
+      <section class="detail-description" aria-labelledby="description-heading"><h2 id="description-heading">About this item</h2><p>{{ item.description|linebreaksbr }}</p></section>
+      <dl class="detail-facts">
+        <div><dt><i class="bi bi-geo-alt" aria-hidden="true"></i> Location</dt><dd>{{ item.location|default:'Not provided' }}</dd></div>
+        <div><dt><i class="bi bi-calendar3" aria-hidden="true"></i> Date reported</dt><dd><time datetime="{{ item.date_reported|date:'c' }}">{{ item.date_reported|date:'M j, Y' }} at {{ item.date_reported|date:'H:i' }}</time></dd></div>
+        <div><dt><i class="bi bi-person" aria-hidden="true"></i> Reported by</dt><dd>{{ item.reported_by.username }}</dd></div>
+      </dl>
+      <div class="detail-controls">
           {% if user.is_authenticated and user == item.reported_by %}
-                <button type="button" class="btn btn-info text-white" id="editItemBtn" style="display:inline; margin-top: 12px;">
+                <button type="button" class="btn btn-info text-white" id="editItemBtn" aria-expanded="false" aria-controls="editItemForm">
                   <i class="bi bi-pencil-square"></i> Edit Item
                 </button>
                 <form id="editItemForm" method="post" action="{% url 'edit_item_fields' item.id %}" enctype="multipart/form-data" class="mb-3 p-3 rounded-4 mt-3" style="display:none; background: var(--primary-subtle);">
@@ -49,20 +52,19 @@
                     var editForm = document.getElementById('editItemForm');
                     if (editBtn && editForm) {
                       editBtn.addEventListener('click', function() {
-                        editForm.style.display = (editForm.style.display === 'none') ? 'block' : 'none';
+                        var opened = editForm.style.display === 'none';
+                        editForm.style.display = opened ? 'block' : 'none';
+                        editBtn.setAttribute('aria-expanded', String(opened));
+                        if (opened) document.getElementById('itemDescription').focus();
                       });
                     }
                   });
                 </script>
           {% endif %}
-        <div class="d-flex flex-wrap gap-3 mt-4 align-items-center">
-            <!-- Safety Tips Modal Trigger -->
-            <a href="{% url 'terms_and_conditions' %}" class="btn btn-outline-info" target="_blank">
-              <i class="bi bi-shield-check"></i> Safety & Terms
-            </a>
+        <div class="detail-actions">
           {% if user.is_authenticated and user != item.reported_by and not item.is_returned %}
-            <button type="button" class="btn btn-warning" id="claimItemBtn"><i class="bi bi-patch-check"></i> Claim Ownership</button>
-            <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-outline-warning"><i class="bi bi-chat-dots"></i> Message Finder</a>
+            {% if own_claim %}<a class="btn btn-primary" href="{% url 'my_claims' %}">View my claim ? {{ own_claim.get_status_display }}</a>{% else %}<button type="button" class="btn btn-warning" id="claimItemBtn"><i class="bi bi-patch-check"></i> Claim Ownership</button>{% endif %}
+            <a href="{% url 'inbox' %}?item_id={{ item.id }}&recipient_id={{ item.reported_by.id }}" class="btn btn-outline-warning"><i class="bi bi-chat-dots"></i> Message Reporter</a>
           {% endif %}
           {% if can_review_claims and pending_claims %}
             <a href="{% url 'manage_claims' item.id %}" class="btn btn-outline-primary">
@@ -84,17 +86,17 @@
                     <h5 class="modal-title" id="claimModalLabel">Submit Ownership Claim</h5>
                     <small class="text-muted">Provide a short proof message and optional image.</small>
                   </div>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="post" action="{% url 'submit_claim' item.id %}" enctype="multipart/form-data">
                   {% csrf_token %}
                   <div class="modal-body claim-modal-body">
                     <div class="mb-3">
-                      <label class="form-label">Proof message</label>
+                      <label for="id_proof_text" class="form-label">Proof message</label>
                       {{ claim_form.proof_text }}
                     </div>
                     <div class="mb-3">
-                      <label class="form-label">Optional proof image</label>
+                      <label for="id_proof_image" class="form-label">Optional proof image</label>
                       {{ claim_form.proof_image }}
                     </div>
                   </div>
@@ -116,13 +118,13 @@
                     <h5 class="modal-title" id="returnModalLabel">Confirm Return With OTP</h5>
                     <small class="text-muted">Select the verified claimant and enter the 6-digit code.</small>
                   </div>
-                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form method="post" action="{% url 'mark_item_returned' item.id %}">
                   {% csrf_token %}
                   <div class="modal-body return-modal-body">
                     <div class="mb-3">
-                      <label class="form-label">Claimant username</label>
+                      <label for="claimantUsername" class="form-label">Claimant username</label>
                       <input type="text" class="form-control form-control-lg return-input" name="claimant_username" id="claimantUsername" list="approvedClaimants" placeholder="Type the approved claimant username" autocomplete="off" required>
                       <datalist id="approvedClaimants">
                         {% for username in claimant_usernames %}
@@ -131,7 +133,7 @@
                       </datalist>
                     </div>
                     <div class="mb-3">
-                      <label class="form-label">Verification code</label>
+                      <label for="verificationCode" class="form-label">Verification code</label>
                       <input type="text" class="form-control form-control-lg return-input" name="verification_code" id="verificationCode" placeholder="Enter the 6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
                     </div>
                     <div class="alert alert-info mb-0">
@@ -147,88 +149,7 @@
             </div>
           </div>
 
-          <style>
-            .feature-card,
-            .feature-card:hover,
-            .feature-card::before,
-            .feature-card::after {
-              transition: none !important;
-            }
 
-            .feature-card:hover {
-              transform: none !important;
-              box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08) !important;
-            }
-
-            .feature-card:hover::before,
-            .feature-card:hover::after {
-              opacity: 0 !important;
-              transform: none !important;
-            }
-
-            .claim-review-panel,
-            .claim-modal-content,
-            .return-modal-content {
-              background: linear-gradient(135deg, var(--bg-primary, #06112f) 0%, var(--bg-secondary, rgba(10, 33, 74, 0.95)) 100%);
-              border: 1px solid rgba(157, 190, 255, 0.18);
-              color: #eaf2ff;
-            }
-
-            .claim-review-panel {
-              padding: 1.25rem;
-              border-radius: 1rem;
-            }
-
-            .claim-review-card {
-              background: rgba(255, 255, 255, 0.06);
-              border: 1px solid rgba(157, 190, 255, 0.14);
-            }
-
-            .claim-modal-header,
-            .return-modal-header {
-              border-bottom: 1px solid rgba(157, 190, 255, 0.15);
-            }
-
-            .claim-modal-body,
-            .return-modal-body {
-              padding: 1.5rem;
-            }
-
-            .claim-modal-footer,
-            .return-modal-footer {
-              border-top: 1px solid rgba(157, 190, 255, 0.15);
-            }
-
-            .claim-modal-content textarea,
-            .return-input {
-              background: rgba(255, 255, 255, 0.08);
-              color: #eaf2ff;
-              border: 1.5px solid rgba(157, 190, 255, 0.3);
-            }
-
-            .claim-modal-content textarea:focus,
-            .return-input:focus {
-              background: rgba(255, 255, 255, 0.12);
-              color: #eaf2ff;
-              border-color: rgba(217, 119, 6, 0.6);
-              box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.15);
-            }
-
-            .claim-modal-content input::file-selector-button {
-              background: #D97706;
-              color: white;
-              border: none;
-              padding: 0.5rem 0.9rem;
-              margin-right: 0.75rem;
-              border-radius: 0.4rem;
-            }
-
-            body.dark-mode .claim-review-panel,
-            body.dark-mode .claim-modal-content,
-            body.dark-mode .return-modal-content {
-              background: linear-gradient(135deg, #06112f 0%, rgba(10, 33, 74, 0.95) 100%);
-            }
-          </style>
 
           <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -282,8 +203,9 @@
             </form>
           {% endif %}
         </div>
+        {% if not user.is_authenticated %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in to get in touch <i class="bi bi-arrow-right" aria-hidden="true"></i></a>{% endif %}
       </div>
     </div>
-  </div>
-</div>
+  </article>
+</section>
 {% endblock %}

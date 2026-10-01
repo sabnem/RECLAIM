@@ -121,6 +121,8 @@
                           <form method="post" action="{% url 'review_claim' claim.id %}">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="reject">
+                            <label for="reason-{{ claim.id }}" class="form-label">Reason for denial (optional)</label>
+                            <textarea class="form-control mb-2" id="reason-{{ claim.id }}" name="reason" maxlength="2000" rows="2" placeholder="Help the claimant understand your decision"></textarea>
                             <button type="submit" class="btn btn-outline-danger">
                               <i class="bi bi-x-circle"></i> Reject Claim
                             </button>

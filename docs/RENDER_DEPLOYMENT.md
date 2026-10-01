@@ -106,6 +106,22 @@ Do not commit a data export or credentials to Git to perform the transfer.
 
 ## Release verification
 
+### Claim tracking update (migration 0013)
+
+This update adds persistent claim notifications and the Ended claim status.
+Run `python manage.py migrate --noinput` against ReclaimDB before the updated
+web process starts. The paid pre-deploy command above handles this. If your
+service has no pre-deploy command, configure a release/start step that runs
+the migration successfully before starting Daphne. Do not deploy new code
+without this table: authenticated navigation queries unread notifications.
+
+Members can use My claims to view sent/received requests. Rejected claims can
+be appealed while an item remains available; ended claims cannot be reopened.
+Notifications are stored in PostgreSQL and the badge polls every 30 seconds
+while a page is visible. Opening a notification marks only that user's event
+read. Existing claims remain visible, but past events are not backfilled.
+Approval OTP delivery still uses the configured email provider.
+
 Check the deployed HTTPS URL, not only the local server:
 
 1. Home, login, and profile load with styles in light/dark mode on mobile/desktop.

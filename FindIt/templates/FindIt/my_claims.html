@@ -1,0 +1,24 @@
+{% extends 'base.html' %}{% load static %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/claims.css' %}">
+<header class="page-heading"><div><span class="eyebrow">Every step towards a reunion</span><h1>My claims</h1><p>Follow your requests and review claims on your reports.</p></div><a class="btn btn-outline-primary" href="{% url 'notifications' %}">Notifications</a></header>
+<nav class="claim-tabs" aria-label="Claim lists"><a class="btn {% if not received %}btn-primary{% else %}btn-outline-primary{% endif %}" href="{% url 'my_claims' %}" {% if not received %}aria-current="page"{% endif %}>Claims I made</a><a class="btn {% if received %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?tab=received" {% if received %}aria-current="page"{% endif %}>Claims received</a></nav>
+<div class="claim-list">
+{% for claim in page_obj %}
+<article class="claim-entry"><header><div><span class="eyebrow">{% if received %}From {{ claim.claimant.username }}{% else %}Your ownership request{% endif %}</span><h2><a href="{% url 'item_detail' claim.item_id %}">{{ claim.item.title }}</a></h2></div><span class="claim-state">{% if claim.is_returned %}Returned{% else %}{{ claim.get_status_display }}{% endif %}</span></header>
+<p>{{ claim.proof_text|linebreaksbr }}</p><p class="text-muted small">Last updated {{ claim.updated_at|date:'M j, Y H:i' }}</p>
+{% if claim.proof_image %}<a href="{{ claim.proof_image.url }}" target="_blank" rel="noopener">View submitted proof image</a>{% endif %}
+{% if claim.status == 'approved' and not claim.is_returned %}<p class="claim-guidance">Approved. Arrange the handover with the reporter and use the verification code sent by email.</p>{% endif %}
+<div class="claim-actions">
+{% if received %}<a class="btn btn-primary" href="{% url 'manage_claims' claim.item_id %}">Manage claims</a>
+{% elif not claim.item.is_returned and claim.status != 'ended' %}
+{% if claim.status == 'rejected' %}<a class="btn btn-primary" href="{% url 'appeal_claim' claim.id %}">Appeal with new evidence</a>{% endif %}
+<details class="claim-end"><summary>End this claim</summary><p>This closes your request permanently. You will not be able to appeal it.</p><form method="post" action="{% url 'end_claim' claim.id %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Confirm end claim</button></form></details>
+{% endif %}
+</div>
+<details class="claim-history"><summary>Claim history</summary><ol>{% for event in claim.events.all %}<li><strong>{{ event.kind|title }}</strong> · {{ event.created_at|date:'M j, Y H:i' }}{% if event.text %}<p>{{ event.text|linebreaksbr }}</p>{% endif %}</li>{% empty %}<li>Submitted {{ claim.created_at|date:'M j, Y' }}. {{ claim.get_status_display }}.</li>{% endfor %}</ol></details>
+</article>
+{% empty %}<div class="empty-state"><h2>No claims here yet</h2><p>{% if received %}Claims on your reports will appear here, and you will receive a notification.{% else %}Open an item and submit proof of ownership to get started.{% endif %}</p><a class="btn btn-primary" href="{% url 'item_list' %}">Browse items</a></div>{% endfor %}
+</div>
+{% include 'includes/claim_pagination.html' %}
+{% endblock %}

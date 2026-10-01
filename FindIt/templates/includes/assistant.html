@@ -1,0 +1,19 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/assistant.css' %}">
+<div class="niulize-widget">
+  <button type="button" id="niulizeOpen" class="niulize-launcher" aria-haspopup="dialog" aria-controls="niulizePanel" aria-expanded="false"><i class="bi bi-chat-heart" aria-hidden="true"></i><span>Need help?</span></button>
+  <dialog id="niulizePanel" class="niulize-panel" aria-labelledby="niulizeTitle">
+    <header><div><strong id="niulizeTitle">NIULIZE</strong><p>Your RECLAIM help guide</p></div><button id="niulizeClose" type="button" aria-label="Close assistance"><i class="bi bi-x-lg" aria-hidden="true"></i></button></header>
+    <div id="niulizeMessages" class="niulize-messages" role="log" aria-live="polite" aria-relevant="additions"><p class="niulize-bubble">Hi! I can explain how to use RECLAIM. Choose a topic or ask a question. Please don't share passwords, verification codes, or personal details.</p></div>
+    <div class="niulize-topics" aria-label="Suggested questions"><button type="button">Report an item</button><button type="button">My claims</button><button type="button">Appeal a claim</button><button type="button">Notifications</button></div>
+    <p id="niulizeStatus" class="niulize-status" role="status"></p>
+    <div id="niulizeFollowup" class="niulize-followup" hidden>
+      <div id="niulizeSuggestions" class="niulize-topics" aria-label="Related help topics"></div>
+      <details id="niulizeRequestDetails"><summary>Still need help? Request an answer</summary><p>This sends your last question to the RECLAIM team and saves it in My help requests.</p><button type="button" id="niulizeRequest" data-url="{% url 'request_answer' %}">Send question to administrator</button></details>
+    </div>
+    <a class="niulize-requests-link" href="{% url 'assistance_requests' %}">My help requests &amp; answers</a>
+    <form id="niulizeForm" action="{% url 'assistant_reply' %}" method="post">{% csrf_token %}<label for="niulizeQuestion">How can I help?</label><div><input id="niulizeQuestion" name="message" type="text" maxlength="1000" placeholder="Ask about using RECLAIM…" required autocomplete="off"><button id="niulizeSend" type="submit" aria-label="Send question"><i class="bi bi-send" aria-hidden="true"></i></button></div></form>
+    <footer>FAQ assistance · Answers managed by RECLAIM</footer>
+  </dialog>
+</div>
+<script src="{% static 'js/assistant.js' %}"></script>

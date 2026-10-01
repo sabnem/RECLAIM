@@ -31,6 +31,8 @@
     .sidebar-action-meta { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .theme-action { justify-content: space-between; }
     .theme-action .badge { background: rgba(var(--primary-rgb), .12); color: var(--primary); }
+    #claimNotificationCount { background: #a9510b; color: #fff; border: 1px solid transparent; min-width: 24px; padding: 5px 7px; margin-left: auto; font-size: .75rem; font-weight: 750; flex-shrink: 0; }
+    .dark-mode #claimNotificationCount { background: #f6b56d; color: #24180d; }
     .sidebar-user-avatar { width: 28px; height: 28px; flex-shrink: 0; object-fit: cover; border-radius: 50%; }
     .app-main { min-width: 0; margin-left: calc(var(--sidebar-width) + 2 * var(--sidebar-gap)); padding: 24px; flex: 1 0 auto; transition: margin-left .28s cubic-bezier(.22,1,.36,1); }
     .app-shell > .footer { margin-left: calc(var(--sidebar-width) + 2 * var(--sidebar-gap)); }

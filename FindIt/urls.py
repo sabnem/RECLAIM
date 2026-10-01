@@ -1,7 +1,19 @@
 from django.urls import path
 from . import views
+from . import claim_views
+from .assistance import assistant_reply, request_answer, assistance_requests
 
 urlpatterns = [
+    path('assistance/reply/', assistant_reply, name='assistant_reply'),
+    path('assistance/request/', request_answer, name='request_answer'),
+    path('assistance/requests/', assistance_requests, name='assistance_requests'),
+    path('my-claims/', claim_views.my_claims, name='my_claims'),
+    path('claims/<int:claim_id>/appeal/', claim_views.appeal_claim, name='appeal_claim'),
+    path('claims/<int:claim_id>/end/', claim_views.end_claim, name='end_claim'),
+    path('notifications/', claim_views.notifications, name='notifications'),
+    path('notifications/count/', claim_views.notification_count, name='notification_count'),
+    path('notifications/<int:event_id>/open/', claim_views.open_notification, name='open_notification'),
+    path('notifications/<int:event_id>/read/', claim_views.mark_notification_read, name='mark_notification_read'),
     path('', views.home, name='home'),
     path('register/', views.register, name='register'),
     path('login/', views.user_login, name='login'),

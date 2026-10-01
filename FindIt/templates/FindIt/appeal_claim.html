@@ -1,0 +1,5 @@
+{% extends 'base.html' %}{% load static %}{% block content %}
+<link rel="stylesheet" href="{% static 'css/claims.css' %}">
+<header class="page-heading"><div><span class="eyebrow">Another chance to verify ownership</span><h1>Appeal your claim</h1><p>{{ claim.item.title }} — explain why this item belongs to you and provide new details.</p></div></header>
+<form method="post" enctype="multipart/form-data" class="claim-entry">{% csrf_token %}{{ form.as_p }}<div class="claim-actions"><button type="submit" class="btn btn-primary">Submit appeal</button><a class="btn btn-outline-primary" href="{% url 'my_claims' %}">Cancel</a></div></form>
+{% endblock %}

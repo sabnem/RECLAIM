@@ -1,0 +1,14 @@
+<article class="browse-card">
+  <div class="browse-card-media">
+    {% if item.photo %}<img src="{{ item.photo.url }}" alt="{{ item.title }}" loading="lazy" decoding="async" width="480" height="320">
+    {% else %}<div class="browse-card-placeholder"><i class="bi bi-box-seam" aria-hidden="true"></i><span>No photo provided</span></div>{% endif %}
+    <span class="browse-status browse-status--{{ item.status }}"><i class="bi {% if item.status == 'lost' %}bi-search{% else %}bi-check-circle{% endif %}" aria-hidden="true"></i> {{ item.get_status_display }}</span>
+  </div>
+  <div class="browse-card-content">
+    <span class="browse-category">{{ item.category|default:'Uncategorised' }}</span>
+    <h2><a href="{% url 'item_detail' item.id %}" class="browse-card-link">{{ item.title }}</a></h2>
+    <p class="browse-description">{{ item.description|truncatewords:24 }}</p>
+    <div class="browse-location"><i class="bi bi-geo-alt" aria-hidden="true"></i><span>{{ item.location|default:'Location not provided' }}</span></div>
+    <div class="browse-card-footer"><time datetime="{{ item.date_reported|date:'c' }}"><i class="bi bi-calendar3" aria-hidden="true"></i> {{ item.date_reported|date:'M j, Y' }}</time><span class="browse-action" aria-hidden="true">View item <i class="bi bi-arrow-up-right"></i></span></div>
+  </div>
+</article>

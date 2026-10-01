@@ -2,6 +2,7 @@
 
 import json
 import logging
+import cloudinary.uploader
 
 from django.conf import settings
 from django.contrib import messages
@@ -9,7 +10,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,6 +30,7 @@ from .forms import (
 from .models import (
     AccountDeletionFeedback,
     Claim,
+    ClaimEvent,
     Item,
     ItemCategory,
     Message,
@@ -72,9 +74,10 @@ def _send_claim_otp_notification(request, claim, verification_code):
 
 @login_required
 @require_POST
+@transaction.atomic
 def submit_claim(request, item_id):
 
-    item = get_object_or_404(Item, id=item_id)
+    item = get_object_or_404(Item.objects.select_for_update(), id=item_id)
 
     if item.reported_by == request.user:
         messages.error(request, 'You cannot claim an item that you reported yourself.')
@@ -84,10 +87,10 @@ def submit_claim(request, item_id):
         messages.error(request, 'This item has already been returned.')
         return redirect('item_detail', item_id=item.id)
 
-    existing_approved = Claim.objects.filter(item=item, claimant=request.user, status=Claim.STATUS_APPROVED, is_returned=False).exists()
+    existing_approved = Claim.objects.filter(item=item, claimant=request.user).exists()
     if existing_approved:
-        messages.info(request, 'You already have an approved claim for this item.')
-        return redirect('item_detail', item_id=item.id)
+        messages.info(request, 'You already have a claim for this item. Manage it from My claims.')
+        return redirect('my_claims')
 
     form = ClaimForm(request.POST, request.FILES)
     if not form.is_valid():
@@ -114,6 +117,9 @@ def submit_claim(request, item_id):
     claim.full_clean()
     claim.save()
 
+    ClaimEvent.objects.create(claim=claim, recipient=item.reported_by, actor=request.user,
+                              kind='submitted', text=claim.proof_text)
+
     if item.verification_status == 'FOUND':
         item.verification_status = 'CLAIMED'
         item.save(update_fields=['verification_status'])
@@ -124,15 +130,20 @@ def submit_claim(request, item_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def review_claim(request, claim_id):
 
     claim = get_object_or_404(Claim, id=claim_id)
-    item = claim.item
+    item = get_object_or_404(Item.objects.select_for_update(), id=claim.item_id)
+    claim.refresh_from_db()
     if request.user != item.reported_by and not request.user.is_superuser:
         messages.error(request, 'Only the finder or an administrator can review this claim.')
         return redirect('item_detail', item_id=item.id)
 
     action = request.POST.get('action')
+    if claim.status != Claim.STATUS_PENDING or item.is_returned:
+        messages.info(request, 'This claim is no longer awaiting review.')
+        return redirect('manage_claims', item_id=item.id)
     if action not in {'approve', 'reject'}:
         messages.error(request, 'Invalid claim action.')
         return redirect('item_detail', item_id=item.id)
@@ -153,8 +164,10 @@ def review_claim(request, claim_id):
         claim.is_returned = False
         claim.returned_at = None
         claim.save()
+        ClaimEvent.objects.create(claim=claim, recipient=claim.claimant, actor=request.user,
+                                  kind='rejected', text=request.POST.get('reason', '').strip()[:2000])
         if not item.claims.filter(status=Claim.STATUS_APPROVED).exists():
-            item.verification_status = 'FOUND'
+            item.verification_status = 'CLAIMED' if item.claims.filter(status=Claim.STATUS_PENDING).exists() else 'FOUND'
             item.save(update_fields=['verification_status'])
         messages.success(request, 'Claim rejected.')
         return redirect('item_detail', item_id=item.id)
@@ -166,15 +179,17 @@ def review_claim(request, claim_id):
     claim.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'is_returned', 'returned_at', 'updated_at'])
     item.verification_status = 'VERIFIED'
     item.save(update_fields=['verification_status'])
+    ClaimEvent.objects.create(claim=claim, recipient=claim.claimant, actor=request.user, kind='approved')
     _send_claim_otp_notification(request, claim, verification_code)
     return redirect('item_detail', item_id=item.id)
 
 
 @login_required
 @require_POST
+@transaction.atomic
 def mark_item_returned(request, item_id):
 
-    item = get_object_or_404(Item, id=item_id)
+    item = get_object_or_404(Item.objects.select_for_update(), id=item_id)
     if request.user != item.reported_by and not request.user.is_superuser:
         messages.error(request, 'Only the finder or an administrator can confirm the return.')
         return redirect('item_detail', item_id=item.id)
@@ -377,6 +392,7 @@ def item_detail(request, item_id):
         'claim_form': claim_form,
         'return_form': return_form,
         'can_submit_claim': can_submit_claim,
+        'own_claim': item.claims.filter(claimant=request.user).first() if request.user.is_authenticated else None,
         'can_review_claims': can_review_claims,
         'can_confirm_return': can_confirm_return,
     })
@@ -725,9 +741,24 @@ def upload_profile_picture(request):
 def remove_profile_picture(request):
     profile = request.user.userprofile
     if profile.profile_picture:
-        profile.profile_picture.delete(save=False)
+        picture = profile.profile_picture
+        try:
+            result = cloudinary.uploader.destroy(
+                picture.public_id,
+                resource_type=picture.resource_type or 'image',
+                type=picture.type or 'upload',
+                invalidate=True,
+            )
+        except Exception:
+            logger.warning('Cloudinary profile picture removal failed for user %s', request.user.pk)
+            messages.error(request, 'Your picture could not be removed right now. Please try again.')
+            return redirect('profile')
+        if result.get('result') not in {'ok', 'not found'}:
+            messages.error(request, 'Your picture could not be removed right now. Please try again.')
+            return redirect('profile')
         profile.profile_picture = None
-        profile.save()
+        profile.save(update_fields=['profile_picture'])
+        messages.success(request, 'Your profile picture has been removed.')
     return redirect('profile')
 
 

@@ -1,4 +1,65 @@
 from django.contrib import admin
+from .models import AssistanceFAQ, AssistanceRequest
+from django.utils import timezone
+from django.db import transaction
+
+
+@admin.register(AssistanceFAQ)
+class AssistanceFAQAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'is_active', 'priority')
+    list_filter = ('is_active', 'category')
+    search_fields = ('title', 'keywords', 'response')
+
+
+class AssistanceAnsweredFilter(admin.SimpleListFilter):
+    title = 'Answer status'
+    parameter_name = 'answered'
+
+    def lookups(self, request, model_admin):
+        return [('no', 'Awaiting answer'), ('yes', 'Answered')]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'no':
+            return queryset.filter(answer='')
+        if self.value() == 'yes':
+            return queryset.exclude(answer='')
+        return queryset
+
+
+@admin.register(AssistanceRequest)
+class AssistanceRequestAdmin(admin.ModelAdmin):
+    list_display = ('question', 'user', 'created_at', 'answered_at')
+    list_filter = (AssistanceAnsweredFilter,)
+    search_fields = ('question', 'answer', 'user__username')
+    readonly_fields = ('user', 'question', 'created_at', 'answered_at', 'answered_by', 'faq')
+    fields = ('user', 'question', 'created_at', 'answer', 'answered_at', 'answered_by', 'faq')
+    actions = ['create_faq_drafts']
+
+    def has_add_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        if 'answer' in form.changed_data:
+            obj.answer = obj.answer.strip()
+            obj.answered_at = timezone.now() if obj.answer else None
+            obj.answered_by = request.user if obj.answer else None
+        super().save_model(request, obj, form, change)
+
+    @admin.action(description='Create inactive FAQ drafts from answered requests')
+    def create_faq_drafts(self, request, queryset):
+        if not request.user.has_perm('FindIt.add_assistancefaq'):
+            self.message_user(request, 'You need permission to add FAQs.', level='error')
+            return
+        count = 0
+        with transaction.atomic():
+            for question in queryset.select_for_update().exclude(answer='').filter(faq__isnull=True):
+                question.faq = AssistanceFAQ.objects.create(
+                    title=f'Help request {question.pk}: {question.question[:150]}',
+                    response=question.answer, keywords='', is_active=False,
+                )
+                question.save(update_fields=['faq'])
+                count += 1
+        self.message_user(request, f'{count} inactive FAQ draft(s) created. Edit the title, remove private details, add keywords, then activate.')
 from .models import UserProfile, Item, ItemCategory, Message, RecoveredItem, Claim, ReturnConfirmation
 
 @admin.register(UserProfile)

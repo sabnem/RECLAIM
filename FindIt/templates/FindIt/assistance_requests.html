@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% load static %}{% block content %}
+<link rel="stylesheet" href="{% static 'css/claims.css' %}">
+<header class="page-heading"><div><span class="eyebrow">NIULIZE assistance</span><h1>My help requests</h1><p>Answers from the RECLAIM team. Only you and authorized administrators can see your requests.</p></div></header>
+<div class="claim-list">{% for question in page_obj %}<article class="claim-entry"><header><h2>{{ question.question }}</h2><span class="claim-state">{% if question.answer %}Answered{% else %}Awaiting answer{% endif %}</span></header><p class="text-muted small">Sent {{ question.created_at|date:'M j, Y H:i' }}</p>{% if question.answer %}<h3 class="h6">Administrator's answer</h3><p>{{ question.answer|linebreaksbr }}</p><p class="text-muted small">Updated {{ question.answered_at|date:'M j, Y H:i' }}</p>{% else %}<p>The team has received your question. Check this page again for their response.</p>{% endif %}</article>{% empty %}<div class="empty-state"><h2>No help requests yet</h2><p>Ask NIULIZE using Need help? If the answer does not help, choose Request an answer.</p></div>{% endfor %}</div>
+{% include 'includes/claim_pagination.html' %}
+{% endblock %}

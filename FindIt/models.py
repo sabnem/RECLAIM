@@ -177,10 +177,12 @@ class Claim(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_APPROVED = 'approved'
     STATUS_REJECTED = 'rejected'
+    STATUS_ENDED = 'ended'
     STATUS_CHOICES = [
         (STATUS_PENDING, 'Pending'),
         (STATUS_APPROVED, 'Approved'),
         (STATUS_REJECTED, 'Rejected'),
+        (STATUS_ENDED, 'Ended'),
     ]
 
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='claims')
@@ -243,6 +245,56 @@ class Claim(models.Model):
         self.verification_code_used_at = timezone.now()
         self.status = self.STATUS_APPROVED
         self.save(update_fields=['is_returned', 'returned_at', 'verification_code_used_at', 'status', 'updated_at'])
+
+
+class AssistanceFAQ(models.Model):
+    """Editable NIULIZE help topics, adapted from sabnem/NIULIZE-CHATBOT."""
+    title = models.CharField(max_length=200, unique=True)
+    category = models.CharField(max_length=100, default='Getting started')
+    keywords = models.TextField(help_text='Comma-separated words or phrases that match this topic.')
+    response = models.TextField()
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=1)
+
+    class Meta:
+        ordering = ['-priority', 'title']
+        verbose_name = 'Assistance FAQ'
+
+    def __str__(self):
+        return self.title
+
+
+class AssistanceRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assistance_requests')
+    question = models.TextField(max_length=1000)
+    answer = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    answered_at = models.DateTimeField(null=True, blank=True)
+    answered_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name='answered_assistance_requests')
+    faq = models.ForeignKey(AssistanceFAQ, null=True, blank=True, on_delete=models.SET_NULL)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+
+    def __str__(self):
+        return self.question[:80]
+
+
+class ClaimEvent(models.Model):
+    """Persistent claim history and recipient-scoped in-app notifications."""
+
+    claim = models.ForeignKey(Claim, on_delete=models.CASCADE, related_name='events')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='claim_notifications')
+    actor = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    kind = models.CharField(max_length=20)
+    text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at', '-id']
+        indexes = [models.Index(fields=['recipient', 'read_at'])]
 
 
 class ReturnConfirmation(models.Model):

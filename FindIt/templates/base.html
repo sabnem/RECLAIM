@@ -59,7 +59,7 @@
                         <div class="sidebar-group" data-group="workspace">
                             <button class="sidebar-group-toggle" type="button" data-submenu-target="workspaceSubmenu" aria-expanded="false" data-tooltip="Workspace" aria-label="Workspace section">
                                 <i class="bi bi-grid-1x2"></i>
-                                <span class="sidebar-label">Workspace</span>
+                                <span class="sidebar-label">Categories</span>
                                 <i class="bi bi-chevron-down sidebar-caret"></i>
                             </button>
                             <div class="sidebar-submenu" id="workspaceSubmenu">
@@ -107,6 +107,10 @@
                                 <a href="{% url 'returns_statistics' %}" class="sidebar-submenu-link {% if current_url == 'returns_statistics' %}active-link{% endif %}">Statistics Dashboard</a>
                             </div>
                         </div>
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'my_claims' %}" class="sidebar-link {% if current_url == 'my_claims' %}active{% endif %}" aria-label="My claims" data-tooltip="My claims"><i class="bi bi-patch-check"></i><span class="sidebar-label">My claims</span></a>
+                        <a href="{% url 'notifications' %}" class="sidebar-link {% if current_url == 'notifications' %}active{% endif %}" aria-label="Claim notifications" data-tooltip="Notifications"><i class="bi bi-bell"></i><span class="sidebar-label">Notifications</span><span id="claimNotificationCount" class="badge" data-url="{% url 'notification_count' %}" aria-live="polite" aria-label="Unread claim notifications" {% if not unread_claim_notifications %}hidden{% endif %}>{{ unread_claim_notifications }}</span></a>
+                        {% endif %}
                     {% endwith %}
                 </nav>
 
@@ -233,5 +237,8 @@
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
     <script src="{% static 'js/sidebar.js' %}"></script>
     <script src="{% static 'js/theme.js' %}"></script>
+    <script src="{% static 'js/flash-messages.js' %}"></script>
+    <script src="{% static 'js/claim-notifications.js' %}"></script>
+    {% include 'includes/assistant.html' %}
 </body>
 </html>
