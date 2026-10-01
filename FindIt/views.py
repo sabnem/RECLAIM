@@ -1,7 +1,41 @@
+"""HTTP views for reports, claims, messaging, and member accounts."""
+
+import json
 import logging
 
-from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
+from django.core.mail import send_mail
+from django.db import models
+from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
+
+from .forms import (
+    ClaimForm,
+    ItemForm,
+    LoginForm,
+    MessageForm,
+    ReturnVerificationForm,
+    UserProfileForm,
+    UserRegistrationForm,
+    UserReviewForm,
+)
+from .models import (
+    AccountDeletionFeedback,
+    Claim,
+    Item,
+    ItemCategory,
+    Message,
+    RecoveredItem,
+    ReturnConfirmation,
+)
+from .selectors import return_statistics_for
 
 
 logger = logging.getLogger(__name__)
@@ -39,8 +73,6 @@ def _send_claim_otp_notification(request, claim, verification_code):
 @login_required
 @require_POST
 def submit_claim(request, item_id):
-    from .forms import ClaimForm
-    from .models import Claim, Item
 
     item = get_object_or_404(Item, id=item_id)
 
@@ -93,7 +125,6 @@ def submit_claim(request, item_id):
 @login_required
 @require_POST
 def review_claim(request, claim_id):
-    from .models import Claim
 
     claim = get_object_or_404(Claim, id=claim_id)
     item = claim.item
@@ -142,7 +173,6 @@ def review_claim(request, claim_id):
 @login_required
 @require_POST
 def mark_item_returned(request, item_id):
-    from .models import Claim, Item, RecoveredItem, ReturnConfirmation
 
     item = get_object_or_404(Item, id=item_id)
     if request.user != item.reported_by and not request.user.is_superuser:
@@ -204,24 +234,10 @@ def mark_item_returned(request, item_id):
 @login_required
 def return_confirmation(request, item_id):
     return redirect('item_detail', item_id=item_id)
-# Context processor to provide unread inbox count to all templates
-def unread_inbox_count(request):
-    if request.user.is_authenticated:
-        return {'unread_inbox_count': request.user.received_messages.filter(is_read=False).count()}
-    return {'unread_inbox_count': 0}
-# Context processor to provide categories to all templates
-from .models import ItemCategory
-from .models import ReturnConfirmation, Item
-from .forms import ClaimForm, ReturnVerificationForm
-def categories_context(request):
-    return {'categories': ItemCategory.objects.all()}
-from django.contrib.auth.decorators import user_passes_test
-
 # Admin Dashboard view (superuser only)
 @user_passes_test(lambda u: u.is_superuser)
 def admin_dashboard(request):
     from django.contrib.auth.models import User
-    from .models import Item, Message
     total_users = User.objects.count()
     total_items = Item.objects.count()
     total_messages = Message.objects.count()
@@ -238,26 +254,9 @@ def admin_dashboard(request):
         'recent_items': recent_items,
         'recent_users': recent_users,
     })
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-from django.contrib.auth import authenticate, login, logout
-from .forms import UserRegistrationForm, LoginForm, ItemForm, MessageForm
-from django.contrib import messages
-from .models import Item, ItemCategory, Message
-from django.db import models
-from django.contrib.auth.models import User
-from django.db.models import Q
-from django.core.mail import send_mail
-from django.conf import settings
-from django.http import JsonResponse
-import json
-from django.views.decorators.http import require_POST
 
-from .forms import UserReviewForm
-from .models import UserReview
 
 # Submit review for reputation system
-from django.contrib.auth.decorators import login_required
 
 
 def conversation_room_id(item_id, user_one_id, user_two_id):
@@ -331,15 +330,14 @@ def report_item(request):
     })
 
 def item_list(request):
-    from .models import RecoveredItem
     query = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
     status = request.GET.get('status', '')
-    
+
     # Exclude items that have been recovered (confirmed returns)
     recovered_item_ids = RecoveredItem.objects.values_list('item_id', flat=True)
-    items = Item.objects.exclude(Q(id__in=recovered_item_ids) | Q(is_returned=True)).order_by('-date_reported')
-    
+    items = Item.objects.select_related('category').exclude(Q(id__in=recovered_item_ids) | Q(is_returned=True)).order_by('-date_reported')
+
     if query:
         items = items.filter(Q(title__icontains=query) | Q(description__icontains=query) | Q(location__icontains=query))
     if category_id:
@@ -356,7 +354,6 @@ def item_list(request):
     })
 
 def item_detail(request, item_id):
-    from .models import Claim, RecoveredItem
     item = get_object_or_404(Item, id=item_id)
     claim_form = ClaimForm()
     return_form = ReturnVerificationForm()
@@ -369,7 +366,7 @@ def item_detail(request, item_id):
     can_confirm_return = request.user.is_authenticated and (request.user == item.reported_by or request.user.is_superuser) and approved_claims.exists() and not item.is_returned
 
     has_recovered = RecoveredItem.objects.filter(item=item).exists()
-    
+
     return render(request, 'FindIt/item_detail.html', {
         'item': item,
         'has_recovered': has_recovered,
@@ -387,7 +384,6 @@ def item_detail(request, item_id):
 
 @login_required
 def manage_claims(request, item_id):
-    from .models import Claim, RecoveredItem
 
     item = get_object_or_404(Item, id=item_id)
     if request.user != item.reported_by and not request.user.is_superuser:
@@ -453,17 +449,17 @@ def inbox(request):
         try:
             item = get_object_or_404(Item, id=item_id)
             recipient = get_object_or_404(User, id=recipient_id)
-            
+
             # Check for existing conversation between these two users about this item
             existing_messages = Message.objects.filter(
                 item=item,
                 sender__in=[request.user, recipient],
                 recipient__in=[request.user, recipient]
             ).filter(
-                Q(sender=request.user, deleted_by_sender=False) | 
+                Q(sender=request.user, deleted_by_sender=False) |
                 Q(recipient=request.user, deleted_by_recipient=False)
             ).exists()
-            
+
             # If conversation exists, we'll use it (no redirect needed, just continue)
             # If it doesn't exist, that's fine too - we'll create a new one when they send a message
         except:
@@ -491,15 +487,15 @@ def inbox(request):
     if show_archived:
         # Show only archived messages (those deleted by current user)
         conversations = Message.objects.filter(
-            Q(sender=request.user, deleted_by_sender=True) | 
+            Q(sender=request.user, deleted_by_sender=True) |
             Q(recipient=request.user, deleted_by_recipient=True)
-        ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
+        ).select_related('item', 'sender__userprofile', 'recipient__userprofile').order_by('-timestamp')
     else:
         # Show active conversations (exclude archived messages)
         conversations = Message.objects.filter(
-            Q(sender=request.user, deleted_by_sender=False) | 
+            Q(sender=request.user, deleted_by_sender=False) |
             Q(recipient=request.user, deleted_by_recipient=False)
-        ).select_related('item', 'sender', 'recipient').order_by('-timestamp')
+        ).select_related('item', 'sender__userprofile', 'recipient__userprofile').order_by('-timestamp')
 
     # Group conversations by (item, other_user)
     convo_dict = {}
@@ -529,7 +525,7 @@ def inbox(request):
                 sender__in=[request.user, recipient],
                 recipient__in=[request.user, recipient]
             ).filter(
-                Q(sender=request.user, deleted_by_sender=False) | 
+                Q(sender=request.user, deleted_by_sender=False) |
                 Q(recipient=request.user, deleted_by_recipient=False)
             ).order_by('timestamp')
         # For sidebar highlighting
@@ -546,7 +542,7 @@ def inbox(request):
             sender__in=[request.user, active_conversation.sender, active_conversation.recipient],
             recipient__in=[request.user, active_conversation.sender, active_conversation.recipient]
         ).filter(
-            Q(sender=request.user, deleted_by_sender=False) | 
+            Q(sender=request.user, deleted_by_sender=False) |
             Q(recipient=request.user, deleted_by_recipient=False)
         ).order_by('timestamp')
 
@@ -688,11 +684,6 @@ def send_message(request, item_id, recipient_id):
         'conversation': conversation,
     })
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .models import UserProfile
-from .forms import UserProfileForm
-
 
 @login_required
 def profile_view(request):
@@ -740,9 +731,6 @@ def remove_profile_picture(request):
     return redirect('profile')
 
 
-from .models import AccountDeletionFeedback
-from django.contrib import messages
-from django.contrib.auth import logout
 @login_required
 def delete_account(request):
     if request.method == 'POST':
@@ -854,7 +842,6 @@ def delete_message(request):
 # My Recovered Items - items that owner got back
 @login_required
 def my_recovered_items(request):
-    from .models import RecoveredItem
     recovered_items = RecoveredItem.objects.filter(owner=request.user).select_related('item', 'finder')
     return render(request, 'FindIt/my_recovered_items.html', {
         'recovered_items': recovered_items
@@ -864,7 +851,6 @@ def my_recovered_items(request):
 # My Returned Items - items that finder returned to owners
 @login_required
 def my_returned_items(request):
-    from .models import RecoveredItem
     returned_items = RecoveredItem.objects.filter(finder=request.user).select_related('item', 'owner')
     return render(request, 'FindIt/my_returned_items.html', {
         'returned_items': returned_items
@@ -874,34 +860,33 @@ def my_returned_items(request):
 # Rate the finder who returned the item
 @login_required
 def rate_finder(request, item_id):
-    from .models import RecoveredItem
     item = get_object_or_404(Item, id=item_id)
-    
+
     try:
         recovered_item = RecoveredItem.objects.get(item=item, owner=request.user)
     except RecoveredItem.DoesNotExist:
         messages.error(request, 'This item has not been recovered yet.')
         return redirect('item_detail', item_id=item.id)
-    
+
     # Check if already rated
     if recovered_item.rating:
         messages.info(request, 'You have already rated this return.')
         return redirect('my_recovered_items')
-    
+
     if request.method == 'POST':
         rating = request.POST.get('rating')
         feedback = request.POST.get('feedback', '').strip()
-        
+
         if rating:
             recovered_item.rating = int(rating)
             recovered_item.feedback = feedback
             recovered_item.rated_at = timezone.now()
             recovered_item.save()
-            
+
             # Update finder's reputation score
             if hasattr(recovered_item.finder, 'userprofile'):
                 recovered_item.finder.userprofile.update_reputation()
-            
+
             # Send email notification to finder
             if recovered_item.finder.email and hasattr(recovered_item.finder, 'userprofile') and recovered_item.finder.userprofile.notify_email:
                 try:
@@ -930,13 +915,13 @@ FindIt Team
                     )
                 except Exception as e:
                     # Log error but don't stop the process
-                    print(f"Email notification failed: {e}")
-            
+                    logger.exception('Rating notification email failed for recovered item %s', recovered_item.pk)
+
             messages.success(request, f'Thank you for rating {recovered_item.finder.username}!')
             return redirect('my_recovered_items')
         else:
             messages.error(request, 'Please select a rating.')
-    
+
     return render(request, 'FindIt/rate_finder.html', {
         'item': item,
         'recovered_item': recovered_item
@@ -946,69 +931,7 @@ FindIt Team
 # Statistics Dashboard for Returns
 @login_required
 def returns_statistics(request):
-    from .models import RecoveredItem
-    from django.db.models import Avg, Count, Q
-    from datetime import timedelta
-    
-    # Overall statistics
-    total_recovered = RecoveredItem.objects.count()
-    total_rated = RecoveredItem.objects.filter(rating__isnull=False).count()
-    avg_rating = RecoveredItem.objects.filter(rating__isnull=False).aggregate(Avg('rating'))['rating__avg'] or 0
-    
-    # User-specific statistics
-    user_recovered = RecoveredItem.objects.filter(owner=request.user).count()
-    user_returned = RecoveredItem.objects.filter(finder=request.user).count()
-    user_avg_rating = RecoveredItem.objects.filter(finder=request.user, rating__isnull=False).aggregate(Avg('rating'))['rating__avg'] or 0
-    
-    # Recent activity (last 30 days)
-    thirty_days_ago = timezone.now() - timedelta(days=30)
-    recent_recovered = RecoveredItem.objects.filter(recovered_date__gte=thirty_days_ago).count()
-    
-    # Top finders (users with highest reputation)
-    from django.contrib.auth.models import User
-    top_finders = UserProfile.objects.filter(
-        total_returns__gt=0
-    ).select_related('user').order_by('-reputation_score', '-total_returns')[:10]
-    
-    # Rating distribution
-    rating_distribution = {
-        '5': RecoveredItem.objects.filter(rating=5).count(),
-        '4': RecoveredItem.objects.filter(rating=4).count(),
-        '3': RecoveredItem.objects.filter(rating=3).count(),
-        '2': RecoveredItem.objects.filter(rating=2).count(),
-        '1': RecoveredItem.objects.filter(rating=1).count(),
-    }
-    
-    # Recent recoveries
-    recent_recoveries = RecoveredItem.objects.select_related(
-        'item', 'owner', 'finder'
-    ).order_by('-recovered_date')[:10]
-    
-    # Monthly statistics (last 6 months)
-    from django.db.models.functions import TruncMonth
-    monthly_stats = RecoveredItem.objects.filter(
-        recovered_date__gte=timezone.now() - timedelta(days=180)
-    ).annotate(
-        month=TruncMonth('recovered_date')
-    ).values('month').annotate(
-        count=Count('id')
-    ).order_by('month')
-    
-    context = {
-        'total_recovered': total_recovered,
-        'total_rated': total_rated,
-        'avg_rating': round(avg_rating, 2),
-        'user_recovered': user_recovered,
-        'user_returned': user_returned,
-        'user_avg_rating': round(user_avg_rating, 2),
-        'recent_recovered': recent_recovered,
-        'top_finders': top_finders,
-        'rating_distribution': rating_distribution,
-        'recent_recoveries': recent_recoveries,
-        'monthly_stats': monthly_stats,
-    }
-    
-    return render(request, 'FindIt/returns_statistics.html', context)
+    return render(request, 'FindIt/returns_statistics.html', return_statistics_for(request.user))
 
 
 # Export Recovered Items to PDF
@@ -1022,14 +945,13 @@ def export_recovered_items_pdf(request):
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
     from io import BytesIO
-    from .models import RecoveredItem
-    
+
     # Create PDF buffer
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter)
     elements = []
     styles = getSampleStyleSheet()
-    
+
     # Title
     title_style = ParagraphStyle(
         'CustomTitle',
@@ -1041,7 +963,7 @@ def export_recovered_items_pdf(request):
     )
     elements.append(Paragraph("My Recovered Items Report", title_style))
     elements.append(Spacer(1, 12))
-    
+
     # User info
     info_style = ParagraphStyle(
         'Info',
@@ -1051,23 +973,23 @@ def export_recovered_items_pdf(request):
     )
     elements.append(Paragraph(f"<b>User:</b> {request.user.username}", info_style))
     elements.append(Paragraph(f"<b>Generated:</b> {timezone.now().strftime('%B %d, %Y at %I:%M %p')}", info_style))
-    
+
     # Get user's recovered items
     recovered_items = RecoveredItem.objects.filter(
         owner=request.user
     ).select_related('item', 'finder').order_by('-recovered_date')
-    
+
     elements.append(Paragraph(f"<b>Total Recovered Items:</b> {recovered_items.count()}", info_style))
     elements.append(Spacer(1, 20))
-    
+
     if recovered_items.exists():
         # Create table data
         data = [['Item', 'Finder', 'Date', 'Rating', 'Feedback']]
-        
+
         for recovered in recovered_items:
             rating_stars = '⭐' * (recovered.rating or 0) if recovered.rating else 'Not rated'
             feedback_text = (recovered.feedback[:50] + '...') if recovered.feedback and len(recovered.feedback) > 50 else (recovered.feedback or 'N/A')
-            
+
             data.append([
                 recovered.item.title[:30],
                 recovered.finder.username,
@@ -1075,7 +997,7 @@ def export_recovered_items_pdf(request):
                 rating_stars,
                 feedback_text
             ])
-        
+
         # Create table
         table = Table(data, colWidths=[2*inch, 1.2*inch, 1*inch, 1*inch, 2*inch])
         table.setStyle(TableStyle([
@@ -1091,31 +1013,31 @@ def export_recovered_items_pdf(request):
             ('FONTSIZE', (0, 1), (-1, -1), 9),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
-        
+
         elements.append(table)
         elements.append(Spacer(1, 20))
-        
+
         # Summary statistics
         rated_items = recovered_items.filter(rating__isnull=False)
         if rated_items.exists():
             avg_rating = sum(r.rating for r in rated_items) / rated_items.count()
             elements.append(Paragraph(f"<b>Average Rating Given:</b> {avg_rating:.2f}/5.0 ⭐", info_style))
-        
+
     else:
         elements.append(Paragraph("No recovered items found.", info_style))
-    
+
     # Build PDF
     doc.build(elements)
-    
+
     # Get PDF data
     pdf = buffer.getvalue()
     buffer.close()
-    
+
     # Create HTTP response
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="recovered_items_{request.user.username}_{timezone.now().strftime("%Y%m%d")}.pdf"'
     response.write(pdf)
-    
+
     return response
 
 
@@ -1125,19 +1047,19 @@ def clear_conversation(request):
     """Handle conversation actions: delete or archive"""
     import json
     from django.http import JsonResponse
-    
+
     try:
         data = json.loads(request.body)
         action = data.get('action', 'delete')  # 'delete' or 'archive'
         item_id = data.get('item_id')
         recipient_id = data.get('recipient_id')
-        
+
         if not item_id or not recipient_id:
             return JsonResponse({'success': False, 'error': 'Missing item_id or recipient_id'}, status=400)
-        
+
         item = get_object_or_404(Item, id=item_id)
         recipient = get_object_or_404(User, id=recipient_id)
-        
+
         if action == 'delete':
             # Hard delete: Permanently remove all messages in this conversation
             conversation_messages = Message.objects.filter(
@@ -1145,16 +1067,16 @@ def clear_conversation(request):
                 sender__in=[request.user, recipient],
                 recipient__in=[request.user, recipient]
             )
-            
+
             deleted_count = conversation_messages.count()
             conversation_messages.delete()
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': f'Conversation deleted permanently ({deleted_count} messages removed)',
                 'deleted_count': deleted_count
             })
-        
+
         elif action == 'archive':
             # Soft delete: Mark messages as deleted for current user only
             # Messages sent by current user
@@ -1164,7 +1086,7 @@ def clear_conversation(request):
                 recipient=recipient
             )
             sender_count = sender_messages.update(deleted_by_sender=True)
-            
+
             # Messages received by current user
             recipient_messages = Message.objects.filter(
                 item=item,
@@ -1172,15 +1094,15 @@ def clear_conversation(request):
                 recipient=request.user
             )
             recipient_count = recipient_messages.update(deleted_by_recipient=True)
-            
+
             total_archived = sender_count + recipient_count
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': f'Conversation archived ({total_archived} messages hidden)',
                 'archived_count': total_archived
             })
-        
+
         elif action == 'unarchive':
             # Unarchive: Mark messages as not deleted for current user
             # Messages sent by current user
@@ -1190,7 +1112,7 @@ def clear_conversation(request):
                 recipient=recipient
             )
             sender_count = sender_messages.update(deleted_by_sender=False)
-            
+
             # Messages received by current user
             recipient_messages = Message.objects.filter(
                 item=item,
@@ -1198,20 +1120,17 @@ def clear_conversation(request):
                 recipient=request.user
             )
             recipient_count = recipient_messages.update(deleted_by_recipient=False)
-            
+
             total_unarchived = sender_count + recipient_count
-            
+
             return JsonResponse({
-                'success': True, 
+                'success': True,
                 'message': f'Conversation unarchived ({total_unarchived} messages restored)',
                 'unarchived_count': total_unarchived
             })
-        
+
         else:
             return JsonResponse({'success': False, 'error': 'Invalid action'}, status=400)
-        
+
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-

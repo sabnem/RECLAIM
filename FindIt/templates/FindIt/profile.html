@@ -3,7 +3,9 @@
 {% block content %}
 
 <link rel="stylesheet" href="{% static 'css/profile.css' %}">
-<div class="container mt-5 mb-5">
+<div class="account-page">
+<header class="page-heading"><div><span class="eyebrow">Your account</span><h1>My profile</h1><p>Manage your details and see your contribution to the community.</p></div></header>
+{% include 'includes/account_tabs.html' %}
     <!-- Profile Header Card -->
     <div class="row justify-content-center mb-4">
         <div class="col-12">
@@ -16,17 +18,17 @@
                                 {% if profile.profile_picture %}
                                     <img src="{{ profile.profile_picture.url }}" alt="Profile Picture">
                                 {% else %}
-                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D97706&color=fff&size=200" alt="Default Profile Picture">
+                                    <span class="profile-initial" aria-label="Profile avatar">{{ user.username|first|upper }}</span>
                                 {% endif %}
 
                                 <!-- Overlay icons -->
                                 <div class="icon-overlay-center">
                                     <!-- Upload -->
-                                    <span class="camera-overlay rounded-circle p-2 d-flex align-items-center justify-content-center"
+                                    <button type="button" aria-label="Upload profile photo" class="camera-overlay rounded-circle p-2 d-flex align-items-center justify-content-center"
                                           style="width:45px;height:45px;"
                                           onclick="document.getElementById('profilePicInput').click();">
                                         <i class="bi bi-camera-fill text-white" style="font-size:1.3rem;"></i>
-                                    </span>
+                                    </button>
 
                                     <!-- Remove -->
                                     {% if user.userprofile.profile_picture %}
@@ -138,7 +140,7 @@
         <div class="col-lg-4 mb-4">
             <div class="mb-3">
                 <div class="stat-card">
-                    <div class="stat-number">{{ user.item_set.count }}</div>
+                    <div class="stat-number">{{ user.items_reported.count }}</div>
                     <div class="stat-label">Items Reported</div>
                 </div>
             </div>

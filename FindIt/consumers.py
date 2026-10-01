@@ -1,16 +1,20 @@
 import json
+import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import User
 from .models import Message
 from django.utils import timezone
 
+logger = logging.getLogger(__name__)
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
         self.room_group_name = f'chat_{self.conversation_id}'
+        logger.debug('WebSocket connecting to %s', self.room_group_name)
 
-        print(f"🔵 WebSocket CONNECT: conversation_id={self.conversation_id}, room={self.room_group_name}")
 
         # Join room group
         await self.channel_layer.group_add(
@@ -19,10 +23,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         await self.accept()
-        print(f"✅ WebSocket ACCEPTED: {self.channel_name}")
 
     async def disconnect(self, close_code):
-        print(f"🔴 WebSocket DISCONNECT: conversation_id={self.conversation_id}, code={close_code}")
         # Leave room group
         await self.channel_layer.group_discard(
             self.room_group_name,
@@ -31,7 +33,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     # Receive message from WebSocket
     async def receive(self, text_data):
-        print(f"📨 WebSocket RECEIVED: {text_data}")
         text_data_json = json.loads(text_data)
         # Support different payload types from clients (message, typing)
         payload_type = text_data_json.get('type', 'message')
@@ -101,7 +102,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         item_id = text_data_json.get('item_id')
         image = text_data_json.get('image', None)
 
-        print(f"📝 Parsed message: sender={sender_id}, recipient={recipient_id}, item={item_id}, content='{message_content}'")
 
         # Save message to database
         message = await self.save_message(
@@ -112,7 +112,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             image=image
         )
 
-        print(f"💾 Message saved to DB: id={message['id']}")
 
         # Send message to room group
         await self.channel_layer.group_send(
@@ -127,7 +126,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
-        print(f"📤 Broadcasted to room: {self.room_group_name}")
 
     # Receive message from room group
     async def chat_message(self, event):
@@ -137,7 +135,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         timestamp = event['timestamp']
         message_id = event['message_id']
 
-        print(f"📡 Sending to WebSocket client: message_id={message_id}, sender={sender_username}")
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
@@ -186,18 +183,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         sender = User.objects.get(id=sender_id)
         recipient = User.objects.get(id=recipient_id)
         item = Item.objects.get(id=item_id)
-        
+
         message = Message.objects.create(
             sender=sender,
             recipient=recipient,
             item=item,
             content=content,
         )
-        
+
         if image:
             message.image = image
             message.save()
-        
+
         return {
             'id': message.id,
             'sender_username': sender.username,
@@ -211,7 +208,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Message.DoesNotExist:
             return None
         # Only sender can edit their message
-        if msg.sender.id != int(user_id):
+        if msg.sender_id != int(user_id):
             return None
         msg.content = new_content
         msg.edited = True
@@ -231,7 +228,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         user_id = int(user_id)
         if for_everyone:
             # Only sender may delete for everyone in this implementation
-            if msg.sender.id != user_id:
+            if msg.sender_id != user_id:
                 return None
             msg.deleted_for_everyone = True
             msg.deleted_at = timezone.now()
@@ -240,9 +237,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return {'deleted_at': msg.deleted_at.strftime('%b. %d, %Y, %I:%M %p')}
         else:
             # mark deleted for this user only
-            if msg.sender.id == user_id:
+            if msg.sender_id == user_id:
                 msg.deleted_by_sender = True
-            elif msg.recipient.id == user_id:
+            elif msg.recipient_id == user_id:
                 msg.deleted_by_recipient = True
             else:
                 return None

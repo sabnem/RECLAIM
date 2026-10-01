@@ -1,16 +1,20 @@
 {% extends 'base.html' %}
 {% block content %}
+<header class="page-heading">
+  <div><span class="eyebrow">Community workspace</span><h1>Lost &amp; found items</h1><p>Search your community's reports and help an item find its way home.</p></div>
+  <a href="{% url 'report_item' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Report an item</a>
+</header>
 <div class="row mb-4">
   <div class="col-md-12">
     <form method="get" class="row g-3 p-4 rounded-4 shadow-sm search-form" style="background: var(--surface);">
       <div class="col-md-4">
         <div class="form-group mb-0">
-          <input type="text" name="q" class="form-control form-control-lg" placeholder="🔍 Search by title, description, or location" value="{{ query }}">
+          <label for="item-search" class="form-label">Search items</label><input id="item-search" type="text" name="q" class="form-control form-control-lg" placeholder="🔍 Search by title, description, or location" value="{{ query }}">
         </div>
       </div>
       <div class="col-md-3">
         <div class="form-group mb-0">
-          <select name="category" class="form-select form-select-lg category-select">
+          <label for="item-category" class="form-label">Category</label><select id="item-category" name="category" class="form-select form-select-lg category-select">
             <option value=""><i class="bi bi-grid-3x3-gap-fill"></i> All Categories</option>
             {% for cat in categories %}
               <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:'s' %}selected{% endif %} data-icon="bi-tag-fill">{{ cat.name }}</option>
@@ -20,14 +24,14 @@
       </div>
       <div class="col-md-3">
         <div class="form-group mb-0">
-          <select name="status" class="form-select form-select-lg">
+          <label for="item-status" class="form-label">Status</label><select id="item-status" name="status" class="form-select form-select-lg">
             <option value="">All Status</option>
             <option value="lost" {% if selected_status == 'lost' %}selected{% endif %}>Lost</option>
             <option value="found" {% if selected_status == 'found' %}selected{% endif %}>Found</option>
           </select>
         </div>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-2 d-flex align-items-end">
         <button type="submit" class="btn btn-info btn-lg w-100 rounded-pill">
           <i class="bi bi-search me-2"></i>Search
         </button>
@@ -37,7 +41,7 @@
 </div>
 <div class="row">
   {% for item in items %}
-    <div class="col-md-4 mb-4">
+    <div class="col-sm-6 col-xl-4 mb-4">
       <div class="card h-100 border-0 rounded-4 item-card shadow-sm">
         {% if item.photo %}
         {% comment %} full item display regardless of aspect ratio {% endcomment %}
@@ -58,7 +62,7 @@
       </div>
     </div>
   {% empty %}
-    <div class="col-12"><div class="alert alert-warning">No items found.</div></div>
+    <div class="col-12"><div class="empty-state"><i class="bi bi-search"></i><h2>No matching items yet</h2><p>Try another keyword or clear your filters. You can also report an item to let the community know.</p><a href="{% url 'item_list' %}" class="btn btn-outline-primary">Clear filters</a> <a href="{% url 'report_item' %}" class="btn btn-primary">Report an item</a></div></div>
   {% endfor %}
 </div>
 {% endblock %}

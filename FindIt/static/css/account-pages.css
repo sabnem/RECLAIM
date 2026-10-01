@@ -1,0 +1,99 @@
+.avatar-initial, .profile-initial { display: inline-grid; place-items: center; background: var(--primary-subtle); color: var(--primary); font-weight: 600; }
+.profile-initial { width: 112px; height: 112px; border-radius: 50%; font-size: 2.25rem; border: 1px solid var(--line); }
+.account-page .user-details { flex-direction: row; }
+.account-page .detail-item { border: 0; box-shadow: none; }
+.account-page .detail-text { font-size: .88rem; font-weight: 400; }
+.account-page .user-name { color: var(--text); }
+.account-page { padding: 0; }
+.account-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; margin-bottom: 28px; width: fit-content; max-width: 100%; }
+.account-tabs a { padding: 9px 14px; color: var(--muted); border-radius: 8px; text-decoration: none; font-size: .88rem; font-weight: 600; }
+.account-tabs a[aria-current="page"] { background: var(--primary-subtle); color: var(--primary); }
+.account-tabs a:focus-visible { outline: 2px solid var(--primary); }
+.archive-summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; color: var(--muted); font-size: .88rem; }
+.archive-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; }
+.archive-card { overflow: hidden; }
+.archive-media { height: 180px; display: grid; place-items: center; background: var(--bg); border-bottom: 1px solid var(--line); }
+.archive-media img { width: 100%; height: 180px; object-fit: contain; padding: 12px; }
+.archive-media > i { font-size: 2.5rem; color: var(--muted); opacity: .45; }
+.archive-card .card-body { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.archive-card h2 { font-size: 1.15rem; letter-spacing: -.02em; margin: 0; overflow-wrap: anywhere; }
+.archive-card p { color: var(--muted); font-size: .9rem; margin: 0; }
+.record-status { width: fit-content; background: var(--primary-subtle); color: var(--primary); border-radius: 6px; padding: 4px 8px; font-size: .72rem; font-weight: 600; }
+.record-details { display: grid; gap: 10px; margin: 0; font-size: .84rem; }
+.record-details > div { display: grid; grid-template-columns: 84px minmax(0,1fr); gap: 12px; }
+.record-details dt { font-weight: 400; color: var(--muted); }
+.record-details dd { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+.record-feedback { border-top: 1px solid var(--line); padding-top: 16px; margin-top: auto; font-size: .84rem; }
+.record-feedback p { margin-top: 10px; font-size: .84rem; }
+.record-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.account-page .profile-card { transform: none; }
+.account-page .profile-card.py-5 { padding: 28px 16px !important; }
+.account-page .profile-pic-hover, .account-page .profile-pic-hover img { width: 112px; height: 112px; }
+.account-page .profile-pic-hover img { border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.account-page .icon-overlay-center { top: auto; bottom: -12px; transform: translateX(-50%); }
+.account-page .camera-overlay { opacity: 1; display: flex; }
+.account-page .user-name { font-size: 1.65rem; margin-bottom: 12px !important; }
+.account-page .user-details { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+.account-page .detail-item { margin: 0; padding: 0; background: none; font-size: .85rem; min-width: 0; }
+.account-page .detail-text { overflow-wrap: anywhere; }
+.account-page .profile-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.account-page .section-header { font-size: 1.1rem; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+.account-page .info-item { display: grid; grid-template-columns: 150px minmax(0,1fr); gap: 20px; padding: 16px 0; margin: 0; background: transparent; border-bottom: 1px solid var(--line); border-radius: 0; transform: none; }
+.account-page .info-item:last-child { border: 0; }
+.account-page .info-label { color: var(--muted); font-weight: 500; margin: 0; }
+.account-page .info-value { font-size: .9rem; overflow-wrap: anywhere; }
+.account-page .stat-card { text-align: left; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.account-page .stat-number { font-size: 2rem; color: var(--text); }
+.account-page .stat-label { font-size: .84rem; color: var(--muted); }
+.metrics-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 18px; margin-bottom: 28px; }
+.metric-card { padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+.metric-card i { color: var(--primary); font-size: 1.2rem; }
+.metric-card strong { display: block; margin: 14px 0 4px; font-size: 2rem; font-weight: 650; line-height: 1.2; color: var(--text); }
+.metric-card span { display: block; color: var(--muted); font-size: .84rem; }
+.statistics-page .card { height: 100%; }
+.statistics-page .card-title { font-size: 1.05rem; }
+.statistics-page .table { --bs-table-bg: var(--surface); --bs-table-color: var(--text); --bs-table-border-color: var(--line); --bs-table-hover-bg: var(--primary-subtle); --bs-table-hover-color: var(--text); font-size: .88rem; }
+.statistics-page .table th { color: var(--muted); font-size: .75rem; font-weight: 600; padding: 14px 12px; white-space: nowrap; }
+.statistics-page .table td { padding: 16px 12px; vertical-align: middle; }
+.statistics-page .table-primary { --bs-table-bg: var(--primary-subtle); --bs-table-color: var(--text); }
+.statistics-page .list-group-item { background: transparent; color: var(--text); border-color: var(--line); padding-block: 18px; }
+.statistics-page .progress { background: var(--bg); }
+.statistics-page .d-flex.justify-content-between { gap: 12px; flex-wrap: wrap; }
+.inbox-page { --text-primary: var(--text); --text-secondary: var(--muted); --bg-chat: var(--bg); --bg-primary: var(--surface); --bg-secondary: var(--surface); --message-received-bg: var(--surface); --message-received-text: var(--text); }
+.inbox-page .messaging-container { min-height: 0; }
+.inbox-page .messaging-app { width: 100%; max-width: none; height: clamp(480px,74dvh,850px); min-height: 0; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); box-shadow: none; }
+.inbox-page .messaging-app .sidebar { position: relative; inset: auto; flex: 0 0 32%; width: 32%; min-width: 240px; max-width: 360px; height: 100%; background: var(--surface); padding: 0; border-right: 1px solid var(--line); overflow-y: auto; scrollbar-width: thin; }
+.inbox-page .sidebar-header, .inbox-page .chat-header { background: var(--surface); color: var(--text); border-bottom: 1px solid var(--line); box-shadow: none; padding: 16px; min-height: 76px; flex-shrink: 0; }
+.inbox-page .chat-header .text-white, .inbox-page .sidebar-header .text-white { color: var(--text) !important; }
+.inbox-page .conversation { padding: 14px !important; margin: 4px 0; border: 0; border-radius: 10px; background: transparent; box-shadow: none; transform: none; }
+.inbox-page .conversation:hover, .inbox-page .conversation.active-convo { background: var(--primary-subtle); }
+.inbox-page .conversation .flex-grow-1 { min-width: 0; overflow-wrap: anywhere; }
+.inbox-page .conversation-avatar { width: 40px; height: 40px; border: 0; flex-shrink: 0; }
+.inbox-page .chat-area { position: relative; inset: auto; width: auto !important; min-width: 0; max-width: none; height: 100%; padding: 0; background: var(--bg); }
+.inbox-page .chat-history { background: var(--bg); padding: 24px; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+.inbox-page .chat-footer { position: static; width: 100%; max-width: none; margin: 0; border-radius: 0; background: var(--surface); padding: 16px; border-top: 1px solid var(--line); box-shadow: none; flex-shrink: 0; }
+.inbox-page .chat-bubble { max-width: 85%; border-radius: 14px; padding: 12px 16px; box-shadow: none; overflow-wrap: anywhere; }
+.inbox-page .chat-bubble.sent { background: var(--primary-subtle); color: var(--text); border: 1px solid var(--line); }
+.inbox-page .chat-bubble.received { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+.inbox-page .chat-header-avatar { width: 44px; height: 44px; object-fit: cover; }
+.inbox-page .chat-header > .d-flex { min-width: 0; }
+.inbox-page .chat-header .fs-5 { font-size: 1rem !important; overflow-wrap: anywhere; }
+.inbox-page .empty-state { border: 0; background: transparent; padding: 24px; }
+.inbox-page .empty-state h3 { font-size: 1.2rem; }
+.inbox-page .empty-icon-wrapper { width: 60px; height: 60px; background: var(--primary-subtle); color: var(--primary); box-shadow: none; }
+.inbox-page .empty-description { font-size: .88rem; color: var(--muted); }
+.inbox-page .btn-browse-items { background: var(--primary); color: var(--surface); border-radius: 10px; box-shadow: none; font-size: .85rem; }
+.inbox-page .btn-send { background: var(--primary); color: var(--surface); }
+.inbox-page .message-input { min-width: 0; max-height: 140px; resize: vertical; }
+.inbox-page .mobile-panel-hidden { display: none !important; }
+@media (max-width: 1199px) { .archive-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 767.98px) {
+ .inbox-page .messaging-app { flex-direction: column; height: max(360px,calc(var(--app-vh,100dvh) - 240px)); }
+ .inbox-page .messaging-app .sidebar { flex: 1 1 auto; width: 100%; max-width: none; min-width: 0; height: 100%; border: 0; }
+ .inbox-page .chat-area { width: 100% !important; flex: 1 1 auto; }
+ .inbox-page .chat-history { padding: 14px; }
+ .inbox-page .chat-footer { padding: 12px; }
+ .account-page .profile-actions { justify-content: center; }
+ .account-page .user-details { justify-content: center; }
+}
+@media (max-width: 575.98px) { .archive-grid { grid-template-columns: 1fr; } .metrics-grid { gap: 10px; } .metric-card { padding: 18px 14px; } .metric-card strong { font-size: 1.7rem; } .account-page .info-item { grid-template-columns: 1fr; gap: 6px; } .archive-summary { align-items: flex-start; flex-direction: column; } }

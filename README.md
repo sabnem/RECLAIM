@@ -1,176 +1,84 @@
-# Lost & Found Web Portal
+# RECLAIM ? Lost & Found
 
-A Django-based web portal for your community to report, search, and retrieve lost and found items.
+A Django application for reporting lost and found items, messaging other members,
+verifying ownership, recording returns, and tracking community contributions.
 
-## ✨ Features
+## Run locally (Windows / PowerShell)
 
-### Core Functionality
-- 👤 User registration (with contact number) and login
-- 📝 Report lost or found items
-- 📷 Upload item details and photos
-- 🔍 Search and filter items by category or location
-- 💬 Website messaging system for communication
-- 🌓 Dark mode support with theme toggle
+The existing environment is `reclaim`. For a fresh checkout:
 
-### Item Recovery System
-- ✅ Mark items as returned with owner confirmation
-- ⭐ Rate finders with 5-star interactive system
-- 💾 Recovered items archive (separate from active listings)
-- 📊 Detailed feedback and comments
-
-### Reputation & Statistics
-- 🏆 User reputation scores based on ratings
-- 🎖️ Badge system (Hero, Trusted, Helpful, Active, New)
-- 📈 Comprehensive statistics dashboard
-- 👥 Top finders leaderboard
-- 📉 Rating distribution analytics
-- 🕐 Recent recoveries timeline
-
-### Notifications & Export
-- 📧 Email notifications when rated (configurable)
-- 📄 PDF export of recovered items
-- 📊 Statistics export functionality
-
-## 🚀 Getting Started
-
-1. **Prerequisites**
-   - Python 3.8+ and pip installed
-   - Virtual environment recommended
-
-2. **Installation**
-   ```bash
-   # Clone the repository
-   git clone <repository-url>
-   cd RECLAIM
-
-   # Create and activate virtual environment
-   python -m venv lfound
-   lfound\Scripts\activate  # Windows
-   # source lfound/bin/activate  # macOS/Linux
-
-   # Install dependencies
-   pip install -r requirements.txt
-   ```
-
-3. **Database Setup**
-   ```bash
-   # Run migrations
-   python manage.py migrate
-
-   # (Optional) Create superuser for admin access
-   python manage.py createsuperuser
-   ```
-
-4. **Start Development Server**
-   ```bash
-   python manage.py runserver
-   ```
-
-5. **Access the Application**
-   - Main site: http://127.0.0.1:8000/
-   - Admin panel: http://127.0.0.1:8000/admin/
-
-## 📖 Usage Guide
-
-### For Item Finders (Reporters)
-1. Sign up/Login to your account
-2. Click "Report Found Item"
-3. Fill in item details and upload photo
-4. Mark item as returned when owner retrieves it
-5. Receive rating and reputation boost
-
-### For Item Owners
-1. Search for your lost item
-2. Contact the finder via messaging system
-3. Confirm item return when retrieved
-4. Rate the finder's helpfulness
-5. View recovered items in your dashboard
-
-### Statistics Dashboard
-- Navigate to: Profile → Statistics Dashboard
-- View your performance metrics
-- Check community statistics
-- See top finders leaderboard
-- Export data to PDF
-
-## 🛠️ Configuration
-
-### Email Notifications
-By default, emails are sent to console (development mode).
-
-For production, update `lost_and_found/settings.py`:
-```python
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'your-email@gmail.com'
-EMAIL_HOST_PASSWORD = 'your-app-password'
+```powershell
+python -m venv reclaim
+.\reclaim\Scripts\python.exe -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-### Dark Mode
-- Toggle using the moon/sun icon in the navigation bar
-- Preference saved in browser localStorage
-- Fully supported across all pages
+Edit `.env` with your configuration. Keep it private. The current workspace already
+has its existing settings in `.env`; do not replace that file with the example.
 
-## 📁 Project Structure
-
-```
-RECLAIM/
-├── FindIt/                 # Main application
-│   ├── models.py          # Database models (Item, RecoveredItem, UserProfile)
-│   ├── views.py           # View logic and controllers
-│   ├── forms.py           # Form definitions
-│   ├── urls.py            # URL routing
-│   ├── templates/         # HTML templates
-│   ├── static/            # CSS, JS, images
-│   └── templatetags/      # Custom template filters
-├── lost_and_found/        # Project settings
-├── media/                 # User-uploaded files
-├── static/                # Static assets
-└── requirements.txt       # Python dependencies
+```powershell
+.\reclaim\Scripts\python.exe manage.py migrate
+.\reclaim\Scripts\python.exe manage.py runserver 127.0.0.1:8000
 ```
 
-## 🔧 Technologies Used
+To access the development server on your local network:
 
-- **Backend**: Django 5.0.6
-- **Database**: PostgreSQL (configurable)
-- **Frontend**: Bootstrap 5.3.2, Custom CSS
-- **PDF Generation**: ReportLab
-- **Email**: Django SMTP backend
-- **Icons**: Bootstrap Icons
+```powershell
+.\reclaim\Scripts\python.exe manage.py runserver 0.0.0.0:8000
+```
 
-## 📊 Database Models
+Open `http://192.168.0.13:8000/` while that address belongs to this computer.
+Set `ALLOWED_HOSTS` and `SITE_URL` in `.env` for the host you use.
+SQLite defaults to `db.sqlite3`; set `DATABASE_URL` to use PostgreSQL.
+Cloudinary credentials are required for image uploads. Email defaults to the
+console backend locally. Live email requires the `EMAIL_*` settings in
+`lost_and_found/settings.py`.
 
-### RecoveredItem
-- Links completed item returns
-- Stores rating and feedback
-- Tracks recovery date and participants
+## Verify changes
 
-### UserProfile
-- Extends Django User model
-- Reputation score (0.00-5.00)
-- Total returns and ratings count
-- Profile picture support
+```powershell
+.\reclaim\Scripts\python.exe manage.py check
+.\reclaim\Scripts\python.exe manage.py makemigrations --check --dry-run
+.\reclaim\Scripts\python.exe manage.py test FindIt --settings=lost_and_found.test_settings --noinput
+.\reclaim\Scripts\python.exe manage.py collectstatic --noinput
+```
 
-## 🧪 Testing
+Tests use an isolated in-memory database and an in-memory email backend. They do
+not modify the working database or contact Cloudinary/SMTP. The legacy
+`scripts/e2e_return_flow_test.py` entry point now runs the isolated return test.
+`scripts/create_test_data.py` remains an explicit development-only data seeder;
+it writes to the configured database and should not be run against production.
 
-See [TESTING_GUIDE.md](TESTING_GUIDE.md) for detailed testing instructions.
+## Project structure
 
-Quick test workflow:
-1. Create two user accounts (finder and owner)
-2. Report an item as finder
-3. Mark item as returned
-4. Confirm return as owner
-5. Submit rating
-6. Check statistics dashboard
-7. Export PDF report
+- `FindIt/models.py`, `forms.py`, `views.py`: application behavior.
+- `FindIt/selectors.py`: reporting queries and aggregate statistics.
+- `FindIt/context_processors.py`: shared navigation data.
+- `FindIt/consumers.py`, `routing.py`: real-time messaging.
+- `FindIt/templates/`: pages and reusable markup.
+- `FindIt/static/css/`, `js/`: source styles and browser scripts.
+- `FindIt/static/vendor/`: pinned Bootstrap assets and licenses.
+- `FindIt/tests.py`: workflow and query-budget regression tests.
+- `lost_and_found/`: Django/ASGI configuration and isolated test settings.
+- `docs/`: maintenance notes; `docs/legacy/` preserves historical feature notes.
 
-## Replace Placeholder Media
-If you see placeholder images, replace them with actual item photos as needed.
+`staticfiles/` is generated by `collectstatic`; edit assets under `FindIt/static/`
+instead. Local environments, database backups, uploads, and generated files are
+excluded from new Git additions. Existing tracked data files are preserved.
 
-## Contributing
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## Deployment
 
-## License
-[MIT](LICENSE)
+For Render with PostgreSQL, Cloudinary, and live chat, follow
+[the Render deployment guide](docs/RENDER_DEPLOYMENT.md). Use
+`DJANGO_SETTINGS_MODULE=lost_and_found.render_settings` for that deployment.
+
+Set a deployment-specific `SECRET_KEY`, `DEBUG=False`, explicit `ALLOWED_HOSTS`,
+`DATABASE_URL`, and the required Cloudinary/email settings. Run migrations and
+`collectstatic` during deployment. Use the ASGI application
+`lost_and_found.asgi:application` to support WebSockets. The current in-memory
+channel layer is for a single process; multi-process deployments require a shared
+channel backend configured separately.
+
+See [maintenance notes](docs/MAINTENANCE.md) for the asset order, cleanup scope,
+and verification details. Historical notes in `docs/legacy/` may describe earlier
+implementations; the current code and this guide take precedence.

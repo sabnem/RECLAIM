@@ -1,0 +1,6 @@
+<nav class="account-tabs" aria-label="Your activity">
+    <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>Profile</a>
+    <a href="{% url 'my_recovered_items' %}" {% if request.resolver_match.url_name == 'my_recovered_items' %}aria-current="page"{% endif %}>Recovered</a>
+    <a href="{% url 'my_returned_items' %}" {% if request.resolver_match.url_name == 'my_returned_items' %}aria-current="page"{% endif %}>Returned</a>
+    <a href="{% url 'returns_statistics' %}" {% if request.resolver_match.url_name == 'returns_statistics' %}aria-current="page"{% endif %}>Statistics</a>
+</nav>

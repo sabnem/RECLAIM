@@ -26,7 +26,6 @@ urlpatterns = [
     path('items/<int:item_id>/edit/', views.edit_item_fields, name='edit_item_fields'),
     path('terms-and-conditions/', views.terms_and_conditions, name='terms_and_conditions'),
     path('profile/upload-picture/', views.upload_profile_picture, name='upload_profile_picture'),
-    path('profile/remove-picture/', views.remove_profile_picture, name='remove_profile_picture'),
     path('privacy-policy/', views.privacy_policy, name='privacy_policy'),
     path('my-recovered-items/', views.my_recovered_items, name='my_recovered_items'),
     path('my-returned-items/', views.my_returned_items, name='my_returned_items'),

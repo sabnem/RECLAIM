@@ -24,7 +24,7 @@ import environ
 
 env = environ.Env()
 
-environ.Env.read_env()
+environ.Env.read_env(BASE_DIR / '.env')
 
 
 
@@ -32,7 +32,7 @@ environ.Env.read_env()
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx'
+SECRET_KEY = env('SECRET_KEY')
 
 
 
@@ -41,8 +41,8 @@ SECRET_KEY = 'django-insecure-@)y*t1^%l$cj0+k-r&$uj!n2x$oc0r4urw((7p$zsde!h+$+yx
 # DEBUG = False
 # ALLOWED_HOSTS = ['JsNEM.pythonanywhere.com', 'jsnem.pythonanywhere.com']
 
-DEBUG = True
-ALLOWED_HOSTS = ['www.nemlostandfound.com', 'nemlostandfound.com','*']
+DEBUG = env.bool('DEBUG', default=True)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['www.nemlostandfound.com', 'nemlostandfound.com', '*'])
 
 
 
@@ -92,8 +92,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'FindIt.views.categories_context',
-                'FindIt.views.unread_inbox_count',
+                'FindIt.context_processors.categories_context',
+                'FindIt.context_processors.unread_inbox_count',
             ],
         },
     },
@@ -108,7 +108,7 @@ WSGI_APPLICATION = 'lost_and_found.wsgi.application'
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.parse(env('DATABASE_URL'))
+    'default': dj_database_url.parse(env('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'))
  }
 
 
@@ -150,7 +150,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = []
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (user uploads) - handled by Cloudinary
@@ -191,13 +191,13 @@ CHANNEL_LAYERS = {
         # },
     },
 }
-SITE_URL = 'http://127.0.0.1:8000'
+SITE_URL = env('SITE_URL', default='http://127.0.0.1:8000')
 
 # Cloudinary Configuration
 cloudinary.config(
-    cloud_name=env('CLOUDINARY_CLOUD_NAME', default='dqv8znzsj'),
-    api_key=env('CLOUDINARY_API_KEY', default='989933919878537'),
-    api_secret=env('CLOUDINARY_API_SECRET', default='9e1xUANz_Z32KToucCsLyEZ4xyo'),
+    cloud_name=env('CLOUDINARY_CLOUD_NAME', default=''),
+    api_key=env('CLOUDINARY_API_KEY', default=''),
+    api_secret=env('CLOUDINARY_API_SECRET', default=''),
 )
 
 # Set Cloudinary as the default storage backend

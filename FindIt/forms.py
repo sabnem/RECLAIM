@@ -1,8 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import UserProfile, Item
-from .models import UserReview
-from .models import Claim
+from .models import Claim, Item, UserProfile, UserReview
+
+
 class UserRegistrationForm(forms.ModelForm):
     email = forms.EmailField(
         label='',
@@ -156,18 +156,18 @@ class UserProfileForm(forms.ModelForm):
         widget=forms.TextInput(attrs={'placeholder': 'Contact Number'})
     )
     profile_picture = forms.ImageField(required=False)
-    
+
     address = forms.CharField(
         label='',
         widget=forms.TextInput(attrs={'placeholder': 'Address'})
     )
-    
+
     bio = forms.CharField(
         label='',
         widget=forms.Textarea(attrs={'placeholder': 'Bio', 'rows': 3}),
         required=False
     )
-    
+
     social_links = forms.CharField(
         label='',
         widget=forms.TextInput(attrs={'placeholder': 'Social Links (comma separated)'}),
@@ -198,7 +198,7 @@ class UserProfileForm(forms.ModelForm):
         user.first_name = self.cleaned_data['first_name']
         user.last_name = self.cleaned_data['last_name']
         user.email = self.cleaned_data['email']
-        user.username = self.cleaned_data['username']  
+        user.username = self.cleaned_data['username']
         profile.contact_number = self.cleaned_data['contact_number']
         profile.address = self.cleaned_data['address']
         profile.bio = self.cleaned_data['bio']

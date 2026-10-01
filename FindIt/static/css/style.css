@@ -1086,10 +1086,8 @@ body.dark-mode .modal-footer {
 }
 
 body.dark-mode .card-title,
-body.dark-mode .modal-title,
-body.dark-mode .card-body strong,
-body.dark-mode .card-body div {
-    color: #fff;
+body.dark-mode .modal-title {
+    color: var(--text);
 }
 
 body.dark-mode .badge.bg-info {
@@ -1097,9 +1095,7 @@ body.dark-mode .badge.bg-info {
     color: var(--primary-2) !important;
 }
 
-body.dark-mode .card-body i {
-    color: var(--primary-2);
-}
+/* Icons inherit the foreground of their button, badge, or text. */
 
 .item-card::before, .feature-card::before {
     content: '';

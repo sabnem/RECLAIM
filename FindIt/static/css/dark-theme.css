@@ -1,0 +1,89 @@
+/* One palette for custom components and Bootstrap in the selected dark theme. */
+body.app-layout.dark-mode {
+    color-scheme: dark;
+    --bg: #101722;
+    --surface: #192332;
+    --surface-raised: #222f40;
+    --text: #edf2f8;
+    --muted: #adb9ca;
+    --text-muted: var(--muted);
+    --line: #344255;
+    --primary: #f6b56d;
+    --primary-2: #ffd29e;
+    --primary-rgb: 246,181,109;
+    --primary-subtle: rgba(246,181,109,.1);
+    --on-accent: #24180d;
+    --danger: #ff929b;
+    --bs-body-color: var(--text);
+    --bs-body-bg: var(--bg);
+    --bs-secondary-color: var(--muted);
+    --bs-tertiary-bg: var(--surface-raised);
+    --bs-secondary-bg: var(--surface-raised);
+    --bs-border-color: var(--line);
+    --bs-emphasis-color: var(--text);
+    --bs-link-color: var(--primary);
+    --bs-link-hover-color: var(--primary-2);
+}
+body.app-layout.dark-mode .app-main :is(h1,h2,h3,h4,h5,h6),
+body.app-layout.dark-mode .account-page .user-name {
+    color: var(--text); background-image: none; -webkit-text-fill-color: currentColor;
+}
+body.app-layout.dark-mode :is(.text-muted,.card-text,.form-text) { color: var(--muted) !important; }
+body.app-layout.dark-mode .form-label { color: var(--text) !important; }
+body.app-layout.dark-mode .account-page :is(.stat-card,.profile-card),
+body.app-layout.dark-mode .search-form,
+body.app-layout.dark-mode .form-section { background: var(--surface) !important; border-color: var(--line); }
+body.app-layout.dark-mode .account-page :is(.info-item,.detail-item),
+body.app-layout.dark-mode .account-page :is(.info-item,.detail-item):hover {
+    background: transparent; box-shadow: none; border-color: var(--line);
+}
+body.app-layout.dark-mode .account-page :is(.stat-number,.info-value,.detail-text) { color: var(--text); }
+body.app-layout.dark-mode .account-page :is(.info-label,.stat-label) { color: var(--muted); opacity: 1; }
+body.app-layout.dark-mode :is(.form-control,.form-select),
+body.app-layout.dark-mode .search-form :is(.form-control,.form-select) {
+    background-color: var(--bg); color: var(--text); border-color: var(--line);
+}
+body.app-layout.dark-mode :is(.form-control,.form-select):focus,
+body.app-layout.dark-mode .search-form :is(.form-control,.form-select):focus {
+    background-color: var(--bg); border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle);
+}
+body.app-layout.dark-mode .form-control::placeholder { color: var(--muted); opacity: 1; }
+body.app-layout.dark-mode .form-select option { color: var(--text); background: var(--surface); }
+body.app-layout.dark-mode .report-card :is(.form-control,.form-select,textarea,input:not([type="checkbox"]):not([type="radio"])),
+body.app-layout.dark-mode .report-card :is(.form-control,.form-select,textarea,input):focus {
+    background-color: var(--bg) !important; border-color: var(--line) !important; color: var(--text) !important;
+}
+body.app-layout.dark-mode .report-card :is(.form-control,.form-select,textarea,input):focus { border-color: var(--primary) !important; }
+body.app-layout.dark-mode .category-select { background-image: var(--bs-form-select-bg-img); }
+body.app-layout.dark-mode :is(.btn-primary,.btn-info,.btn-send,.btn-browse-items) {
+    background: var(--primary) !important; color: var(--on-accent) !important; border-color: var(--primary) !important;
+}
+body.app-layout.dark-mode :is(.btn-primary,.btn-info,.btn-send,.btn-browse-items):hover {
+    background: var(--primary-2) !important; border-color: var(--primary-2) !important;
+}
+body.app-layout.dark-mode :is(.btn-outline-primary,.btn-outline-info,.btn-edit-profile) {
+    background: transparent; color: var(--primary); border-color: var(--primary);
+}
+body.app-layout.dark-mode :is(.btn-outline-primary,.btn-outline-info,.btn-edit-profile):is(:hover,:focus-visible) {
+    background: var(--primary-subtle); color: var(--primary-2); border-color: var(--primary-2);
+}
+body.app-layout.dark-mode .btn i,
+body.app-layout.dark-mode .btn:is(:hover,:focus-visible) i { color: inherit !important; }
+body.app-layout.dark-mode .camera-overlay { background: var(--primary) !important; border-color: var(--primary); }
+body.app-layout.dark-mode .camera-overlay i { color: var(--on-accent) !important; }
+body.app-layout.dark-mode :is(.btn-logout,.btn-outline-danger) { color: var(--danger); border-color: var(--danger); background: transparent; }
+body.app-layout.dark-mode :is(.btn-logout,.btn-outline-danger):hover { color: var(--danger); background: rgba(255,146,155,.1); border-color: var(--danger); }
+body.app-layout.dark-mode .text-danger { color: var(--danger) !important; }
+body.app-layout.dark-mode .text-success { color: #80d9b0 !important; }
+body.app-layout.dark-mode .text-warning { color: #f4ce78 !important; }
+body.app-layout.dark-mode .text-primary { color: var(--primary) !important; }
+body.app-layout.dark-mode .inbox-page :is(.conversation,.chat-footer,.chat-header,.sidebar-header) { background: var(--surface); border-color: var(--line); box-shadow: none; }
+body.app-layout.dark-mode .inbox-page .conversation:is(:hover,.active-convo) { background: var(--primary-subtle) !important; border-color: var(--line) !important; }
+body.app-layout.dark-mode .inbox-page .chat-bubble.sent { background: #30303a; color: var(--text); border-color: var(--line); }
+body.app-layout.dark-mode .inbox-page .chat-bubble.received { background: var(--surface); color: var(--text); border-color: var(--line); }
+body.app-layout.dark-mode .inbox-page .empty-icon-wrapper { background: var(--primary-subtle); color: var(--primary); }
+body.app-layout.dark-mode .dropdown-menu { --bs-dropdown-bg: var(--surface); --bs-dropdown-color: var(--text); --bs-dropdown-link-color: var(--text); --bs-dropdown-link-hover-color: var(--text); --bs-dropdown-link-hover-bg: var(--surface-raised); --bs-dropdown-border-color: var(--line); }
+body.app-layout.dark-mode .sidebar-brand-mark { color: var(--on-accent); }
+body.app-layout.dark-mode .footer::before,
+body.app-layout.dark-mode .footer::after { display: none; }
+body.app-layout.dark-mode .footer :is(p,.small) { color: var(--muted) !important; opacity: 1; }

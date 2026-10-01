@@ -1,0 +1,23 @@
+<article class="card archive-card">
+    <div class="archive-media">{% if record.item.photo %}<img src="{{ record.item.photo.url }}" alt="{{ record.item.title }}" loading="lazy">{% else %}<i class="bi bi-box-seam" aria-hidden="true"></i>{% endif %}</div>
+    <div class="card-body">
+        <span class="record-status"><i class="bi bi-check2-circle" aria-hidden="true"></i> Return completed</span>
+        <h2>{{ record.item.title }}</h2>
+        <p>{{ record.item.description|truncatewords:18 }}</p>
+        <dl class="record-details">
+            <div><dt>Date</dt><dd>{{ record.recovered_date|date:"M d, Y" }}</dd></div>
+            <div><dt>Location</dt><dd>{{ record.location|default:"Not specified" }}</dd></div>
+            <div><dt>{% if returned %}Returned to{% else %}Returned by{% endif %}</dt><dd>{% if returned %}{{ record.owner.username }}{% else %}{{ record.finder.username }}{% endif %}</dd></div>
+        </dl>
+        <div class="record-feedback">
+            {% if record.rating %}
+                <span aria-label="{{ record.rating }} out of 5 stars">{% for i in '12345' %}<i class="bi {% if forloop.counter <= record.rating %}bi-star-fill text-warning{% else %}bi-star text-muted{% endif %}" aria-hidden="true"></i>{% endfor %}</span>
+                <span class="text-muted ms-2">{% if returned %}Owner's rating{% else %}Your rating{% endif %}</span>
+                {% if record.feedback %}<p>“{{ record.feedback|truncatewords:30 }}”</p>{% endif %}
+                {% if returned and record.rated_at %}<p>Rated {{ record.rated_at|date:"M d, Y" }}</p>{% endif %}
+            {% elif returned %}<p class="m-0"><i class="bi bi-clock me-1"></i> Awaiting the owner's rating</p>
+            {% else %}<a href="{% url 'rate_finder' record.item.id %}" class="btn btn-primary">Rate your finder</a>{% endif %}
+        </div>
+        <div class="record-actions"><a href="{% url 'item_detail' record.item.id %}" class="btn btn-outline-primary">View item <i class="bi bi-arrow-right" aria-hidden="true"></i></a></div>
+    </div>
+</article>

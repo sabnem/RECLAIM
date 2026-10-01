@@ -1,69 +1,15 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block content %}
-<div class="container py-5">
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h2 class="fw-bold mb-2">
-            <i class="bi bi-graph-up text-primary me-2"></i>
-            Returns Statistics Dashboard
-          </h2>
-          <p class="text-muted mb-0">Track your contributions and community impact</p>
-        </div>
-        <div>
-          <a href="{% url 'export_recovered_items_pdf' %}" class="btn btn-outline-danger">
-            <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Summary Cards -->
-  <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #D97706, #FB923C);">
-        <div class="card-body text-white text-center">
-          <i class="bi bi-box-seam display-4 mb-2"></i>
-          <h3 class="fw-bold">{{ total_recovered }}</h3>
-          <p class="mb-0">Total Recovered</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #10b981, #34d399);">
-        <div class="card-body text-white text-center">
-          <i class="bi bi-star-fill display-4 mb-2"></i>
-          <h3 class="fw-bold">{{ avg_rating }}</h3>
-          <p class="mb-0">Avg Rating</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #3b82f6, #60a5fa);">
-        <div class="card-body text-white text-center">
-          <i class="bi bi-hand-thumbs-up-fill display-4 mb-2"></i>
-          <h3 class="fw-bold">{{ user_returned }}</h3>
-          <p class="mb-0">Items You Returned</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="card border-0 rounded-4 shadow-sm" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
-        <div class="card-body text-white text-center">
-          <i class="bi bi-check-circle-fill display-4 mb-2"></i>
-          <h3 class="fw-bold">{{ user_recovered }}</h3>
-          <p class="mb-0">Items You Recovered</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<div class="account-page statistics-page">
+<header class="page-heading"><div><span class="eyebrow">Community impact</span><h1>Statistics dashboard</h1><p>A clear view of successful returns, ratings, and your contributions.</p></div><a href="{% url 'export_recovered_items_pdf' %}" class="btn btn-outline-primary"><i class="bi bi-download"></i> Export PDF</a></header>
+{% include 'includes/account_tabs.html' %}
+<section class="metrics-grid" aria-label="Key statistics">
+<div class="metric-card"><i class="bi bi-box-seam" aria-hidden="true"></i><strong>{{ total_recovered }}</strong><span>Community recoveries</span></div>
+<div class="metric-card"><i class="bi bi-star" aria-hidden="true"></i><strong>{{ avg_rating|floatformat:1 }}<small class="fs-6 text-muted"> / 5</small></strong><span>Community average rating</span></div>
+<div class="metric-card"><i class="bi bi-arrow-up-right" aria-hidden="true"></i><strong>{{ user_returned }}</strong><span>Items you returned</span></div>
+<div class="metric-card"><i class="bi bi-check2-circle" aria-hidden="true"></i><strong>{{ user_recovered }}</strong><span>Items you recovered</span></div>
+</section>
   <!-- Your Stats -->
   <div class="row mb-4">
     <div class="col-md-6 mb-4">
@@ -78,7 +24,7 @@
               <span class="fw-bold">
                 {{ user_avg_rating }}/5.0
                 {% for i in "12345" %}
-                  {% if forloop.counter <= user_avg_rating|floatformat:0 %}
+                  {% if forloop.counter <= user_avg_rating %}
                     <i class="bi bi-star-fill text-warning"></i>
                   {% else %}
                     <i class="bi bi-star text-muted"></i>
@@ -177,7 +123,7 @@
                     <td>
                       <strong>{{ profile.reputation_score }}/5.0</strong>
                       {% for i in "12345" %}
-                        {% if forloop.counter <= profile.reputation_score|floatformat:0 %}
+                        {% if forloop.counter <= profile.reputation_score %}
                           <i class="bi bi-star-fill text-warning"></i>
                         {% else %}
                           <i class="bi bi-star text-muted"></i>
