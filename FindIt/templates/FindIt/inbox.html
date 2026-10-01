@@ -10,209 +10,146 @@
   <div class="container">
     <div class="messaging-app d-flex">
 
-      <!-- Sidebar: Conversation List -->
-      <aside class="sidebar" id="conversationList">
+      <!-- Conversation list -->
+      <aside class="sidebar" id="conversationList" aria-label="Conversations">
         <div class="sidebar-header d-flex align-items-center justify-content-between">
-          <div>
-            <i class="bi bi-chat-dots-fill me-2"></i>
-            {% if request.GET.archived %}Archived Messages{% else %}Messages{% endif %}
+          <div class="fw-semibold">
+            {% if show_archived %}
+              <a href="{% url 'inbox' %}?view=list" class="chat-icon-btn me-1" aria-label="Back to chats"><i class="bi bi-arrow-left"></i></a>
+              Archived
+            {% else %}
+              <i class="bi bi-chat-dots-fill me-2" aria-hidden="true"></i>Chats
+            {% endif %}
           </div>
-          <div class="d-flex align-items-center">
-            <button class="btn btn-link text-white p-1 me-2" id="toggleArchivedBtn" title="{% if request.GET.archived %}Show Active Messages{% else %}Show Archived Messages{% endif %}">
-              <i class="bi bi-{% if request.GET.archived %}chat-dots{% else %}archive{% endif %} fs-6"></i>
-            </button>
-            <button class="btn btn-link text-white d-md-none p-0" id="backToChatBtn" style="display:none !important;">
-              <i class="bi bi-arrow-left fs-4"></i>
-            </button>
-          </div>
+          {% if not show_archived %}
+          <a href="{% url 'inbox' %}?archived=1" class="chat-icon-btn" title="Archived chats" aria-label="Archived chats"><i class="bi bi-archive"></i></a>
+          {% endif %}
         </div>
-        <div class="p-2">
+        <div class="p-2" id="conversationItems">
           {% for convo in conversations %}
-          <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}" style="text-decoration:none; color:inherit;">
-            <div class="conversation d-flex align-items-center {% if active_conversation and convo.id == active_conversation.id %}active-convo{% endif %}">
-              <img src="{% if convo.avatar_url %}{{ convo.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ convo.name|urlencode }}&background=D97706&color=fff&size=50{% endif %}" 
-                   class="rounded-circle me-3 conversation-avatar" 
-                   width="50" height="50" alt="Avatar">
-              <div class="flex-grow-1">
-                <div class="fw-bold mb-1" style="color: var(--text-primary);">{{ convo.name }}</div>
-                <div class="small" style="color: var(--text-secondary);">
-                  {{ convo.last_message|truncatewords:5 }}
-                </div>
-              </div>
-              <div class="text-end small ms-2" style="color: var(--primary, #D97706);">
-                {{ convo.last_date|date:'M d' }}
-              </div>
-            </div>
+          <a href="{% url 'inbox' %}?item_id={{ convo.item_id }}&recipient_id={{ convo.other_user_id }}{% if show_archived %}&archived=1{% endif %}"
+             class="conversation convo-row {% if active_conversation and convo.key == active_conversation.key %}active-convo{% endif %} {% if convo.unread %}has-unread{% endif %}"
+             data-key="{{ convo.key }}" data-last-id="{{ convo.last_id }}">
+            <img src="{% if convo.avatar_url %}{{ convo.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ convo.name|urlencode }}&background=a9510b&color=fff&size=80{% endif %}"
+                 class="rounded-circle conversation-avatar" width="48" height="48" alt="">
+            <span class="convo-body">
+              <span class="convo-top">
+                <span class="convo-name">{{ convo.name }}</span>
+                <time class="convo-time" datetime="{{ convo.last_date|date:'c' }}" data-time="{{ convo.last_date|date:'c' }}">{{ convo.last_date|date:'M d' }}</time>
+              </span>
+              <span class="convo-item"><i class="bi bi-tag" aria-hidden="true"></i> {{ convo.item_title }}</span>
+              <span class="convo-bottom">
+                <span class="convo-preview {% if convo.last_is_deleted %}is-deleted{% endif %}">
+                  {% if convo.last_is_mine and not convo.last_is_deleted %}<i class="bi {% if convo.last_is_read %}bi-check2-all is-read{% else %}bi-check2{% endif %} msg-tick" aria-hidden="true"></i>{% endif %}
+                  {% if convo.last_is_deleted %}<i class="bi bi-slash-circle" aria-hidden="true"></i>{% endif %}
+                  <span class="convo-preview-text">{{ convo.last_message|default:"No messages"|truncatechars:60 }}</span>
+                </span>
+                <span class="convo-typing" hidden>typing…</span>
+                <span class="convo-unread" {% if not convo.unread %}hidden{% endif %} aria-label="{{ convo.unread }} unread">{{ convo.unread }}</span>
+              </span>
+            </span>
           </a>
           {% empty %}
-          <div class="d-flex justify-content-center align-items-center" style="min-height: 50vh;">
+          <div class="d-flex justify-content-center align-items-center convo-empty" style="min-height: 50vh;">
             <div class="empty-state text-center">
               <div class="empty-icon-wrapper mb-4">
-                <i class="bi bi-chat-left-dots-fill"></i>
+                <i class="bi bi-{% if show_archived %}archive{% else %}chat-left-dots-fill{% endif %}"></i>
               </div>
-              <h3 class="fw-bold mb-3">No Messages Yet</h3>
+              <h3 class="fw-bold mb-3">{% if show_archived %}No archived chats{% else %}No messages yet{% endif %}</h3>
               <p class="mb-4 empty-description">
-                Start a conversation by contacting the owner or finder of an item.
+                {% if show_archived %}Chats you archive will appear here.{% else %}Start a conversation by contacting the owner or finder of an item.{% endif %}
               </p>
-              <a href="{% url 'item_list' %}" class="btn-browse-items">
-                Browse Items
-              </a>
+              <a href="{% url 'item_list' %}" class="btn-browse-items">Browse Items</a>
             </div>
           </div>
           {% endfor %}
         </div>
       </aside>
 
-      {% if active_conversation %}{# template-only #}
-      <!-- Chat Area -->
+      {% if active_conversation %}
+      <!-- Chat -->
       <main class="chat-area flex-grow-1 d-flex flex-column" id="chatArea">
-        <!-- Chat Header -->
         <header class="chat-header d-flex align-items-center justify-content-between">
-          <div class="d-flex align-items-center">
-            <button class="btn btn-link text-white p-0 me-3 d-md-none" id="backToListBtn" type="button" aria-label="Back to conversations">
-              <i class="bi bi-arrow-left fs-4"></i>
+          <div class="chat-header-main">
+            <button class="chat-icon-btn d-md-none" id="backToListBtn" type="button" aria-label="Back to conversations">
+              <i class="bi bi-arrow-left"></i>
             </button>
-            <img src="{{ active_conversation.item_image|default:'https://via.placeholder.com/60' }}" 
-                 class="rounded me-3 chat-header-avatar" 
-                 width="60" height="60" alt="Item">
-            <div>
-              <div class="fw-bold text-white fs-5">{{ active_conversation.item_title }}</div>
-              <div class="text-white opacity-75">
-                <i class="bi bi-person-circle me-1"></i>
-                {{ active_conversation.name }}
+            <img src="{% if active_conversation.avatar_url %}{{ active_conversation.avatar_url }}{% else %}https://ui-avatars.com/api/?name={{ active_conversation.name|urlencode }}&background=a9510b&color=fff&size=80{% endif %}"
+                 class="rounded-circle chat-header-avatar" width="44" height="44" alt="">
+            <div class="chat-header-text">
+              <div class="chat-header-name">{{ active_conversation.name }}</div>
+              <div class="chat-header-status" id="chatStatus" aria-live="polite">
+                <span class="status-default"><i class="bi bi-tag" aria-hidden="true"></i> {{ active_conversation.item_title }}</span>
+                <span class="status-typing" hidden>typing…</span>
               </div>
-              <div id="typingIndicator" class="small text-white opacity-75" style="display:none; margin-top:4px;"></div>
             </div>
           </div>
           <div class="dropdown">
-            <button class="btn btn-link text-white p-0" type="button" id="chatOptionsDropdown" aria-label="Conversation options" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-three-dots-vertical fs-4"></i>
+            <button class="chat-icon-btn" type="button" id="chatOptionsDropdown" aria-label="Chat options" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-three-dots-vertical"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chatOptionsDropdown">
-              {% if request.GET.archived %}
+            <ul class="dropdown-menu dropdown-menu-end chat-menu" aria-labelledby="chatOptionsDropdown">
+              <li><a class="dropdown-item" href="{% url 'item_detail' active_conversation.item_id %}"><i class="bi bi-box-seam"></i>View item</a></li>
               <li>
-                <a class="dropdown-item text-success" href="#" id="unarchiveConversationBtn">
-                  <i class="bi bi-arrow-counterclockwise me-2"></i>
-                  Unarchive Conversation
-                </a>
+                {% if active_conversation.archived %}
+                <button class="dropdown-item" type="button" data-chat-action="unarchive"><i class="bi bi-arrow-counterclockwise"></i>Unarchive chat</button>
+                {% else %}
+                <button class="dropdown-item" type="button" data-chat-action="archive"><i class="bi bi-archive"></i>Archive chat</button>
+                {% endif %}
               </li>
-              {% else %}
-              <li>
-                <a class="dropdown-item text-warning" href="#" id="archiveConversationBtn">
-                  <i class="bi bi-archive me-2"></i>
-                  Archive Conversation
-                </a>
-              </li>
-              {% endif %}
+              <li><button class="dropdown-item" type="button" data-chat-action="clear"><i class="bi bi-eraser"></i>Clear chat</button></li>
               <li><hr class="dropdown-divider"></li>
-              <li>
-                <a class="dropdown-item text-danger" href="#" id="clearConversationBtn">
-                  <i class="bi bi-trash me-2"></i>
-                  Delete Conversation
-                </a>
-              </li>
+              <li><button class="dropdown-item text-danger" type="button" data-chat-action="delete"><i class="bi bi-trash"></i>Delete chat</button></li>
             </ul>
           </div>
         </header>
 
-        <!-- Chat History -->
-        <section class="chat-history flex-grow-1" id="chatHistory">
-          {% if active_conversation.date %}
-          <div class="date-divider">
-            <span>{{ active_conversation.date|date:'F d, Y' }}</span>
-          </div>
-          {% endif %}
-          {% for msg in active_conversation.messages %}
-          <div class="d-flex mb-3 {% if msg.sender == user %}justify-content-end{% else %}justify-content-start{% endif %}">
-            <div class="chat-bubble {% if msg.sender == user %}sent{% else %}received{% endif %}" data-message-id="{{ msg.id }}">
-              {% if msg.deleted_for_everyone %}
-                <div class="mb-1"><em>This message was deleted</em></div>
-              {% else %}
-                {% if msg.image %}
-                <div class="mb-2">
-                  <img src="{{ msg.image.url }}" 
-                       class="img-fluid" 
-                       alt="Chat Image"
-                       onclick="openLightbox('{{ msg.image.url }}')">
-                </div>
-                {% endif %}
-                {% if msg.content %}
-                <div class="mb-1 message-content">{{ msg.content }}{% if msg.edited %} <small class="text-muted">(edited)</small>{% endif %}</div>
-                {% endif %}
-              {% endif %}
-              <div class="small opacity-75 text-end mt-1">
-                {{ msg.timestamp|time:'H:i' }}
-              </div>
-
-              {% if msg.sender == user %}
-              <div class="message-actions dropdown" style="position:absolute; top:6px; right:6px;">
-                <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a href="#" class="dropdown-item edit-message-btn" data-message-id="{{ msg.id }}">Edit</a></li>
-                  <li><a href="#" class="dropdown-item delete-for-me-btn" data-message-id="{{ msg.id }}">Delete for me</a></li>
-                  <li><a href="#" class="dropdown-item text-danger delete-for-everyone-btn" data-message-id="{{ msg.id }}">Delete for everyone</a></li>
-                </ul>
-              </div>
-              {% else %}
-              <div class="message-actions dropdown" style="position:absolute; top:6px; left:6px;">
-                <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
-                <ul class="dropdown-menu">
-                  <li><a href="#" class="dropdown-item delete-for-me-btn" data-message-id="{{ msg.id }}">Delete for me</a></li>
-                </ul>
-              </div>
-              {% endif %}
+        <section class="chat-history flex-grow-1" id="chatHistory" aria-live="polite" aria-label="Messages">
+          <div id="chatMessages"></div>
+          <div class="msg-row is-received typing-row" id="typingBubble" hidden>
+            <div class="msg-bubble typing-bubble" aria-label="{{ active_conversation.name }} is typing">
+              <span></span><span></span><span></span>
             </div>
           </div>
-          {% endfor %}
         </section>
 
-        <!-- Chat Footer -->
         <footer class="chat-footer">
-          <form method="post" enctype="multipart/form-data" id="chatForm">
+          <div class="chat-connection" id="chatConnection" hidden><i class="bi bi-wifi-off" aria-hidden="true"></i> Reconnecting… messages still send.</div>
+          <form method="post" enctype="multipart/form-data" id="chatForm" action="{% url 'inbox' %}">
             {% csrf_token %}
-            <input type="hidden" name="item_id" value="{{ item_id }}">
-            <input type="hidden" name="recipient_id" value="{{ recipient_id }}">
-            <!-- Image Preview -->
+            <input type="hidden" name="item_id" value="{{ active_conversation.item_id }}">
+            <input type="hidden" name="recipient_id" value="{{ active_conversation.recipient_id }}">
             <div id="imagePreviewContainer" style="display: none;" class="mb-3">
               <div class="image-preview-wrapper">
                 <img id="chatImagePreview" src="" alt="Preview" class="image-preview">
-                <button type="button" id="removeImageBtn" class="remove-image-btn">
+                <button type="button" id="removeImageBtn" class="remove-image-btn" aria-label="Remove image">
                   <i class="bi bi-x"></i>
                 </button>
               </div>
             </div>
-            <!-- Input Row -->
             <div class="d-flex align-items-center gap-2">
-              <label for="chatImageUpload" class="btn-attach mb-0">
+              <label for="chatImageUpload" class="btn-attach mb-0" title="Attach image">
                 <i class="bi bi-paperclip fs-5"></i>
               </label>
-              <input type="file" 
-                     id="chatImageUpload" 
-                     name="chat_image" 
-                     accept="image/*" 
-                     style="display:none;">
-              <textarea
-                     name="message" aria-label="Message"
-                     class="form-control message-input flex-grow-1" 
-                     placeholder="Type your message..."
-                autocomplete="off"
-                rows="1"></textarea>
-              <button type="submit" class="btn btn-send" title="Send message">
+              <input type="file" id="chatImageUpload" name="chat_image" accept="image/*" style="display:none;">
+              <textarea name="message" aria-label="Message" class="form-control message-input flex-grow-1"
+                        placeholder="Type a message" autocomplete="off" rows="1" maxlength="4000"></textarea>
+              <button type="submit" class="btn btn-send" title="Send message" aria-label="Send message">
                 <i class="bi bi-send-fill"></i>
               </button>
             </div>
           </form>
         </footer>
       </main>
+      {{ active_conversation.messages|json_script:"chatMessagesData" }}
       {% else %}
-      <!-- Creative Empty State for Desktop Conversation Area -->
       <main class="chat-area flex-grow-1 d-flex flex-column justify-content-center align-items-center" id="chatArea">
         <div class="empty-state text-center" style="max-width: 420px; margin: auto;">
           <div class="empty-icon-wrapper mb-4">
             <i class="bi bi-chat-dots-fill" style="font-size: 3rem;"></i>
           </div>
           <h3 class="fw-bold mb-3">Select a conversation to get started</h3>
-          <p class="mb-4 empty-description">Choose a message from the list on the left to view your conversation. You can also start a new chat by contacting an item owner or finder.</p>
+          <p class="mb-4 empty-description">Choose a chat from the list to view it. You can also start a new chat by contacting an item owner or finder.</p>
           <a href="{% url 'item_list' %}" class="btn-browse-items">
             <i class="bi bi-search me-2"></i>Browse Items
           </a>
@@ -223,26 +160,45 @@
     </div>
   </div>
 </div>
+</div>
 
-</div>
 <!-- Lightbox -->
-<div id="imageLightbox" onclick="closeLightbox()">
-  <img id="lightboxImg" src="" alt="Full Image">
+<div id="imageLightbox" role="dialog" aria-label="Image preview">
+  <img id="lightboxImg" src="" alt="Full image">
 </div>
+
+<!-- WhatsApp-style confirmation dialog, filled in by inbox.js -->
+<div class="modal fade chat-dialog" id="chatDialog" tabindex="-1" aria-labelledby="chatDialogTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h2 class="chat-dialog-title" id="chatDialogTitle"></h2>
+        <p class="chat-dialog-text" id="chatDialogText"></p>
+      </div>
+      <div class="chat-dialog-actions" id="chatDialogActions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="chat-toast" id="chatToast" role="status" aria-live="polite" hidden></div>
 
 <div id="inboxConfig" hidden
      data-has-conversation="{{ active_conversation|yesno:'true,false' }}"
-     data-conversation-id="{{ active_conversation.id|default:'' }}"
      data-user-id="{{ user.id }}"
-     data-username="{{ user.username }}"
-     data-recipient-id="{{ recipient_id|default:'null' }}"
-     data-item-id="{{ item_id|default:'null' }}"
+     data-item-id="{{ active_conversation.item_id|default:'' }}"
+     data-recipient-id="{{ active_conversation.recipient_id|default:'' }}"
+     data-other-name="{{ active_conversation.name|default:'' }}"
+     data-archived-view="{{ show_archived|yesno:'true,false' }}"
      data-csrf-token="{{ csrf_token }}"
-     data-clear-url="{% url 'clear_conversation' %}"
+     data-send-url="{% url 'send_chat_message' %}"
+     data-edit-url="{% url 'edit_message' %}"
      data-delete-url="{% url 'delete_message' %}"
+     data-read-url="{% url 'mark_conversation_read' %}"
+     data-sync-url="{% url 'sync_conversation' %}"
+     data-typing-url="{% url 'typing_status' %}"
+     data-action-url="{% url 'clear_conversation' %}"
      data-inbox-url="{% url 'inbox' %}"></div>
 <script src="{% static 'js/inbox.js' %}"></script>
-
 {% if active_conversation %}
 <script src="{% static 'js/chat.js' %}"></script>
 {% endif %}

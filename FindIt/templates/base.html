@@ -49,26 +49,49 @@
                     </button>
                 </div>
 
+                <div class="app-sidebar-scroll">
                 <nav class="sidebar-nav">
-                    {% with current_url=request.resolver_match.url_name %}
+                    {% with current_url=request.resolver_match.url_name current_category=request.GET.category|default:'' %}
                         <a href="{% url 'home' %}" class="sidebar-link {% if current_url == 'home' %}active{% endif %}" data-tooltip="Home" aria-label="Home">
                             <i class="bi bi-house-door"></i>
                             <span class="sidebar-label">Home</span>
                         </a>
 
-                        <div class="sidebar-group" data-group="workspace">
-                            <button class="sidebar-group-toggle" type="button" data-submenu-target="workspaceSubmenu" aria-expanded="false" data-tooltip="Workspace" aria-label="Workspace section">
+                        <div class="sidebar-group" data-group="categories">
+                            <button class="sidebar-group-toggle" type="button" data-submenu-target="categoriesSubmenu" aria-expanded="false" data-tooltip="Categories" aria-label="Categories">
                                 <i class="bi bi-grid-1x2"></i>
                                 <span class="sidebar-label">Categories</span>
                                 <i class="bi bi-chevron-down sidebar-caret"></i>
                             </button>
-                            <div class="sidebar-submenu" id="workspaceSubmenu">
-                                <a href="{% url 'item_list' %}" class="sidebar-submenu-link">All Items</a>
-                                {% for category in categories %}
-                                    <a href="{% url 'item_list' %}?category={{ category.id }}" class="sidebar-submenu-link" title="{{ category.name }}">{{ category.name }}</a>
-                                {% empty %}
-                                    <span class="sidebar-submenu-link text-muted">No categories</span>
-                                {% endfor %}
+                            <div class="sidebar-submenu sidebar-menu-card sidebar-categories" id="categoriesSubmenu">
+                                <div class="account-menu-head">
+                                    <span class="account-menu-avatar menu-card-mark" aria-hidden="true"><i class="bi bi-grid-1x2"></i></span>
+                                    <span class="account-menu-identity">
+                                        <strong>Browse by category</strong>
+                                        <span>{{ categories|length }} categor{{ categories|length|pluralize:"y,ies" }}</span>
+                                    </span>
+                                </div>
+                                <a href="{% url 'item_list' %}" class="account-menu-link {% if current_url == 'item_list' and not current_category %}active-link{% endif %}">
+                                    <span class="account-menu-icon"><i class="bi bi-collection"></i></span>
+                                    <span class="account-menu-text">All items<small>Every reported item</small></span>
+                                </a>
+                                {% if categories|length > 6 %}
+                                <label class="sidebar-category-search">
+                                    <i class="bi bi-search" aria-hidden="true"></i>
+                                    <input type="search" placeholder="Find a category" aria-label="Filter categories" data-category-filter autocomplete="off">
+                                </label>
+                                {% endif %}
+                                <div class="sidebar-category-list" data-category-list>
+                                    {% for category in categories %}
+                                        <a href="{% url 'item_list' %}?category={{ category.id }}" class="account-menu-link {% if current_url == 'item_list' and current_category == category.id|stringformat:'s' %}active-link{% endif %}" title="{{ category.name }}">
+                                            <span class="account-menu-icon category-initial" aria-hidden="true">{{ category.name|first|upper }}</span>
+                                            <span class="account-menu-text"><span class="sidebar-category-name">{{ category.name }}</span></span>
+                                        </a>
+                                    {% empty %}
+                                        <p class="account-menu-note">No categories yet.</p>
+                                    {% endfor %}
+                                    <span class="sidebar-category-empty" data-category-empty hidden>No matching categories</span>
+                                </div>
                             </div>
                         </div>
 
@@ -96,15 +119,48 @@
 
                         <div class="sidebar-group {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}open{% endif %}" data-group="account">
                             <button class="sidebar-group-toggle {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}active{% endif %}" type="button" data-submenu-target="accountSubmenu" aria-expanded="{% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}true{% else %}false{% endif %}" data-tooltip="{% if user.is_authenticated %}{{ user.username }}{% else %}My account{% endif %}" aria-label="{% if user.is_authenticated %}{{ user.username }}{% else %}My account{% endif %}">
-                                <i class="bi bi-person-circle"></i>
+                                {% if user.is_authenticated and user.userprofile.profile_picture %}
+                                    <img src="{{ user.userprofile.profile_picture.url }}" alt="" class="sidebar-user-avatar">
+                                {% elif user.is_authenticated %}
+                                    <span class="sidebar-user-avatar avatar-initial" aria-hidden="true">{{ user.username|first|upper }}</span>
+                                {% else %}
+                                    <i class="bi bi-person-circle"></i>
+                                {% endif %}
                                 <span class="sidebar-label">{% if user.is_authenticated %}{{ user.username }}{% else %}My account{% endif %}</span>
                                 <i class="bi bi-chevron-down sidebar-caret"></i>
                             </button>
-                            <div class="sidebar-submenu {% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}open{% endif %}" id="accountSubmenu">
-                                <a href="{% url 'profile' %}" class="sidebar-submenu-link {% if current_url == 'profile' %}active-link{% endif %}">Profile</a>
-                                <a href="{% url 'my_recovered_items' %}" class="sidebar-submenu-link {% if current_url == 'my_recovered_items' %}active-link{% endif %}">My Recovered Items</a>
-                                <a href="{% url 'my_returned_items' %}" class="sidebar-submenu-link {% if current_url == 'my_returned_items' %}active-link{% endif %}">My Returned Items</a>
-                                <a href="{% url 'returns_statistics' %}" class="sidebar-submenu-link {% if current_url == 'returns_statistics' %}active-link{% endif %}">Statistics Dashboard</a>
+                            <div class="sidebar-submenu sidebar-menu-card sidebar-account-menu{% if current_url == 'profile' or current_url == 'my_recovered_items' or current_url == 'my_returned_items' or current_url == 'returns_statistics' %}open{% endif %}" id="accountSubmenu">
+                                {% if user.is_authenticated %}
+                                <div class="account-menu-head">
+                                    {% if user.userprofile.profile_picture %}
+                                        <img src="{{ user.userprofile.profile_picture.url }}" alt="" class="account-menu-avatar">
+                                    {% else %}
+                                        <span class="account-menu-avatar avatar-initial" aria-hidden="true">{{ user.username|first|upper }}</span>
+                                    {% endif %}
+                                    <span class="account-menu-identity">
+                                        <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                        <span>{{ user.email|default:"Member" }}</span>
+                                    </span>
+                                </div>
+                                {% else %}
+                                <p class="account-menu-note">Sign in to manage your profile and returns.</p>
+                                {% endif %}
+                                <a href="{% url 'profile' %}" class="account-menu-link {% if current_url == 'profile' %}active-link{% endif %}">
+                                    <span class="account-menu-icon"><i class="bi bi-person"></i></span>
+                                    <span class="account-menu-text">Profile<small>Details &amp; privacy</small></span>
+                                </a>
+                                <a href="{% url 'my_recovered_items' %}" class="account-menu-link {% if current_url == 'my_recovered_items' %}active-link{% endif %}">
+                                    <span class="account-menu-icon"><i class="bi bi-bag-check"></i></span>
+                                    <span class="account-menu-text">Recovered items<small>Items you got back</small></span>
+                                </a>
+                                <a href="{% url 'my_returned_items' %}" class="account-menu-link {% if current_url == 'my_returned_items' %}active-link{% endif %}">
+                                    <span class="account-menu-icon"><i class="bi bi-arrow-return-left"></i></span>
+                                    <span class="account-menu-text">Returned items<small>Items you handed back</small></span>
+                                </a>
+                                <a href="{% url 'returns_statistics' %}" class="account-menu-link {% if current_url == 'returns_statistics' %}active-link{% endif %}">
+                                    <span class="account-menu-icon"><i class="bi bi-bar-chart-line"></i></span>
+                                    <span class="account-menu-text">Statistics<small>Your return activity</small></span>
+                                </a>
                             </div>
                         </div>
                         {% if user.is_authenticated %}
@@ -149,6 +205,7 @@
                         {% endif %}
                     </div>
                 </div>
+                </div>
             </div>
         </aside>
 
@@ -174,62 +231,30 @@
             </div>
         </main>
     
-    <!-- Modern Footer -->
-    <footer class="footer mt-auto">
-        <div class="container footer-content">
-            <div class="row g-4 py-5">
-
-                <!-- About -->
-                <div class="col-12 col-md-4">
-                    <a class="navbar-brand d-flex align-items-center gap-2 mb-2" href="/">
-                        <i class="bi bi-search" style="font-size:1.6rem;"></i>
-                        <span class="fw-bold brand-text">Lost & Found</span>
+    <footer class="footer site-footer mt-auto">
+        <div class="site-footer-inner">
+            <div class="site-footer-main">
+                <div class="site-footer-brand">
+                    <a class="site-footer-logo" href="{% url 'home' %}">
+                        <span class="sidebar-brand-mark"><i class="bi bi-search" aria-hidden="true"></i></span>
+                        <strong>Lost &amp; Found</strong>
                     </a>
-                    <p class="small opacity-75">
-                        A community-driven platform to report and recover lost items.  
-                        Connect with others and help return items to their rightful owners.
-                    </p>
+                    <p>A community-driven platform to report and recover lost items. Connect with others and help return items to their rightful owners.</p>
                 </div>
 
-                <!-- Quick Links -->
-                <div class="col-6 col-md-4">
-                    <h6 class="mb-3">Quick Links</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="{% url 'terms_and_conditions' %}" class="d-block py-1 footer-link">Terms & Conditions</a></li>
-                        <li><a href="{% url 'privacy_policy' %}" class="d-block py-1 footer-link">Privacy Policy</a></li>
-                    </ul>
-                </div>
-
-                <!-- Contact & Socials -->
-                <div class="col-6 col-md-4">
-                    <h6 class="mb-3">Get in Touch</h6>
-                    <p class="small mb-1"><i class="bi bi-envelope me-2"></i> support@lostfound.com</p>
-                    <p class="small"><i class="bi bi-telephone me-2"></i> +255 755 630 639</p>
-                    
-                    <div class="social-icons d-flex gap-3 mt-4">
-                        <!-- <a href="#" class="social-link-static">
-                            <i class="bi bi-twitter"></i>
-                        </a> -->
-                        <a href="https://www.linkedin.com/in/eric-nkiya-950b15281/" class="social-link-static">
-                            <i class="bi bi-linkedin"></i>
-                        </a>
-                        <a href="https://www.instagram.com/kylian_nem03?igsh=OWd6OGZtZ3EwNnVw" class="social-link-static">
-                            <i class="bi bi-instagram"></i>
-                        </a>
-                        <a href="https://github.com/sabnem" class="social-link-static">
-                            <i class="bi bi-github"></i>
-                        </a>
+                <div class="site-footer-contact">
+                    <h2 class="site-footer-heading">Get in touch</h2>
+                    <a href="mailto:support@lostfound.com"><i class="bi bi-envelope" aria-hidden="true"></i>support@lostfound.com</a>
+                    <a href="tel:+255755630639"><i class="bi bi-telephone" aria-hidden="true"></i>+255 755 630 639</a>
+                    <div class="site-footer-social">
+                        <a href="https://www.linkedin.com/in/eric-nkiya-950b15281/" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                        <a href="https://www.instagram.com/kylian_nem03?igsh=OWd6OGZtZ3EwNnVw" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                        <a href="https://github.com/sabnem" target="_blank" rel="noopener" aria-label="GitHub"><i class="bi bi-github"></i></a>
                     </div>
                 </div>
             </div>
 
-            <!-- Divider -->
-            <hr class="mt-4 opacity-50 footer-divider">
-
-            <!-- Bottom bar -->
-            <div class="text-center py-3 small opacity-75">
-                <p class="mb-0">&copy; {% now "Y" %} Lost &amp; Found Portal. All rights reserved.</p>
-            </div>
+            <p class="site-footer-bottom">&copy; {% now "Y" %} Lost &amp; Found Portal. All rights reserved.</p>
         </div>
     </footer>
     </div>

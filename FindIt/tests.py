@@ -5,15 +5,17 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from asgiref.sync import async_to_sync
+from channels.db import database_sync_to_async
 from channels.testing import WebsocketCommunicator
 from django.core import mail
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.test import TestCase, TransactionTestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Claim, Item, ItemCategory, Message, RecoveredItem, ReturnConfirmation
-from .consumers import ChatConsumer
+from .chat_views import create_message
+from .consumers import InboxConsumer
+from .models import Claim, ConversationState, Item, ItemCategory, Message, RecoveredItem, ReturnConfirmation
 from .selectors import return_statistics_for
 
 
@@ -170,46 +172,114 @@ class PortalTests(TestCase):
         with self.assertNumQueries(2):
             profile.update_reputation()
 
+    def post_json(self, name, payload):
+        return self.client.post(reverse(name), json.dumps(payload), content_type="application/json")
+
+    def inbox_keys(self, user, **params):
+        self.client.force_login(user)
+        return [row["key"] for row in self.client.get(reverse("inbox"), {"view": "list", **params}).context["conversations"]]
+
     def test_conversation_archive_and_restore(self):
-        message = Message.objects.create(item=self.item, sender=self.finder, recipient=self.owner, content="Hello")
+        Message.objects.create(item=self.item, sender=self.finder, recipient=self.owner, content="Hello")
+        key = f"{self.item.pk}-{self.finder.pk}"
         self.client.force_login(self.owner)
         payload = {"item_id": self.item.pk, "recipient_id": self.finder.pk, "action": "archive"}
-        response = self.client.post(reverse("clear_conversation"), json.dumps(payload), content_type="application/json")
-        self.assertEqual(response.status_code, 200)
-        message.refresh_from_db()
-        self.assertTrue(message.deleted_by_recipient)
-        self.assertFalse(message.deleted_by_sender)
+        self.assertEqual(self.post_json("clear_conversation", payload).status_code, 200)
+        self.assertTrue(ConversationState.objects.get(user=self.owner).archived)
+        self.assertNotIn(key, self.inbox_keys(self.owner))
+        self.assertIn(key, self.inbox_keys(self.owner, archived="1"))
+        # The other participant is unaffected.
+        self.assertIn(f"{self.item.pk}-{self.owner.pk}", self.inbox_keys(self.finder))
+        self.client.force_login(self.owner)
         payload["action"] = "unarchive"
-        self.assertEqual(self.client.post(reverse("clear_conversation"), json.dumps(payload), content_type="application/json").status_code, 200)
+        self.assertEqual(self.post_json("clear_conversation", payload).status_code, 200)
+        self.assertIn(key, self.inbox_keys(self.owner))
+
+    def test_delete_chat_only_affects_requesting_member(self):
+        first = Message.objects.create(item=self.item, sender=self.finder, recipient=self.owner, content="Hello")
+        self.client.force_login(self.owner)
+        payload = {"item_id": self.item.pk, "recipient_id": self.finder.pk, "action": "delete"}
+        self.assertEqual(self.post_json("clear_conversation", payload).status_code, 200)
+        self.assertTrue(Message.objects.filter(pk=first.pk).exists())
+        self.assertEqual(self.inbox_keys(self.owner), [])
+        self.client.force_login(self.finder)
+        response = self.client.get(reverse("inbox"), {"item_id": self.item.pk, "recipient_id": self.owner.pk})
+        self.assertEqual([m["content"] for m in response.context["active_conversation"]["messages"]], ["Hello"])
+        # A new message brings the chat back for the deleter, without the old history.
+        self.client.post(reverse("send_chat_message"), {"item_id": self.item.pk, "recipient_id": self.owner.pk, "message": "Still there?"})
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("inbox"), {"item_id": self.item.pk, "recipient_id": self.finder.pk})
+        self.assertEqual([m["content"] for m in response.context["active_conversation"]["messages"]], ["Still there?"])
+
+    def test_clear_chat_keeps_conversation_listed(self):
+        Message.objects.create(item=self.item, sender=self.finder, recipient=self.owner, content="Hello")
+        self.client.force_login(self.owner)
+        self.post_json("clear_conversation", {"item_id": self.item.pk, "recipient_id": self.finder.pk, "action": "clear"})
+        self.assertEqual(self.inbox_keys(self.owner), [f"{self.item.pk}-{self.finder.pk}"])
+        response = self.client.get(reverse("sync_conversation"), {"item_id": self.item.pk, "recipient_id": self.finder.pk})
+        self.assertEqual(response.json()["messages"], [])
+
+    def test_send_message_reaches_recipient_with_read_receipts(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("send_chat_message"), {"item_id": self.item.pk, "recipient_id": self.finder.pk, "message": "Is this mine?"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["message"]["is_read"])
+        self.assertEqual(self.post_json("send_chat_message", {}).status_code, 400)
+        self.assertEqual(self.client.post(reverse("send_chat_message"), {"item_id": self.item.pk, "recipient_id": self.owner.pk, "message": "Me"}).status_code, 400)
+        self.client.force_login(self.finder)
+        sync = self.client.get(reverse("sync_conversation"), {"item_id": self.item.pk, "recipient_id": self.owner.pk}).json()
+        self.assertEqual([m["content"] for m in sync["messages"]], ["Is this mine?"])
+        self.assertEqual(self.post_json("mark_conversation_read", {"item_id": self.item.pk, "recipient_id": self.owner.pk}).json()["marked"], 1)
+        self.assertTrue(Message.objects.get().is_read)
+
+    def test_delete_for_everyone_wipes_content(self):
+        message = Message.objects.create(item=self.item, sender=self.finder, recipient=self.owner, content="Secret")
+        self.client.force_login(self.finder)
+        data = self.post_json("delete_message", {"message_id": message.pk, "for_everyone": True}).json()
+        self.assertEqual(data["message"]["content"], "")
         message.refresh_from_db()
-        self.assertFalse(message.deleted_by_recipient)
+        self.assertEqual((message.content, message.deleted_for_everyone), ("", True))
+        self.assertEqual(self.post_json("edit_message", {"message_id": message.pk, "new_content": "Again"}).status_code, 400)
+
+    def test_typing_status_over_http(self):
+        self.client.force_login(self.owner)
+        self.post_json("typing_status", {"item_id": self.item.pk, "recipient_id": self.finder.pk, "is_typing": True})
+        self.client.force_login(self.finder)
+        params = {"item_id": self.item.pk, "recipient_id": self.owner.pk}
+        self.assertTrue(self.client.get(reverse("sync_conversation"), params).json()["typing"])
+        self.client.force_login(self.owner)
+        self.post_json("typing_status", {"item_id": self.item.pk, "recipient_id": self.finder.pk, "is_typing": False})
+        self.client.force_login(self.finder)
+        self.assertFalse(self.client.get(reverse("sync_conversation"), params).json()["typing"])
 
 
-class ChatTests(TransactionTestCase):
-    def test_websocket_message_typing_edit_and_delete(self):
+class ChatSocketTests(TransactionTestCase):
+    def test_socket_delivers_messages_and_typing_to_each_member(self):
         sender = User.objects.create_user("chat-sender")
         recipient = User.objects.create_user("chat-recipient")
         item = Item.objects.create(title="Keys", description="Keys", location="Park", status="found", reported_by=sender)
 
-        async def round_trip():
-            socket = WebsocketCommunicator(ChatConsumer.as_asgi(), "/ws/chat/test/")
-            socket.scope["user"] = sender
-            socket.scope["url_route"] = {"kwargs": {"conversation_id": f"{item.pk}-{sender.pk}-{recipient.pk}"}}
+        async def connect(user):
+            socket = WebsocketCommunicator(InboxConsumer.as_asgi(), "/ws/inbox/")
+            socket.scope["user"] = user
             connected, _ = await socket.connect()
-            self.assertTrue(connected)
+            return socket, connected
+
+        async def round_trip():
+            anonymous, connected = await connect(AnonymousUser())
+            self.assertFalse(connected)
+            sender_socket, _ = await connect(sender)
+            recipient_socket, _ = await connect(recipient)
             try:
-                await socket.send_json_to({"message": "Hello", "sender_id": sender.pk, "recipient_id": recipient.pk, "item_id": item.pk})
-                event = await socket.receive_json_from()
-                self.assertEqual(event["message"], "Hello")
-                message_id = event["message_id"]
-                await socket.send_json_to({"type": "typing", "sender_id": sender.pk, "sender_username": sender.username, "is_typing": True})
-                self.assertEqual((await socket.receive_json_from())["type"], "typing")
-                await socket.send_json_to({"type": "edit", "message_id": message_id, "sender_id": sender.pk, "new_content": "Updated"})
-                self.assertEqual((await socket.receive_json_from())["new_content"], "Updated")
-                await socket.send_json_to({"type": "delete", "message_id": message_id, "sender_id": sender.pk, "for_everyone": True})
-                self.assertEqual((await socket.receive_json_from())["type"], "message_deleted")
+                await sender_socket.send_json_to({"type": "typing", "item_id": item.pk, "recipient_id": recipient.pk, "is_typing": True})
+                typing = await recipient_socket.receive_json_from()
+                self.assertEqual((typing["type"], typing["sender_id"], typing["is_typing"]), ("typing", sender.pk, True))
+                await database_sync_to_async(create_message)(sender, recipient.pk, item.pk, "Hello")
+                for socket in (sender_socket, recipient_socket):
+                    event = await socket.receive_json_from()
+                    self.assertEqual((event["type"], event["message"]["content"]), ("message", "Hello"))
             finally:
-                await socket.disconnect()
+                await sender_socket.disconnect()
+                await recipient_socket.disconnect()
 
         async_to_sync(round_trip)()
-        self.assertTrue(Message.objects.get(item=item).deleted_for_everyone)

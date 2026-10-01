@@ -173,6 +173,24 @@ class Message(models.Model):
         return f"From {self.sender.username} to {self.recipient.username} about {self.item.title}"
 
 
+class ConversationState(models.Model):
+    """One member's private view of a chat; the other participant is never affected."""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_states')
+    other_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='+')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='conversation_states')
+    archived = models.BooleanField(default=False)
+    # Messages sent at or before this moment are hidden for `user` only (clear/delete chat).
+    cleared_at = models.DateTimeField(null=True, blank=True)
+    # Deleted chats leave the list until a new message arrives; cleared chats stay listed.
+    hidden = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'item', 'other_user'], name='unique_conversation_state'),
+        ]
+
+
 class Claim(models.Model):
     STATUS_PENDING = 'pending'
     STATUS_APPROVED = 'approved'

@@ -1,426 +1,442 @@
-// WebSocket setup for real-time messaging
-const conversationId = inboxConfig.conversationId;
-const currentUserId = inboxConfig.userId;
-const recipientId = inboxConfig.recipientId;
-const itemId = inboxConfig.itemId;
+// Active conversation: rendering, sending, read receipts, typing, edit/delete and offline sync.
+(() => {
+  const userId = Inbox.userId;
+  const itemId = Number(inboxConfig.itemId);
+  const recipientId = Number(inboxConfig.recipientId);
+  const history = document.getElementById('chatHistory');
+  const container = document.getElementById('chatMessages');
+  const typingBubble = document.getElementById('typingBubble');
+  const statusDefault = document.querySelector('#chatStatus .status-default');
+  const statusTyping = document.querySelector('#chatStatus .status-typing');
+  const connectionNote = document.getElementById('chatConnection');
+  const form = document.getElementById('chatForm');
+  const input = form.querySelector('[name="message"]');
+  const fileInput = document.getElementById('chatImageUpload');
+  const messages = new Map();
+  let pendingCounter = 0;
 
-// WebSocket connection
-const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-const wsUrl = protocol + window.location.host + '/ws/chat/' + conversationId + '/';
-const chatSocket = new WebSocket(wsUrl);
+  const belongsHere = message => message.item_id === itemId &&
+    ((message.sender_id === userId && message.recipient_id === recipientId) ||
+     (message.sender_id === recipientId && message.recipient_id === userId));
 
-chatSocket.onopen = function(e) {
-  };
-
-chatSocket.onmessage = function(e) {
-  const data = JSON.parse(e.data);
-
-  // Handle typing notifications
-  if (data.type === 'typing') {
-    if (data.sender_id != currentUserId) {
-      const typingEl = document.getElementById('typingIndicator');
-      if (data.is_typing) {
-        typingEl.textContent = data.sender_username + ' is typing...';
-        typingEl.style.display = 'block';
-      } else {
-        typingEl.style.display = 'none';
-      }
-    }
-    return;
-  }
-
-  // Handle regular messages, edits and deletions
-  if (data.type === 'message') {
-    appendMessage(data);
-    return;
-  }
-  if (data.type === 'message_edited') {
-    const el = document.querySelector('[data-message-id="' + data.message_id + '"]');
-    if (el) {
-      const contentEl = el.querySelector('.message-content');
-      if (contentEl) {
-        contentEl.textContent = data.new_content;
-        // add edited tag
-        let editedTag = el.querySelector('.edited-tag');
-        if (!editedTag) {
-          editedTag = document.createElement('small');
-          editedTag.className = 'text-muted edited-tag';
-          editedTag.textContent = ' (edited)';
-          contentEl.appendChild(editedTag);
-        }
-      }
-    }
-    return;
-  }
-  if (data.type === 'message_deleted') {
-    const el = document.querySelector('[data-message-id="' + data.message_id + '"]');
-    if (!el) return;
-    if (data.for_everyone) {
-      // replace content with placeholder
-      const contentEl = el.querySelector('.message-content');
-      if (contentEl) {
-        contentEl.textContent = 'This message was deleted';
-      } else {
-        const newC = document.createElement('div');
-        newC.className = 'mb-1 message-content';
-        newC.textContent = 'This message was deleted';
-        el.insertBefore(newC, el.querySelector('.small'));
-      }
-      // Replace action buttons with a "Remove from view" option so users can delete the placeholder for themselves
-      const actions = el.querySelector('.message-actions');
-      if (actions) {
-        // Clear existing actions and provide a single "Delete for me" entry
-        actions.innerHTML = `\n            <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n            <ul class="dropdown-menu">\n              <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n            </ul>`;
-        // Attach handler
-        const delMe = actions.querySelector('.delete-for-me-btn');
-        if (delMe) {
-          delMe.addEventListener('click', function(ev) {
-            ev.preventDefault();
-            if (confirm('Remove this deleted message from your view?')) {
-              sendDelete(data.message_id, false);
-            }
-          });
-        }
-      }
-    } else {
-      // delete for me: only remove for requesting user
-      if (parseInt(data.requesting_user_id) === parseInt(currentUserId)) {
-        const wrapper = el.parentElement; // outer d-flex
-        if (wrapper) wrapper.remove();
-      }
-    }
-    return;
-  }
-};
-
-chatSocket.onclose = function(e) {
-  console.error('❌ WebSocket closed unexpectedly', e);
-};
-
-chatSocket.onerror = function(e) {
-  console.error('❌ WebSocket error:', e);
-};
-
-// Function to append message to chat
-function appendMessage(data) {
-  const chatHistory = document.getElementById('chatHistory');
-  const isCurrentUser = data.sender_id == currentUserId;
-
-  // Avoid duplicating if message already present
-  if (data.message_id) {
-    const existing = document.querySelector('[data-message-id="' + data.message_id + '"]');
-    if (existing) return;
-  }
-
-  const messageDiv = document.createElement('div');
-  messageDiv.className = 'd-flex mb-3 ' + (isCurrentUser ? 'justify-content-end' : 'justify-content-start');
-
-  const bubbleDiv = document.createElement('div');
-  bubbleDiv.className = 'chat-bubble ' + (isCurrentUser ? 'sent' : 'received');
-  if (data.message_id) bubbleDiv.setAttribute('data-message-id', data.message_id);
-
-  // Content or deleted placeholder
-  if (data.deleted_for_everyone) {
-    const del = document.createElement('div');
-    del.className = 'mb-1 message-content';
-    del.textContent = 'This message was deleted';
-    bubbleDiv.appendChild(del);
-  } else {
-    if (data.image) {
-      const imgWrap = document.createElement('div');
-      imgWrap.className = 'mb-2';
-      const img = document.createElement('img');
-      img.className = 'img-fluid';
-      img.src = data.image;
-      img.onclick = function() { openLightbox(data.image); };
-      imgWrap.appendChild(img);
-      bubbleDiv.appendChild(imgWrap);
-    }
-    if (data.message) {
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'mb-1 message-content';
-      contentDiv.textContent = data.message;
-      bubbleDiv.appendChild(contentDiv);
-    }
-  }
-
-  const timeDiv = document.createElement('div');
-  timeDiv.className = 'small opacity-75 text-end mt-1';
-  if (data.timestamp) {
-    timeDiv.textContent = data.timestamp;
-  } else {
+  // ----- Rendering -----
+  function dayLabel(date) {
     const now = new Date();
-    timeDiv.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (date.toDateString() === now.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
   }
 
-  bubbleDiv.appendChild(timeDiv);
-
-  // Actions dropdown
-  const actionsWrapper = document.createElement('div');
-  actionsWrapper.className = 'message-actions dropdown';
-  actionsWrapper.style.position = 'absolute';
-  actionsWrapper.style.top = '6px';
-  if (isCurrentUser) actionsWrapper.style.right = '6px'; else actionsWrapper.style.left = '6px';
-  // If this message was deleted for everyone, only provide the "Delete for me" option
-  if (data.deleted_for_everyone) {
-    actionsWrapper.innerHTML = `\n        <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n        <ul class="dropdown-menu ${isCurrentUser ? 'dropdown-menu-end' : ''}">\n          <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n        </ul>\n      `;
-  } else {
-    actionsWrapper.innerHTML = `\n        <button class="btn btn-link p-0 text-white" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>\n        <ul class="dropdown-menu ${isCurrentUser ? 'dropdown-menu-end' : ''}">\n          ${isCurrentUser ? '<li><a href="#" class="dropdown-item edit-message-btn">Edit</a></li>' : ''}\n          <li><a href="#" class="dropdown-item delete-for-me-btn">Delete for me</a></li>\n          ${isCurrentUser ? '<li><a href="#" class="dropdown-item text-danger delete-for-everyone-btn">Delete for everyone</a></li>' : ''}\n        </ul>\n      `;
-  }
-  bubbleDiv.appendChild(actionsWrapper);
-
-  messageDiv.appendChild(bubbleDiv);
-  chatHistory.appendChild(messageDiv);
-
-  // Attach event handlers for actions
-  const editBtn = bubbleDiv.querySelector('.edit-message-btn');
-  if (editBtn) {
-    editBtn.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      openEditInline(bubbleDiv, data.message_id);
-    });
-  }
-  const delMeBtn = bubbleDiv.querySelector('.delete-for-me-btn');
-  if (delMeBtn) {
-    delMeBtn.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      if (confirm('Delete this message for you?')) {
-        sendDelete(data.message_id, false);
-      }
-    });
-  }
-  const delAllBtn = bubbleDiv.querySelector('.delete-for-everyone-btn');
-  if (delAllBtn) {
-    delAllBtn.addEventListener('click', function(ev) {
-      ev.preventDefault();
-      if (confirm('Delete this message for everyone? This cannot be undone.')) {
-        sendDelete(data.message_id, true);
-      }
-    });
+  function timeLabel(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  // Scroll to bottom
-  chatHistory.scrollTop = chatHistory.scrollHeight;
-}
-
-// Handle form submission
-const chatForm = document.getElementById('chatForm');
-const messageInput = chatForm.querySelector('[name="message"]');
-
-// Typing indicator handling
-let typingTimeout = null;
-function sendTyping(isTyping) {
-  if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-  const payload = {
-    type: 'typing',
-    sender_id: currentUserId,
-    sender_username: inboxConfig.username,
-    is_typing: isTyping,
-  };
-  try {
-    chatSocket.send(JSON.stringify(payload));
-  } catch (err) {
-    console.error('Typing send error', err);
+  function tickIcon(message) {
+    if (message.pending) return '<i class="bi bi-clock msg-tick" title="Sending" aria-label="Sending"></i>';
+    if (message.is_read) return '<i class="bi bi-check2-all msg-tick is-read" title="Read" aria-label="Read"></i>';
+    return '<i class="bi bi-check2 msg-tick" title="Sent" aria-label="Sent"></i>';
   }
-}
 
-chatForm.addEventListener('submit', function(e) {
-  e.preventDefault();
-  const message = messageInput.value.trim();
-  if (!message) return;
+  function buildBubble(message) {
+    const mine = message.sender_id === userId;
+    const row = document.createElement('div');
+    row.className = 'msg-row ' + (mine ? 'is-sent' : 'is-received');
+    row.dataset.messageId = message.id;
+    row.dataset.day = new Date(message.timestamp).toDateString();
 
-  // Send message via WebSocket (server will broadcast authoritative message)
-  const messageData = {
-    type: 'message',
-    'message': message,
-    'sender_id': currentUserId,
-    'recipient_id': recipientId,
-    'item_id': itemId,
-    'image': null
-  };
-  chatSocket.send(JSON.stringify(messageData));
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble' + (message.deleted_for_everyone ? ' is-deleted' : '') + (message.pending ? ' is-pending' : '');
 
-  // Clear input and stop typing
-  messageInput.value = '';
-  sendTyping(false);
-});
-
-// Send edit over WebSocket
-function sendEdit(messageId, newContent) {
-  if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
-  const payload = {
-    type: 'edit',
-    message_id: messageId,
-    sender_id: currentUserId,
-    new_content: newContent
-  };
-  chatSocket.send(JSON.stringify(payload));
-}
-
-// Send delete over WebSocket
-function sendDelete(messageId, forEveryone) {
-  // Debug logging so we can trace delete attempts in the browser console
-  if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
-    console.warn('WebSocket not open; attempting HTTP fallback to delete view');
-    // Fallback: POST to HTTP endpoint for delete
-    const csrfInput = document.querySelector('#chatForm input[name="csrfmiddlewaretoken"]');
-    const csrfToken = csrfInput ? csrfInput.value : null;
-    fetch(inboxConfig.deleteUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken
-      },
-      body: JSON.stringify({ message_id: messageId, for_everyone: forEveryone })
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.success) {
-        // If delete for me, remove the DOM for current user; if for everyone broadcast will handle others
-        if (!forEveryone) {
-          const el = document.querySelector('[data-message-id="' + messageId + '"]');
-          if (el) {
-            const wrapper = el.parentElement; if (wrapper) wrapper.remove();
-          }
-        } else {
-          // for everyone: emulate server broadcast for current user
-          const el = document.querySelector('[data-message-id="' + messageId + '"]');
-          if (el) {
-            const contentEl = el.querySelector('.message-content');
-            if (contentEl) contentEl.textContent = 'This message was deleted';
-          }
-        }
-      } else {
-        alert('Failed to delete message: ' + (data.error || 'unknown'));
-      }
-    })
-    .catch(err => {
-      console.error('HTTP delete fallback failed', err);
-      alert('Could not delete message. Try again.');
-    });
-    return;
-  }
-  const payload = {
-    type: 'delete',
-    message_id: messageId,
-    sender_id: currentUserId,
-    for_everyone: forEveryone
-  };
-  try {
-    chatSocket.send(JSON.stringify(payload));
-    } catch (err) {
-    console.error('Failed to send delete via WebSocket', err, payload);
-    // Try HTTP fallback if WS send throws
-    const csrfInput = document.querySelector('#chatForm input[name="csrfmiddlewaretoken"]');
-    const csrfToken = csrfInput ? csrfInput.value : null;
-    fetch(inboxConfig.deleteUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken
-      },
-      body: JSON.stringify({ message_id: messageId, for_everyone: forEveryone })
-    })
-    .then(r => r.json())
-    .then(data => { })
-    .catch(err2 => console.error('HTTP fallback after WS error failed', err2));
-  }
-}
-
-// Inline edit UI
-function openEditInline(bubbleEl, messageId) {
-  const contentEl = bubbleEl.querySelector('.message-content');
-  if (!contentEl) return;
-  const original = contentEl.textContent;
-  const textarea = document.createElement('textarea');
-  textarea.className = 'form-control mb-2';
-  textarea.value = original;
-  bubbleEl.insertBefore(textarea, contentEl);
-  contentEl.style.display = 'none';
-
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn btn-sm btn-primary me-2';
-  saveBtn.textContent = 'Save';
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn btn-sm btn-secondary';
-  cancelBtn.textContent = 'Cancel';
-  const ctrl = document.createElement('div');
-  ctrl.className = 'mt-2';
-  ctrl.appendChild(saveBtn);
-  ctrl.appendChild(cancelBtn);
-  bubbleEl.insertBefore(ctrl, bubbleEl.querySelector('.small'));
-
-  saveBtn.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    const newText = textarea.value.trim();
-    if (!newText) return alert('Message cannot be empty');
-    // Send edit
-    sendEdit(messageId, newText);
-    // Tear down UI
-    contentEl.textContent = newText + ' ';
-    const tag = document.createElement('small'); tag.className='text-muted edited-tag'; tag.textContent=' (edited)'; contentEl.appendChild(tag);
-    contentEl.style.display = '';
-    textarea.remove(); ctrl.remove();
-  });
-  cancelBtn.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    contentEl.style.display = '';
-    textarea.remove(); ctrl.remove();
-  });
-}
-
-if (messageInput) {
-  messageInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      chatForm.requestSubmit();
+    if (editing && editing.id === String(message.id) && !message.deleted_for_everyone) {
+      bubble.classList.add('is-editing');
+      bubble.appendChild(buildEditor(message));
+      row.appendChild(bubble);
+      return row;
     }
-    // Send typing true on any key press and debounce stop
-    sendTyping(true);
-    if (typingTimeout) clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(function() { sendTyping(false); }, 1400);
-  });
-}
 
-// Attach handlers to initial page-loaded messages
-function attachMessageHandlers() {
-  document.querySelectorAll('.edit-message-btn').forEach(btn => {
-    btn.removeEventListener('click', handleEditClick);
-    btn.addEventListener('click', handleEditClick);
-  });
-  document.querySelectorAll('.delete-for-me-btn').forEach(btn => {
-    btn.removeEventListener('click', handleDeleteForMeClick);
-    btn.addEventListener('click', handleDeleteForMeClick);
-  });
-  document.querySelectorAll('.delete-for-everyone-btn').forEach(btn => {
-    btn.removeEventListener('click', handleDeleteForEveryoneClick);
-    btn.addEventListener('click', handleDeleteForEveryoneClick);
-  });
-}
+    if (message.deleted_for_everyone) {
+      const text = document.createElement('div');
+      text.className = 'msg-text';
+      text.innerHTML = '<i class="bi bi-slash-circle" aria-hidden="true"></i> ';
+      text.append(mine ? 'You deleted this message' : 'This message was deleted');
+      bubble.appendChild(text);
+    } else {
+      if (message.image) {
+        const img = document.createElement('img');
+        img.className = 'msg-image';
+        img.src = message.image;
+        img.alt = 'Shared image';
+        img.loading = 'lazy';
+        img.addEventListener('click', () => openLightbox(message.image));
+        bubble.appendChild(img);
+      }
+      if (message.content) {
+        const text = document.createElement('div');
+        text.className = 'msg-text';
+        text.textContent = message.content;
+        bubble.appendChild(text);
+      }
+    }
 
-// Event handlers
-function handleEditClick(e) {
-  e.preventDefault();
-  const messageId = this.getAttribute('data-message-id');
-  const bubbleEl = this.closest('.chat-bubble');
-  openEditInline(bubbleEl, messageId);
-}
+    const meta = document.createElement('span');
+    meta.className = 'msg-meta';
+    if (message.edited && !message.deleted_for_everyone) meta.insertAdjacentHTML('beforeend', '<span class="msg-edited">edited</span>');
+    const time = document.createElement('time');
+    time.dateTime = message.timestamp;
+    time.textContent = timeLabel(new Date(message.timestamp));
+    meta.appendChild(time);
+    if (mine && !message.deleted_for_everyone) meta.insertAdjacentHTML('beforeend', tickIcon(message));
+    bubble.appendChild(meta);
 
-function handleDeleteForMeClick(e) {
-  e.preventDefault();
-  const messageId = this.getAttribute('data-message-id');
-  if (confirm('Delete this message for you?')) {
-    sendDelete(messageId, false);
+    if (!message.pending) {
+      const menu = document.createElement('div');
+      menu.className = 'msg-menu dropdown';
+      menu.innerHTML =
+        '<button class="msg-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Message options">' +
+        '<i class="bi bi-chevron-down"></i></button><ul class="dropdown-menu ' + (mine ? 'dropdown-menu-end' : '') + ' chat-menu"></ul>';
+      const items = menu.querySelector('ul');
+      const addItem = (icon, label, handler, danger) => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dropdown-item' + (danger ? ' text-danger' : '');
+        btn.innerHTML = '<i class="bi ' + icon + '"></i>';
+        btn.append(label);
+        btn.addEventListener('click', () => handler(message.id));
+        li.appendChild(btn);
+        items.appendChild(li);
+      };
+      if (!message.deleted_for_everyone && message.content) {
+        addItem('bi-copy', 'Copy', copyMessage);
+        if (mine) addItem('bi-pencil', 'Edit', startEdit);
+      }
+      addItem('bi-trash', 'Delete', confirmDelete, true);
+      bubble.appendChild(menu);
+    }
+
+    row.appendChild(bubble);
+    return row;
   }
-}
 
-function handleDeleteForEveryoneClick(e) {
-  e.preventDefault();
-  const messageId = this.getAttribute('data-message-id');
-  if (confirm('Delete this message for everyone? This cannot be undone.')) {
-    sendDelete(messageId, true);
+  function nearBottom() {
+    return history.scrollHeight - history.scrollTop - history.clientHeight < 120;
   }
-}
 
-// Attach handlers on page load
-attachMessageHandlers();
+  function scrollToBottom() {
+    history.scrollTop = history.scrollHeight;
+  }
+
+  // Rebuilds the list from the message map; conversations are small enough to keep this simple.
+  function renderAll() {
+    const keepBottom = nearBottom();
+    const sorted = [...messages.values()].sort((a, b) =>
+      new Date(a.timestamp) - new Date(b.timestamp) || String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
+    const fragment = document.createDocumentFragment();
+    let lastDay = null;
+    sorted.forEach(message => {
+      const day = new Date(message.timestamp).toDateString();
+      if (day !== lastDay) {
+        const divider = document.createElement('div');
+        divider.className = 'date-divider';
+        divider.innerHTML = '<span></span>';
+        divider.firstChild.textContent = dayLabel(new Date(message.timestamp));
+        fragment.appendChild(divider);
+        lastDay = day;
+      }
+      fragment.appendChild(buildBubble(message));
+    });
+    if (!sorted.length) {
+      const empty = document.createElement('div');
+      empty.className = 'chat-empty-note';
+      empty.innerHTML = '<i class="bi bi-lock" aria-hidden="true"></i> Say hello and arrange a safe, public meeting place for the return.';
+      fragment.appendChild(empty);
+    }
+    container.replaceChildren(fragment);
+    if (keepBottom) scrollToBottom();
+  }
+
+  function upsert(message, { scroll = false } = {}) {
+    messages.set(String(message.id), message);
+    renderAll();
+    if (scroll) scrollToBottom();
+  }
+
+  // ----- Read receipts -----
+  let readTimer = null;
+  function markRead() {
+    if (document.visibilityState !== 'visible') return;
+    const unread = [...messages.values()].some(m => m.sender_id === recipientId && !m.is_read);
+    if (!unread) return;
+    clearTimeout(readTimer);
+    readTimer = setTimeout(() => {
+      Inbox.request(inboxConfig.readUrl, { json: { item_id: itemId, recipient_id: recipientId } })
+        .then(() => messages.forEach(m => { if (m.sender_id === recipientId) m.is_read = true; }))
+        .catch(() => {});
+    }, 300);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { markRead(); sync(); }
+  });
+
+  // ----- Typing (outgoing) -----
+  const TYPING_REFRESH_MS = 2500;
+  const TYPING_IDLE_MS = 3000;
+  let typingActive = false;
+  let typingSentAt = 0;
+  let typingIdle = null;
+
+  function sendTyping(isTyping) {
+    const payload = { type: 'typing', item_id: itemId, recipient_id: recipientId, is_typing: isTyping };
+    if (!Inbox.send(payload)) {
+      Inbox.request(inboxConfig.typingUrl, { json: payload }).catch(() => {});
+    }
+  }
+
+  function typingStarted() {
+    clearTimeout(typingIdle);
+    if (!input.value.trim()) { typingStopped(); return; }
+    const now = Date.now();
+    if (!typingActive || now - typingSentAt > TYPING_REFRESH_MS) {
+      typingActive = true;
+      typingSentAt = now;
+      sendTyping(true);
+    }
+    typingIdle = setTimeout(typingStopped, TYPING_IDLE_MS);
+  }
+
+  function typingStopped() {
+    clearTimeout(typingIdle);
+    if (!typingActive) return;
+    typingActive = false;
+    sendTyping(false);
+  }
+
+  // ----- Typing (incoming) -----
+  let otherTypingTimer = null;
+  function showOtherTyping(isTyping) {
+    clearTimeout(otherTypingTimer);
+    const keepBottom = nearBottom();
+    statusTyping.hidden = !isTyping;
+    statusDefault.hidden = isTyping;
+    typingBubble.hidden = !isTyping;
+    if (isTyping && keepBottom) scrollToBottom();
+    // A lost "stopped typing" event must not leave the indicator on forever.
+    if (isTyping) otherTypingTimer = setTimeout(() => showOtherTyping(false), 6000);
+  }
+
+  // ----- Sending -----
+  function autoGrow() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+  }
+
+  function resetComposer() {
+    input.value = '';
+    autoGrow();
+    if (fileInput) fileInput.value = '';
+    const preview = document.getElementById('imagePreviewContainer');
+    if (preview) preview.style.display = 'none';
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const text = input.value.trim();
+    const file = fileInput && fileInput.files[0];
+    if (!text && !file) return;
+
+    const data = new FormData();
+    data.append('item_id', itemId);
+    data.append('recipient_id', recipientId);
+    data.append('message', text);
+    if (file) data.append('chat_image', file);
+
+    const tempId = 'pending-' + (++pendingCounter);
+    upsert({
+      id: tempId, pending: true, item_id: itemId, sender_id: userId, recipient_id: recipientId,
+      content: text, image: file ? URL.createObjectURL(file) : '', timestamp: new Date().toISOString(),
+      edited: false, deleted_for_everyone: false, is_read: false,
+    }, { scroll: true });
+    resetComposer();
+    typingStopped();
+    input.focus();
+
+    Inbox.request(inboxConfig.sendUrl, { body: data })
+      .then(response => {
+        messages.delete(tempId);
+        upsert(response.message, { scroll: true });
+      })
+      .catch(err => {
+        messages.delete(tempId);
+        renderAll();
+        if (!input.value) input.value = text;
+        autoGrow();
+        Inbox.toast('Message not sent: ' + err.message);
+      });
+  });
+
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  input.addEventListener('input', () => { autoGrow(); typingStarted(); });
+  input.addEventListener('blur', typingStopped);
+  window.addEventListener('pagehide', typingStopped);
+
+  // ----- Message actions -----
+  function copyMessage(id) {
+    const message = messages.get(String(id));
+    if (!message) return;
+    navigator.clipboard?.writeText(message.content).then(() => Inbox.toast('Message copied'), () => {});
+  }
+
+  async function confirmDelete(id) {
+    const message = messages.get(String(id));
+    if (!message) return;
+    const mine = message.sender_id === userId;
+    const actions = [];
+    if (mine && !message.deleted_for_everyone) actions.push({ label: 'Delete for everyone', value: 'everyone', danger: true });
+    actions.push({ label: 'Delete for me', value: 'me', danger: !actions.length });
+    const choice = await Inbox.dialog({
+      title: 'Delete message?',
+      text: mine && !message.deleted_for_everyone
+        ? 'Delete for everyone removes it for ' + (inboxConfig.otherName || 'the other person') + ' too.'
+        : 'This removes the message from your chat only.',
+      actions,
+    });
+    if (!choice) return;
+    try {
+      const response = await Inbox.request(inboxConfig.deleteUrl, { json: { message_id: id, for_everyone: choice === 'everyone' } });
+      if (choice === 'everyone') {
+        upsert(response.message);
+      } else {
+        messages.delete(String(id));
+        renderAll();
+      }
+    } catch (err) {
+      Inbox.toast(err.message);
+    }
+  }
+
+  // The open editor survives re-renders caused by incoming events.
+  let editing = null; // { id, draft }
+
+  function startEdit(id) {
+    const message = messages.get(String(id));
+    if (!message) return;
+    editing = { id: String(id), draft: message.content };
+    renderAll();
+    const area = container.querySelector('.msg-editor textarea');
+    area?.focus();
+    area?.setSelectionRange(area.value.length, area.value.length);
+  }
+
+  function stopEdit() {
+    editing = null;
+    renderAll();
+  }
+
+  function buildEditor(message) {
+    const editor = document.createElement('div');
+    editor.className = 'msg-editor';
+    editor.innerHTML =
+      '<textarea class="form-control" rows="2" maxlength="4000" aria-label="Edit message"></textarea>' +
+      '<div class="msg-editor-actions"><button type="button" class="btn btn-sm btn-light" data-act="cancel">Cancel</button>' +
+      '<button type="button" class="btn btn-sm btn-primary" data-act="save">Save</button></div>';
+    const area = editor.querySelector('textarea');
+    area.value = editing.draft;
+    area.addEventListener('input', () => { editing.draft = area.value; });
+
+    const save = async () => {
+      const value = area.value.trim();
+      if (!value) { Inbox.toast('Message cannot be empty'); return; }
+      if (value === message.content) { stopEdit(); return; }
+      try {
+        const response = await Inbox.request(inboxConfig.editUrl, { json: { message_id: message.id, new_content: value } });
+        editing = null;
+        upsert(response.message);
+      } catch (err) {
+        Inbox.toast(err.message);
+      }
+    };
+    editor.querySelector('[data-act="cancel"]').addEventListener('click', stopEdit);
+    editor.querySelector('[data-act="save"]').addEventListener('click', save);
+    area.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); save(); }
+      if (event.key === 'Escape') { event.stopPropagation(); stopEdit(); }
+    });
+    return editor;
+  }
+
+  // ----- Live events -----
+  Inbox.on('message', ({ message }) => {
+    if (!belongsHere(message)) return;
+    const incoming = message.sender_id === recipientId;
+    if (incoming) showOtherTyping(false);
+    upsert(message, { scroll: !incoming || nearBottom() });
+    if (incoming) markRead();
+  });
+  Inbox.on('message_updated', ({ message }) => {
+    if (belongsHere(message) && messages.has(String(message.id))) upsert(message);
+  });
+  Inbox.on('message_hidden', ({ message_id }) => {
+    if (messages.delete(String(message_id))) renderAll();
+  });
+  Inbox.on('read', data => {
+    if (data.item_id !== itemId || data.reader_id !== recipientId) return;
+    const ids = new Set(data.message_ids.map(String));
+    let changed = false;
+    messages.forEach(m => { if (ids.has(String(m.id)) && !m.is_read) { m.is_read = true; changed = true; } });
+    if (changed) renderAll();
+  });
+  Inbox.on('typing', data => {
+    if (data.item_id === itemId && data.sender_id === recipientId) showOtherTyping(data.is_typing);
+  });
+  document.addEventListener('chat:cleared', () => {
+    messages.clear();
+    renderAll();
+  });
+
+  // ----- Offline fallback: poll while the socket is down -----
+  let pollTimer = null;
+  let syncing = false;
+  function sync() {
+    if (syncing) return;
+    syncing = true;
+    const url = inboxConfig.syncUrl + '?item_id=' + itemId + '&recipient_id=' + recipientId;
+    Inbox.request(url, { method: 'GET' })
+      .then(data => {
+        const pending = [...messages.values()].filter(m => m.pending);
+        messages.clear();
+        data.messages.concat(pending).forEach(m => messages.set(String(m.id), m));
+        renderAll();
+        if (!Inbox.isSocketOpen()) showOtherTyping(data.typing);
+        markRead();
+      })
+      .catch(() => {})
+      .finally(() => { syncing = false; });
+  }
+
+  let socketState = null;
+  Inbox.on('socket', open => {
+    if (open === socketState) return;
+    socketState = open;
+    connectionNote.hidden = open;
+    clearInterval(pollTimer);
+    if (open) {
+      sync(); // catch up on anything missed while disconnected
+    } else {
+      pollTimer = setInterval(() => { if (document.visibilityState === 'visible') sync(); }, 4000);
+    }
+  });
+
+  // ----- Initial render -----
+  JSON.parse(document.getElementById('chatMessagesData').textContent)
+    .forEach(message => messages.set(String(message.id), message));
+  renderAll();
+  scrollToBottom();
+  autoGrow();
+})();

@@ -56,6 +56,36 @@
             button.closest('.sidebar-group').classList.toggle('open', open);
         });
     });
+    // Fade hints on the scrollable category list show that more items are available.
+    const categoryList = sidebar.querySelector('[data-category-list]');
+    function updateCategoryHints() {
+        if (!categoryList) return;
+        const { scrollTop, scrollHeight, clientHeight } = categoryList;
+        categoryList.classList.toggle('can-scroll-up', scrollTop > 2);
+        categoryList.classList.toggle('can-scroll-down', scrollTop + clientHeight < scrollHeight - 2);
+    }
+    categoryList?.addEventListener('scroll', updateCategoryHints, { passive: true });
+    sidebar.querySelector('[data-submenu-target="categoriesSubmenu"]')?.addEventListener('click', () => requestAnimationFrame(updateCategoryHints));
+
+    const categoryFilter = sidebar.querySelector('[data-category-filter]');
+    categoryFilter?.addEventListener('input', () => {
+        const query = categoryFilter.value.trim().toLowerCase();
+        let shown = 0;
+        categoryList.querySelectorAll('a.account-menu-link').forEach(link => {
+            const match = link.textContent.trim().toLowerCase().includes(query);
+            link.hidden = !match;
+            if (match) shown += 1;
+        });
+        categoryList.querySelector('[data-category-empty]').hidden = shown > 0;
+        categoryList.scrollTop = 0;
+        updateCategoryHints();
+    });
+
+    const scrollArea = sidebar.querySelector('.app-sidebar-scroll');
+    scrollArea?.addEventListener('scroll', () => {
+        sidebar.querySelector('.app-sidebar-shell').classList.toggle('is-scrolled', scrollArea.scrollTop > 4);
+    }, { passive: true });
+
     collapse.addEventListener('click', () => setCollapsed(!collapsed));
     opener.addEventListener('click', () => setDrawer(true));
     closer.addEventListener('click', () => setDrawer(false));

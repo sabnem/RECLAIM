@@ -106,6 +106,17 @@ Do not commit a data export or credentials to Git to perform the transfer.
 
 ## Release verification
 
+### Messaging update (migration 0017)
+
+Chats are now per-member: archiving, clearing or deleting a chat and "delete for
+me" only change the requester's view; "delete for everyone" (sender only) wipes
+the stored content. Run `python manage.py migrate --noinput` before starting the
+new code. The migration moves chats archived with the old flags into the new
+per-member state. Messages are sent over HTTPS and pushed to each member's
+`/ws/inbox/` socket. If the socket is unavailable the page polls every few
+seconds, so messages still arrive. Instant delivery and typing indicators need
+the WebSocket working with Redis-backed channels.
+
 ### Claim tracking update (migration 0013)
 
 This update adds persistent claim notifications and the Ended claim status.

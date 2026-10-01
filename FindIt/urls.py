@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import chat_views
 from . import claim_views
 from .assistance import assistant_reply, request_answer, assistance_requests
 
@@ -26,8 +27,8 @@ urlpatterns = [
     path('items/<int:item_id>/claims/', views.manage_claims, name='manage_claims'),
     path('claims/<int:claim_id>/review/', views.review_claim, name='review_claim'),
     path('items/<int:item_id>/mark_returned/', views.mark_item_returned, name='mark_item_returned'),
-    path('inbox/', views.inbox, name='inbox'),
-    path('items/<int:item_id>/message/<int:recipient_id>/', views.send_message, name='send_message'),
+    path('inbox/', chat_views.inbox, name='inbox'),
+    path('items/<int:item_id>/message/<int:recipient_id>/', chat_views.send_message, name='send_message'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
@@ -44,7 +45,11 @@ urlpatterns = [
     path('items/<int:item_id>/rate/', views.rate_finder, name='rate_finder'),
     path('statistics/returns/', views.returns_statistics, name='returns_statistics'),
     path('export/recovered-items/pdf/', views.export_recovered_items_pdf, name='export_recovered_items_pdf'),
-    path('clear-conversation/', views.clear_conversation, name='clear_conversation'),
-    path('message/edit/', views.edit_message, name='edit_message'),
-    path('message/delete/', views.delete_message, name='delete_message'),
+    path('clear-conversation/', chat_views.conversation_action, name='clear_conversation'),
+    path('message/send/', chat_views.send_chat_message, name='send_chat_message'),
+    path('message/edit/', chat_views.edit_message, name='edit_message'),
+    path('message/delete/', chat_views.delete_message, name='delete_message'),
+    path('conversation/read/', chat_views.mark_read, name='mark_conversation_read'),
+    path('conversation/sync/', chat_views.sync_conversation, name='sync_conversation'),
+    path('conversation/typing/', chat_views.typing_status, name='typing_status'),
 ]
