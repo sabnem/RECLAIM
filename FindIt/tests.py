@@ -57,6 +57,20 @@ class PortalTests(TestCase):
         self.assertTrue(user.check_password("test-password"))
         self.assertEqual(user.userprofile.contact_number, "0700000000")
 
+    def test_edit_profile_rejects_another_members_email_or_username(self):
+        self.client.force_login(self.owner)
+        data = {"first_name": "Owen", "last_name": "Owner", "email": "FINDER@example.com", "username": "owner",
+                "contact_number": "0700000000", "address": "Town"}
+        response = self.client.post(reverse("edit_profile"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("email", response.context["form"].errors)
+        response = self.client.post(reverse("edit_profile"), {**data, "email": "owner@example.com", "username": "Finder"})
+        self.assertIn("username", response.context["form"].errors)
+        # Keeping your own email and username still saves.
+        self.assertRedirects(self.client.post(reverse("edit_profile"), {**data, "email": "Owner@Example.com"}), reverse("profile"))
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.email, "owner@example.com")
+
     def test_login_and_logout(self):
         self.assertRedirects(self.client.post(reverse("login"), {"username": "owner", "password": "test-password"}), reverse("home"))
         self.assertEqual(self.client.get(reverse("profile")).status_code, 200)

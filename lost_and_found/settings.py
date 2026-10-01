@@ -170,7 +170,21 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=1025)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='noreply@lostandfound.com')
+EMAIL_USE_SSL = env.bool('EMAIL_USE_SSL', default=False)
+EMAIL_TIMEOUT = env.int('EMAIL_TIMEOUT', default=20)
+# Most SMTP providers (Gmail included) reject a From address that differs from the login.
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER or 'noreply@lostandfound.com')
+
+# SMS delivery for claim verification codes: '' (off), 'console', 'africastalking' or 'twilio'.
+SMS_PROVIDER = env('SMS_PROVIDER', default='')
+SMS_DEFAULT_COUNTRY_CODE = env('SMS_DEFAULT_COUNTRY_CODE', default='255')
+AFRICASTALKING_USERNAME = env('AFRICASTALKING_USERNAME', default='')
+AFRICASTALKING_API_KEY = env('AFRICASTALKING_API_KEY', default='')
+AFRICASTALKING_SENDER_ID = env('AFRICASTALKING_SENDER_ID', default='')
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
+TWILIO_FROM_NUMBER = env('TWILIO_FROM_NUMBER', default='')
+TWILIO_MESSAGING_SERVICE_SID = env('TWILIO_MESSAGING_SERVICE_SID', default='')
 
 # Authentication redirects
 LOGIN_URL = 'login'

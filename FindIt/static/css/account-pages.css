@@ -66,7 +66,9 @@
 .inbox-page .sidebar-header, .inbox-page .chat-header { background: var(--surface); color: var(--text); border-bottom: 1px solid var(--line); box-shadow: none; padding: 16px; min-height: 76px; flex-shrink: 0; }
 .inbox-page .chat-header .text-white, .inbox-page .sidebar-header .text-white { color: var(--text) !important; }
 .inbox-page .conversation { padding: 14px !important; margin: 4px 0; border: 0; border-radius: 10px; background: transparent; box-shadow: none; transform: none; }
-.inbox-page .conversation:hover, .inbox-page .conversation.active-convo { background: var(--primary-subtle); }
+.inbox-page .conversation:hover, .inbox-page .conversation.active-convo { background: var(--primary-subtle) !important; }
+/* Override legacy blue/green "active" styles from inbox.css and style.css. */
+.inbox-page .conversation.active-convo { border: 0 !important; border-left: 3px solid var(--primary) !important; box-shadow: none !important; transform: none; }
 .inbox-page .conversation .flex-grow-1 { min-width: 0; overflow-wrap: anywhere; }
 .inbox-page .conversation-avatar { width: 40px; height: 40px; border: 0; flex-shrink: 0; }
 .inbox-page .chat-area { position: relative; inset: auto; width: auto !important; min-width: 0; max-width: none; height: 100%; padding: 0; background: var(--bg); }
@@ -131,7 +133,9 @@ body.app-layout.dark-mode .inbox-page { --tick-read: #53bdeb; --bubble-sent: #3a
 
 /* Messages */
 .inbox-page .chat-history { display: flex; flex-direction: column; }
-.inbox-page #chatMessages { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+/* Messages start at the top of the chat box; long chats still open at the newest message. */
+.inbox-page #chatMessages { display: flex; flex-direction: column; gap: 4px; }
+.inbox-page .chat-history { justify-content: flex-start; }
 .inbox-page .date-divider { margin: 14px 0 8px; text-align: center; }
 .inbox-page .date-divider span { display: inline-block; padding: 4px 12px; border: 0; border-radius: 8px; background: var(--surface); color: var(--muted); font-size: .74rem; font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
 .inbox-page .msg-row { display: flex; }
@@ -185,10 +189,47 @@ body.app-layout.dark-mode .inbox-page { --tick-read: #53bdeb; --bubble-sent: #3a
 body.app-layout.dark-mode .chat-dialog-btn.is-danger { color: var(--danger); }
 .chat-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 2000; max-width: calc(100vw - 32px); padding: 10px 18px; border-radius: 10px; background: #1f2a37; color: #fff; font-size: .88rem; box-shadow: 0 10px 30px rgba(0,0,0,.25); transform: translate(-50%, 12px); opacity: 0; transition: opacity .2s ease, transform .2s ease; }
 .chat-toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+/* ----- Inbox sizing per device ----- */
+/* Desktop/tablet: the chat box fits the screen so the composer is never under the help button. */
+@media (min-width: 768px) {
+ .inbox-page .messaging-app { height: clamp(440px, calc(100dvh - 290px), 860px); }
+}
+@media (min-width: 768px) and (max-width: 991.98px) {
+ .inbox-page .messaging-app { height: clamp(420px, calc(100dvh - 350px), 760px); }
+ .inbox-page .messaging-app .sidebar { flex-basis: 40%; width: 40%; min-width: 220px; }
+}
 @media (max-width: 767.98px) {
  .inbox-page .msg-bubble { max-width: 86%; }
- .inbox-page .chat-header { padding: 10px 8px; min-height: 64px; }
+ /* Legacy inbox.css made the header sticky with a top-bar offset, leaving a gap above it. */
+ .inbox-page .chat-header { position: relative; top: auto; padding: 10px 8px; min-height: 64px; }
  .inbox-page .chat-header-main { gap: 8px; }
  .inbox-page .chat-header-avatar { width: 38px; height: 38px; }
+
+ /* Chat list: a normal page that scrolls from the top. */
+ .inbox-page .messaging-app { height: auto; min-height: 0; }
+ .inbox-page .messaging-app .sidebar { height: auto; overflow: visible; }
+
+ /* Open chat: full-screen under the top bar, WhatsApp style. */
+ body.inbox-chat-mode { overflow: hidden; }
+ body.inbox-chat-mode .inbox-page .page-heading,
+ body.inbox-chat-mode .app-shell > .footer,
+ body.inbox-chat-mode .niulize-launcher { display: none !important; }
+ body.inbox-chat-mode .inbox-page .messaging-app {
+   position: fixed; z-index: 1020; left: 0; right: 0;
+   top: calc(var(--inbox-top, 64px) + var(--vv-offset, 0px));
+   height: calc(var(--app-vh, 100dvh) - var(--inbox-top, 64px));
+   border: 0; border-radius: 0;
+ }
+ body.inbox-chat-mode .inbox-page .chat-area { height: 100%; }
+ body.inbox-chat-mode .inbox-page .chat-history { padding: 12px 10px; }
+ body.inbox-chat-mode .inbox-page .chat-footer { padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+ .inbox-page .message-input { font-size: 16px !important; } /* below 16px iOS zooms the page */
+ .inbox-page .chat-footer .d-flex.align-items-center.gap-2 { padding: 4px; }
+ .inbox-page .btn-attach, .inbox-page .btn-send { width: 44px; height: 44px; flex: 0 0 44px; }
+}
+@media (max-width: 380px) {
+ .inbox-page .msg-bubble { max-width: 92%; }
+ .inbox-page .convo-row .conversation-avatar { width: 42px; height: 42px; }
 }
 @media (prefers-reduced-motion: reduce) { .inbox-page .msg-bubble, .inbox-page .typing-bubble span { animation: none; } }

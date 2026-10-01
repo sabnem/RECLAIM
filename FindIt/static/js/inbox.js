@@ -250,17 +250,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const mobileQuery = window.matchMedia('(max-width: 767.98px)');
   let showChat = inboxConfig.hasConversation === 'true';
 
+  const topbar = document.querySelector('.mobile-topbar');
+  const chatHistory = document.getElementById('chatHistory');
+  const messageInput = document.querySelector('#chatForm [name="message"]');
+
+  // Phones: the open chat is pinned between the top bar and the keyboard.
   function updateViewportHeight() {
-    document.documentElement.style.setProperty('--app-vh', (window.visualViewport ? window.visualViewport.height : window.innerHeight) + 'px');
+    const viewport = window.visualViewport;
+    const root = document.documentElement.style;
+    root.setProperty('--app-vh', (viewport ? viewport.height : window.innerHeight) + 'px');
+    root.setProperty('--vv-offset', (viewport ? viewport.offsetTop : 0) + 'px');
+    root.setProperty('--inbox-top', (topbar && topbar.offsetHeight ? topbar.offsetHeight : 0) + 'px');
+    if (chatHistory && document.activeElement === messageInput) chatHistory.scrollTop = chatHistory.scrollHeight;
   }
   function initMobileView() {
-    conversationList.classList.toggle('mobile-panel-hidden', mobileQuery.matches && showChat);
+    const chatMode = mobileQuery.matches && showChat;
+    conversationList.classList.toggle('mobile-panel-hidden', chatMode);
     chatArea.classList.toggle('mobile-panel-hidden', mobileQuery.matches && !showChat);
+    document.body.classList.toggle('inbox-chat-mode', chatMode);
     updateViewportHeight();
+    if (chatMode && chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
   }
+  window.visualViewport?.addEventListener('scroll', updateViewportHeight);
+  window.addEventListener('resize', updateViewportHeight);
   backToListBtn?.addEventListener('click', () => {
     showChat = false;
     initMobileView();
+    window.scrollTo(0, 0);
   });
   mobileQuery.addEventListener('change', initMobileView);
   window.visualViewport?.addEventListener('resize', updateViewportHeight);

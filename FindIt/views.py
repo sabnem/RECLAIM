@@ -35,39 +35,27 @@ from .models import (
     RecoveredItem,
     ReturnConfirmation,
 )
+from .otp_delivery import deliver_claim_code, mask_email
 from .selectors import return_statistics_for
 
 
 logger = logging.getLogger(__name__)
 
-def _send_claim_otp_notification(request, claim, verification_code):
-    subject = f"Verification code for {claim.item.title}"
-    body = (
-        f"Hello {claim.claimant.username},\n\n"
-        f"Your claim for '{claim.item.title}' was approved.\n"
-        f"Use this 6-digit verification code to confirm the return: {verification_code}\n\n"
-        f"The code expires in 24 hours and can only be used once."
-    )
-    try:
-        if claim.claimant.email:
-            sender_email = settings.EMAIL_HOST_USER or settings.DEFAULT_FROM_EMAIL
-            send_mail(
-                subject=subject,
-                message=body,
-                from_email=sender_email,
-                recipient_list=[claim.claimant.email],
-                fail_silently=False,
-            )
-            messages.success(request, f'Claim approved. Verification code sent to {claim.claimant.username}.')
-        else:
-            raise ValueError('Claimant email is missing.')
-    except Exception as exc:
-        logger.exception('OTP email delivery failed for claim %s', claim.id)
-        messages.info(
+def _send_claim_otp_notification(request, claim, verification_code, lead='Claim approved.'):
+    """Deliver the code to the claimant and report the outcome without revealing it."""
+    delivered, problems = deliver_claim_code(claim, verification_code)
+    name = claim.claimant.username
+    if delivered:
+        channels = [f'email ({mask_email(claim.claimant.email)})' if channel == 'email' else channel for channel in delivered]
+        messages.success(request, f'{lead} Verification code sent to {name} by {" and ".join(channels)}.')
+    else:
+        messages.warning(
             request,
-            f'Email delivery failed for {claim.claimant.username}. The OTP is {verification_code}. '
-            f'Check Render SMTP settings and the server logs for details.'
+            f'{lead} The verification code could not be delivered to {name}. They can request a new '
+            'code from My claims after updating their email or phone number.',
         )
+    if problems and (request.user.is_superuser or settings.DEBUG):
+        messages.info(request, 'Delivery notes: ' + '; '.join(problems) + '.')
 
 
 @login_required

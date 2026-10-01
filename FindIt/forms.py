@@ -192,6 +192,22 @@ class UserProfileForm(forms.ModelForm):
             self.fields['bio'].initial = self.instance.bio
             self.fields['social_links'].initial = self.instance.social_links
 
+    def _other_users(self):
+        return User.objects.exclude(pk=self.instance.user_id)
+
+    def clean_email(self):
+        # Same rule as registration: one account per address, so codes reach the right person.
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if self._other_users().filter(email__iexact=email).exists():
+            raise forms.ValidationError('This email is already used by another account.')
+        return email
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if self._other_users().filter(username__iexact=username).exists():
+            raise forms.ValidationError('This username is already taken.')
+        return username
+
     def save(self, commit=True):
         profile = super().save(commit=False)
         user = profile.user

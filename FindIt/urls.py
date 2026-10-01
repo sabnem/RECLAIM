@@ -11,6 +11,7 @@ urlpatterns = [
     path('my-claims/', claim_views.my_claims, name='my_claims'),
     path('claims/<int:claim_id>/appeal/', claim_views.appeal_claim, name='appeal_claim'),
     path('claims/<int:claim_id>/end/', claim_views.end_claim, name='end_claim'),
+    path('claims/<int:claim_id>/resend-code/', claim_views.resend_claim_code, name='resend_claim_code'),
     path('notifications/', claim_views.notifications, name='notifications'),
     path('notifications/count/', claim_views.notification_count, name='notification_count'),
     path('notifications/<int:event_id>/open/', claim_views.open_notification, name='open_notification'),

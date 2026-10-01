@@ -11,6 +11,7 @@ from django.views.decorators.cache import never_cache
 
 from .forms import ClaimForm
 from .models import Claim, ClaimEvent, Item
+from .otp_delivery import sms_enabled
 
 
 @login_required
@@ -21,7 +22,33 @@ def my_claims(request):
     return render(request, 'FindIt/my_claims.html', {
         'page_obj': Paginator(claims, 12).get_page(request.GET.get('page')),
         'received': received,
+        'sms_enabled': sms_enabled(),
     })
+
+
+RESEND_COOLDOWN_SECONDS = 60
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def resend_claim_code(request, claim_id):
+    """Let an approved claimant get a fresh code; the previous one stops working."""
+    from .views import _send_claim_otp_notification
+
+    # Lock only the claim row: PostgreSQL cannot lock the outer-joined profile.
+    claim = get_object_or_404(Claim.objects.select_for_update(of=('self',)).select_related('item', 'claimant__userprofile'),
+                              pk=claim_id, claimant=request.user)
+    if claim.status != Claim.STATUS_APPROVED or claim.is_returned or claim.item.is_returned:
+        messages.error(request, 'A verification code is only available for approved claims awaiting handover.')
+        return redirect('my_claims')
+    sent_at = claim.verification_code_sent_at
+    if sent_at and (timezone.now() - sent_at).total_seconds() < RESEND_COOLDOWN_SECONDS:
+        messages.info(request, 'A code was just sent. Please wait a minute before requesting another.')
+        return redirect('my_claims')
+    code = claim.generate_verification_code()
+    _send_claim_otp_notification(request, claim, code, lead='New code requested.')
+    return redirect('my_claims')
 
 
 @login_required

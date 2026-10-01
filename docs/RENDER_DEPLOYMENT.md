@@ -76,7 +76,18 @@ development `runserver` or a WSGI-only start command.
 | `EMAIL_USE_TLS` | `True` for STARTTLS |
 | `EMAIL_HOST_USER` | Provider username |
 | `EMAIL_HOST_PASSWORD` | Provider password/app password |
-| `DEFAULT_FROM_EMAIL` | Verified sender address |
+| `DEFAULT_FROM_EMAIL` | Verified sender address (defaults to `EMAIL_HOST_USER`) |
+| `SMS_PROVIDER` | Optional: `africastalking` or `twilio` to also text claim codes |
+| `SMS_DEFAULT_COUNTRY_CODE` | Country code for local numbers such as `0755…` (default `255`) |
+| `AFRICASTALKING_USERNAME` / `AFRICASTALKING_API_KEY` | Africa's Talking app credentials (`sandbox` username for testing) |
+| `AFRICASTALKING_SENDER_ID` | Optional approved sender ID/short code |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Twilio credentials, if using Twilio |
+| `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID` | Twilio sender |
+
+Claim verification codes go only to the claimant, by email and (when
+configured) SMS to their profile phone number. The finder never sees the code.
+Claimants can request a new code from My claims. With the console email
+backend, emails are only printed in the server terminal.
 
 Render supplies `RENDER_EXTERNAL_HOSTNAME`; the application automatically allows
 that hostname and uses its HTTPS URL for links and CSRF checks. Do not copy the
